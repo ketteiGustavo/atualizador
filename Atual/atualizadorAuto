@@ -1760,5 +1760,5 @@ VERIFICAR_VERSAO_RELEASE
 ATUALIZAR
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 GRAVANDO_ATUALIZACOES
-
+# echo "validando"
 # acabar aqui
