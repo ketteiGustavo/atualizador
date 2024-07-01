@@ -936,6 +936,8 @@ OBTER_LINK_RELEASE() {
             while [ "$link_ok" == "false" ]; do
                 nova_data=$(date -d "${nova_data} +1 day" +"%Y%m%d")
                 echo "$nova_data"
+                nova_data=$(date -d "${nova_data}" +"%Y%m%d")
+                echo "$nova_data"
                 nova_data=$(date -d "${nova_data}" +"%d%m")
                 echo "$nova_data"
                 GERAR_LINK
@@ -943,6 +945,7 @@ OBTER_LINK_RELEASE() {
                     break
                 else
                     nova_data=$(date -d "${nova_data}" +"%m%d")
+                    echo "$nova_data"
                 fi
             done
         fi
