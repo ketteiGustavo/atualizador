@@ -254,7 +254,7 @@ controle_versao_release="/u/sist/controle/trimestre-ver-rel.txt"
 
 # Parte web - Links
 
-SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/blob/main/Atual/atualizadorAuto"
+SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizadorAuto"
 SCRIPT_PATH="$0"
 
 URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
@@ -1761,4 +1761,5 @@ ATUALIZAR
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 GRAVANDO_ATUALIZACOES
 # echo "validando"
+#echo "mais um teste"
 # acabar aqui
