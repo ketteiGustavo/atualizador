@@ -254,7 +254,7 @@ controle_versao_release="/u/sist/controle/trimestre-ver-rel.txt"
 
 # Parte web - Links
 
-SCRIPT_URL="https://github.com/ketteiGustavo/atualizador/blob/main/Atual/atualizadorAuto"
+SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/blob/main/Atual/atualizadorAuto"
 SCRIPT_PATH="$0"
 
 URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
@@ -1502,7 +1502,7 @@ ATUALIZAR() {
 UPGRADE () {
     script_path="$0"
     echo "Baixando versao mais recente do atualizador"
-    curl -o "$SCRIPT_PATH.tmp" "$SCRIPTH_URL" || wget -o "$SCRIPT_PATH.tmp" "$SCRIPTH_URL"
+    curl -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -o "$SCRIPT_PATH.tmp" "$SCRIPTH_URL"
 
     if [ $? -eq 0 ]; then
         mv "$SCRIPT_PATH.tmp" "$SCRIPT_PATH"
