@@ -937,9 +937,11 @@ OBTER_LINK_RELEASE() {
             echo "antes do while: $nova_data"
             nova_data=$(date -d "${nova_data}" +"%d%m")
             GERAR_LINK
+            data_busca=$(date -d "${nova_data} -8 day" +"%Y%m%d")
+            echo "data busca antes while: $data_busca"
             while [ "$link_ok" == "false" ]; do
-                data_busca=$(date -d "${nova_data} +1 day" +"%Y%m%d")
-                echo "data busca: $data_busca"
+                data_busca=$(date -d "${data_busca} +1 day" +"%Y%m%d")
+                echo "data busca dentro: $data_busca"
                 nova_data=$(date -d "${data_busca}" +"%d%m")
                 echo "$nova_data"
                 GERAR_LINK
