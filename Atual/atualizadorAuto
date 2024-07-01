@@ -930,9 +930,10 @@ OBTER_LINK_RELEASE() {
     if [ $dia_semana_lido -eq 1 ]; then
         nova_data=$(date -d "${DATA_COMPLETA} -8 days" +"%m%d")
         echo "$nova_data"
-        while [ "$link_ok" == "false" ]; do
-            if [ "$nova_data" -lt "$DIA_MES" ]; then
-                echo "$nova_data"
+        
+        if [ "$nova_data" -lt "$DIA_MES" ]; then
+            echo "$nova_data"
+            while [ "$link_ok" == "false" ]; do
                 nova_data=$(date -d "${nova_data} +1 day" +"%Y%m%d")
                 echo "$nova_data"
                 nova_data=$(date -d "${nova_data}" +"%d%m")
@@ -943,8 +944,9 @@ OBTER_LINK_RELEASE() {
                 else
                     nova_data=$(date -d "${nova_data}" +"%m%d")
                 fi
-            fi
-        done
+            done
+        fi
+        
     elif [ $dia_semana_lido -ge 2 ] && [ $dia_semana_lido -le 6 ]; then
         while [ $(date -d "$DATA_COMPLETA" +%u) -ne 2 ]; do
             DATA_COMPLETA=$(date -d "${DATA_COMPLETA} -1 day" +"%Y%m%d")
