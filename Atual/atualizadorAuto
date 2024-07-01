@@ -935,6 +935,8 @@ OBTER_LINK_RELEASE() {
         
         if [ "$nova_data" -lt "$DIA_MES" ]; then
             echo "antes do while: $nova_data"
+            nova_data=$(date -d "${nova_data}" +"%d%m")
+            GERAR_LINK
             while [ "$link_ok" == "false" ]; do
                 data_busca=$(date -d "${nova_data} +1 day" +"%Y%m%d")
                 echo "data busca: $data_busca"
