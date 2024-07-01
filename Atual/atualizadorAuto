@@ -929,13 +929,13 @@ OBTER_LINK_RELEASE() {
     link_ok=false
 
     if [ $dia_semana_lido -eq 1 ]; then
-        nova_data=$(date -d "${DATA_COMPLETA} -6 days" +"%m%d")
+        nova_data=$(date -d "${DATA_COMPLETA} -8 days" +"%m%d")
         echo "$nova_data"
         while [ "$link_ok" == "false" ]; do
             if [ "$nova_data" -lt "$DIA_MES" ]; then
-                DATA_COMPLETA=$(date -d "${nova_data} +1 day" +"%Y%m%d")
-                echo "$DATA_COMPLETA"
-                nova_data=$(date -d "${DATA_COMPLETA}" +"%d%m")
+                nova_data=$(date -d "${nova_data} +1 day" +"%Y%m%d")
+                echo "$nova_data"
+                nova_data=$(date -d "${nova_data}" +"%d%m")
                 echo "$nova_data"
                 GERAR_LINK
                 if [ "$link_ok" == "true" ]; then
