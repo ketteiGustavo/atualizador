@@ -789,6 +789,7 @@ TRATAR_DATAS () {
 OBTER_LINK_VERSAO() {
     VERIFICA_COBOL
     dia=01
+    dia_teste=$(date +'%d')
     link_encontrado=false
     echo "Buscando atualizacoes! Por favor, aguarde..."
     
@@ -800,13 +801,29 @@ OBTER_LINK_VERSAO() {
 
     # Definindo o mês de busca de acordo com as especificações
     if (( 1 <= mesObtido && mesObtido <= 3 )); then
-        mesBusca="01"
+        if [[ $dia_teste -ge 07 ]]; then
+            mesBusca="01"
+        else
+            mesBusca="10"
+        fi
     elif (( 4 <= mesObtido && mesObtido <= 6 )); then
-        mesBusca="04"
+        if [[ $dia_teste -ge 07 ]]; then
+            mesBusca="04"
+        else
+            mesBusca="01"
+        fi
     elif (( 7 <= mesObtido && mesObtido <= 9 )); then
-        mesBusca="07"
+        if [[ $dia_teste -ge 07 ]]; then
+            mesBusca="07"
+        else
+            mesBusca="04"
+        fi
     else
-        mesBusca="10"
+        if [[ $dia_teste -ge 07 ]]; then
+            mesBusca="10"
+        else
+            mesBusca="07"
+        fi
     fi
 
     #echo "Realizando busca para o mes $mesBusca..."
