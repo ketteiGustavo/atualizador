@@ -930,29 +930,29 @@ OBTER_LINK_RELEASE() {
     nova_data=""
 
     if [ $dia_semana_lido -eq 1 ]; then
-        nova_data=$(date -d "${DATA_COMPLETA} -8 days" +"%m%d")
+        nova_data=$(date -d "${DATA_COMPLETA} -6 days" +"%m%d")
         echo "apos testar: $nova_data"
-        
-        if [ "$nova_data" -lt "$DIA_MES" ]; then
-            echo "antes do while: $nova_data"
-            nova_data=$(date -d "${nova_data}" +"%d%m")
-            GERAR_LINK
-            data_busca=$(date -d "${nova_data} -8 day" +"%Y%m%d")
-            echo "data busca antes while: $data_busca"
-            while [ "$link_ok" == "false" ]; do
-                data_busca=$(date -d "${data_busca} +1 day" +"%Y%m%d")
-                echo "data busca dentro: $data_busca"
-                nova_data=$(date -d "${data_busca}" +"%d%m")
-                echo "$nova_data"
-                GERAR_LINK
-                if [ "$link_ok" == "true" ]; then
-                    break
-                else
-                    nova_data=$(date -d "${nova_data}" +"%m%d")
-                    echo "$nova_data"
-                fi
-            done
-        fi
+        GERAR_LINK
+        #if [ "$nova_data" -lt "$DIA_MES" ]; then
+        #    echo "antes do while: $nova_data"
+        #    nova_data=$(date -d "${nova_data}" +"%d%m")
+        #    GERAR_LINK
+        #    data_busca=$(date -d "${nova_data} -8 day" +"%Y%m%d")
+        #    echo "data busca antes while: $data_busca"
+        #    while [ "$link_ok" == "false" ]; do
+        #        data_busca=$(date -d "${data_busca} +1 day" +"%Y%m%d")
+        #        echo "data busca dentro: $data_busca"
+        #        nova_data=$(date -d "${data_busca}" +"%d%m")
+        #        echo "$nova_data"
+        #        GERAR_LINK
+        #        if [ "$link_ok" == "true" ]; then
+        #            break
+        #        else
+        #            nova_data=$(date -d "${nova_data}" +"%m%d")
+        #            echo "$nova_data"
+        #        fi
+        #    done
+        #fi
         
     elif [ $dia_semana_lido -ge 2 ] && [ $dia_semana_lido -le 6 ]; then
         while [ $(date -d "$DATA_COMPLETA" +%u) -ne 2 ]; do
@@ -969,9 +969,9 @@ OBTER_LINK_RELEASE() {
     fi
 
     if [ "$link_ok" == "true" ]; then
-        echo "Link válido encontrado: $URL_ATUALIZADO_RELEASE_V40 ou $URL_ATUALIZADO_RELEASE_V41" > /dev/null
+        echo "Link valido encontrado: $URL_ATUALIZADO_RELEASE_V40 ou $URL_ATUALIZADO_RELEASE_V41" > /dev/null
     else
-        echo "Nenhum link válido encontrado." > /dev/null
+        echo "Nenhum link valido encontrado." > /dev/null
         return 1
     fi
 
