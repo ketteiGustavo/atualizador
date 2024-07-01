@@ -1499,7 +1499,7 @@ ATUALIZAR() {
 }
 
 # Funcao para atualizar o script sempre para a versao mais recente
-UPGRADE () {
+UPDATE () {
     script_path="$0"
     echo "Baixando versao mais recente do atualizador"
     curl -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -o "$SCRIPT_PATH.tmp" "$SCRIPTH_URL"
@@ -1732,6 +1732,7 @@ case "$1" in
 -up | --update)
     # criar rotina pra baixar nova versao do atualizador.
     echo "Buscando update para o Atualizador..."
+    UPDATE
     exit 0
     ;;
 *)
