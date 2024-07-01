@@ -930,7 +930,7 @@ OBTER_LINK_RELEASE() {
     nova_data=""
 
     if [ $dia_semana_lido -eq 1 ]; then
-        nova_data=$(date -d "${DATA_COMPLETA} -6 days" +"%m%d")
+        nova_data=$(date -d "${DATA_COMPLETA} -6 days" +"%d%m")
         echo "apos testar: $nova_data"
         GERAR_LINK
         #if [ "$nova_data" -lt "$DIA_MES" ]; then
