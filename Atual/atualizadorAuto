@@ -1,0 +1,1742 @@
+#!/bin/bash
+#
+################################################################################
+# atualizarIntegralAutomatico - Programa para atualizar o sistema Integral
+#
+# DATA: 13/04/2024 11:27 - Versao 0.0.10
+# -------------------------------------------------------------------------------
+# Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
+# -------------------------------------------------------------------------------
+# Versao 0: Programa de atualizacao automatica.
+# Versao 0.0.1: Logica do programa ajustada para gravar versao e release apos
+#               execucao completa da atualizacao
+# Versao 0.0.2: Logica para obter links de releases corrigidos
+# Versao 0.0.3: Comandos rar sao exibidos com porcentagem em tela
+# Versao 0.0.4: Criado teste para os arquivos baixados
+# Versao 0.0.5: Criado teste para validar usuarios logados
+# Versao 0.0.6: Validacao do Online, atraves do status-online.gnt
+# Versao 0.0.7: Melhora na parte visual com porcentagens nos progressos
+# Versao 0.0.8: Confirmacao de iniciar atualizacao, para evitar caso seja acio-
+#               nado acidentamente.
+# Versao 0.0.9: Desativado validacao de usuarios logados.
+# Versao 0.0.10: Novos recursos e opcoes para linha de comando.
+#
+# -------------------------------------------------------------------------------
+# Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
+# instalando versao e a release mais recentes. Apos isso ira executar o atu-help
+# manual e dar permissao em /u/sist/exec/*gnt.
+# O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
+################################################################################
+#
+
+# Verifica se o script está sendo executado como root
+#if [[ $(id -u) -ne 0 ]]; then
+#    echo "Este programa requer privilegios de root."
+#    echo "Por favor, execute-o novamente com 'sudo':"
+#    echo "sudo bash $0"
+#    exit 1
+#fi
+
+
+MANUAL_USO="
+Programa: $(basename "$0")
+
+--------------------------------------------------------------------------------
+                              [OPCOES DISPONIVEIS]
+
+OPCOES NA LINHA DE COMANDO:
+    -h, --help      Mostra esta tela de ajuda e sai
+    -V, --version   Mostra a versao do programa e sai
+    -i, --info      Faz a verificacao basica do programa
+
+MODO DE USAR:
+digite o nome do programa e a opcao desejada como acima na linha de comando.
+  exemplo de uso:
+  bash atualizadorAutomatico --help
+  'Ira mostrar essa tela de ajuda e sair.'
+
+--------------------------------------------------------------------------------
+
+  Usando o programa de atualizacao automatica:
+    Ao entrar no programa ira se deparar com o menu principal.
+
+    _____________________________________________________________________
+   |                                                                     |
+   | Selecione o menu que deseja acessar                                 |
+   | 1) Verificar Online             6) Realizar Backup                  |
+   | 2) Obter links atuais           7) Atualizar Sistema                |
+   | 3) Verificar Versao/Release     8) Conf. Atualizacao Automatica     |
+   | 4) Baixar Versao                9) Manual                           |
+   | 5) Baixar Release               10) Sair                            |
+   |_____________________________________________________________________|
+
+    Devera escolher a opcao desejada acordo com os numeros exibidos acima.
+
+    # Programa de Atualizacao Automatica
+    #
+    # Este programa e responsavel por executar automaticamente o processo de
+    # atualizacao do sistema.
+    # Ao ser executado, o programa ira realizar as seguintes acoes:
+    #   1. Verificar o Online de Vendas e de Clientes, informando os usuarios
+    #      conectados para evitar que gere algum problema na atualizacao
+    #   2. Obter links atuais disponiveis no servidor e estimar as proximas da-
+    #      tas das releases futuras.
+    #   3. Ler versao e release informada pelo usuario para direcionar os links
+    #      obtidos.
+    #   4. Efeuta o download da versao mais recente disponivel no portal atraves
+    #      do link obtido, respeitando o Cobol do servidor.
+    #   5. Efetua o download da release mais recente disponivel no portal atra-
+    #      ves do link obtido, respeitando o Cobol do servidor.
+    #   6. Realiza o backup respeitando os padroes da avanco.
+    #   7. Descompacta os pacotes baixados no local correto e concede a permis-
+    #      sao aos '.gnt'
+    #   8. Menu para configurar a atualizacao automatica no servidor, de acordo
+    #      com o dia e hora selecionados.
+    #   9. Manual de utilizacao.
+    #   10. Sair do programa.
+    #
+    # Como usar:
+    #   - Para usar o programa de atualizarIntegral, devera digitar bash atuali-
+    #     zarIntegral.sh e dar 'Enter'
+    #
+    # Observacoes:
+    #   - Caso note qualquer travamento ou tenha alguma ideia de melhoria meu
+    #     e-mail para contato e luiz.gustavo@avancoinfo.com.br
+    #   - Me coloco inteiramente a disposicao para sanar duvidas ou realizar
+    #     melhorias caso necessario nesse programa.
+    #
+    # Recomendacoes de uso:
+    #   - Para primeira utilizacao favor ir do menu 1 ao menu 7.
+    #
+    -Etapa 1) Rodar o comando do menu 1, o programa ira exibir na tela a quanti-
+    #         dade de usuarios usando o Integral, recomenda-se que os usuarios
+    #         desloguem durante a atualizacao, para evitar quaisquer erros
+    #         possiveis em gravacao de arquivos fiscais e financeiros.
+    -Etapa 2) Acessar o menu 2, para obter os links atuais disponiveis no
+    #         'Portal Avanco'.
+    -Etapa 3) Informar a versao que aparece na tela inicial do Integral, respei-
+    #         tando o formato (DDMMAA), caso tenha release instalada informar a
+    #         Letra apos a data.
+    -Etapa 4) Caso a versao estiver desatualizada, o proprio programa ira infor-
+    #         mar a necessidade do download da versao antes de baixar a release.
+    -Etapa 5) Caso somente a release estiver desatualizada o programa ira reco-
+    #         mendar o download apenas da release.
+    -Etapa 6) Acessando o menu 6, o programa realizara o backup de todos os
+    #         '.gnt' na pasta '/u/sist/exec' com o nome BKPTOTAL_(DATADODIA) em
+    #         '/u/sist/exec-a'
+    -Etapa 7) Para efetuar a atualizacao e necessario ter realizado o backup, do
+    #         contrario o programa ira ser fechado. Caso tenha realizado o
+    #         backup, ele ira perguntar o nome do Tecnico que esta efetuando a
+    #         atualizacao e o cliente que esta acompanhando o processo
+    #
+    # OBSERVACAO: SERA GERADO UM ARQUIVO DE LOG PARA CONSULTA! ELE CONTERA AS
+    # INFORMACOES DE: - DATA DA ATUALIZACAO
+    #                 - BACKUP VERIFICADO
+    #                 - VERSAO DO COBOL
+    #                 - VERSAO INTEGRAL ANTES DA ATUALIZACAO
+    #                 - RELEASE INTEGRAL ANTES DA ATUALIZACAO
+    #                 - TECNICO RESPONSAVEL PELA ATUALIZACAO
+    #                 - CLIENTE QUE ACOMPANHOU A ATUALIZACAO
+    #                 - VERSAO INTEGRAL INSTALADA
+    #                 - RELEASE INTEGRAL INSTALADA
+    #                 - DATA E HORA DO BACKUP E LOCAL ONDE SE ENCONTRA
+--------------------------------------------------------------------------------
+    Extra:
+    -Etapa 8) Para configurar a atualizacao automatica devera ser validado junto
+    #         ao cliente o desejo de ativar essa funcao.
+    #         Apos isso confirmar S, para ativar o modo automatico.
+    #         Informar a versao do cobol.
+    #         Informar a versao atual do Integral
+    #         Informar a release atual do Integral se existir no servidor.
+    #         Validar as informacoes apertando S para sim, ou N para digitar no-
+    #         vamente
+    #         O programa ira gravar um arquivo para consulta do modo automatico.
+    #         Caso realmente deseje ativar o modo automatico, devera apertar S,
+    #         para adicionar a configuracao no Crontab que ira ler o programa.
+    #         Devera ser informado o dia de acordo com os permitidos (segunda a
+    #         quinta-feira).
+    #         Devera ser informado a hora de acordo com a permitida (00h a 05h).
+    #         Apos isso a configuracao estara feita e sera realizada no dia e
+    #         hora informado na tela. Pronto agora a configuracao automatica
+    #         esta ativa.
+--------------------------------------------------------------------------------
+"
+
+AVANCO="
+                                                          ##                    
+                                                        ####                    
+                                                      ######                    
+                                                    ########                    
+                        ------------              ##########                    
+                      ------                    ############                    
+                    ------                    ##############                    
+                      ----                  ################                    
+                      ----                ########  ########                    
+                        ----            ########    ########                    
+                          ----       #########      ########                    
+                            --    ########          ########                    
+                              --########            ########                    
+                              ##----                  ######                    
+                            ######----                ######                    
+                          ####        ----            ######                    
+                        ####              --                                    
+                      ####                    --                                
+                    ##                            --                            
+                  ##                                    --                      
+                                                                                
+                                                                                
+                                                                                
+    ##         ##  ##         ##         ##    ##        #####        #####
+  ##  ##       ##  ##       ##  ##       ####  ##       ##          ##    ##
+  ##  ##       ##  ##       ##  ##       ##  ####       ##          ##    ##
+  ##  ##         ##         ##  ##       ##    ##        #####       #####
+"
+
+
+
+
+
+
+
+
+###############################
+# -------------------------------------------------------------------------------
+# Criando opcoes visuais
+# Cores
+readonly RED='\e[1;91m'
+readonly GREEN='\e[1;92m'
+readonly YELLOW='\e[1;93m'
+readonly BLUE='\e[1;94m'
+readonly MAGENTA='\e[1;95m'
+readonly CYAN='\e[1;96m'
+readonly NO_COLOR='\e[0m'
+
+# Variaveis globais
+info_loja_txt="/u/sist/controle/info_loja.txt"
+dia_semana_lido=$(date +%u)
+hora_lida=$(date +%H)
+CONTAUSER=$(ps ax | grep rts32 | grep -v 'grep' | wc -l)
+status_ON=$(cobrun status-online.gnt "L") > /dev/null
+
+# datas
+MES_ANO=$(date +"%m%y")
+MES_ATUAL=$(date +"%m")
+ANO_ATUAL=$(date +"%y")
+
+DATE=$(date +"%d%m%y")
+
+MES_ANTERIOR=$(date -d "4 weeks ago" +"%m")
+ANO_ANTERIOR=$(date -d "4 weeks ago" +"%y")
+
+# Locais dentro do sevidor
+LOCAL_GNT="/u/sist/exec"
+PASTA_AVANCO="/u/rede/avanco"
+PASTA_DESTINO="/u/rede/avanco/atualizacoes"
+LOCAL_LOG="/u/sist/logs"            # arquivo de log
+BKP_DESTINO="/u/sist/exec-a/BKPTOTAL_$DATE.rar" # local de onde serao salvos os backups
+
+
+# Arquivos de log para consulta.
+TESTE_GNT_LOG="/u/sist/logs/testeGNT.log"
+VALIDADOS_GNT="/u/sist/logs/statusGNT.log"
+
+infos_extras="/u/sist/logs/infos_extras.log"
+
+# Arquivo de log
+LOG_FILE="/u/sist/logs/log_$MES_ANO.log"
+# Arquivo de log de erro
+ERRO_LOG_FILE="/u/sist/logs/log_erro_$MES_ANO.log"
+
+# arquivo de pre leitura
+controle_servidor="/u/sist/controle"
+controle_versao_release="/u/sist/controle/trimestre-ver-rel.txt"
+
+
+# Parte web - Links
+URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
+URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao-"
+
+URL_BASE_RELEASE40="https://s3.amazonaws.com/avancoprogramas/integral/release40-"
+URL_BASE_RELEASE41="https://s3.amazonaws.com/avancoprogramas/integral/release-"
+
+URL_ATUALIZADOV40=""
+URL_ATUALIZADOV41=""
+
+URL_ATUALIZADO_RELEASE_V40=""
+URL_ATUALIZADO_RELEASE_V41=""
+
+versaoCobol=""    # usada para armazenar o cobol, apos rodar cobrun integral
+
+
+# trabalhando as variaveis que receberao datas que sao baseada em datas
+
+versaoPortal=""     # armazenara e sera usada para criar as futuras datas das release
+novoPortal=""       # responsavel por obter a atual versao no site e ser usada para comparacoes
+novoPortalPosRelease=""
+releasePortal=""    # armazenara a data da release (precisa validar, pois nao havia release disponivel no dia do teste)
+letraRelease=""     # cada release e unica, tem uma letra propria, aqui ficara essa informacao
+versaoLoja=""       # usada para obter a versao no servidor do cliente
+releaseLoja=""      # usada para obter a release no servidor do cliente
+inf_versao=""
+inf_release=""      # usada para obter a release digitada
+letra_release_atual=""
+inf_versaoCobol=""
+inf_versaoLoja=""
+inf_releaseLoja=""
+dia=""
+mes=""
+ano=""
+data_release_servidor=""
+data_release_baixar=""
+nova_data=""
+link_ok=""
+atualizar_logado=""
+cronometro_start=$(date +'%H:%M:%S')
+cronometro_start_volta=""
+cronometro_stop=""
+cronometro_stop_volta=""
+tempo_gasto=""
+
+# variaveis nos arquivos
+versaoLoja_leitura=""
+releaseLoja_leitura=""
+letraReleaseLoja_leitura=""
+
+proxima_versaoLoja_leitura=""
+proxima_releaseLoja_leitura=""
+proxima_letraReleaseLoja_leitura=""
+
+# flags
+parametros_gravados=""
+parametros_gravados_prox=""
+
+
+# Array para armazenar as datas
+declare -ag datas   # gravara as datas das futuras releases que serao definidas pela funcao que usara 'versaoPortal'
+
+# Array para armazenar as letras do alfabeto (global)
+declare -ag letras  # gravara as letras das futuras releases que serao definidas em conjunto com 'datas' e 'versaoPortal'
+
+RESULTADO=""        # armazena a saida do comando cobrun, para separar somente a versao 4.0 ou 4.1
+
+DATA_ATUAL=$(date +"%d%m%y")       # data obtida ao rodar o script, sera sempre o dia atual
+data_versao=$(date +"%d%m")         # variavel para armazenar a data que que consta no servidor do cliente
+HORA_ATUAL=$(date +"%H:%M:%S")     # hora para gravacoes necessarias
+DIA_HOJE=$(date +"%Y%m%d")
+
+
+################################################################################
+
+# Funcao para exibir mensagens de erro em vermelho
+ERRO_MSG() {
+    echo -e "${RED}[ERROR] - $1${NO_COLOR}"
+}
+
+# Funcao para exibir mensagens de informacao em verde
+INFO_MSG() {
+    echo -e "${GREEN}[INFO] - $1${NO_COLOR}"
+}
+
+# Funcao para exibir mensagens de alerta em amarelo
+ALERTA_MSG() {
+    echo -e "${YELLOW}[ALERTA] - $1${NO_COLOR}"
+}
+
+# Funcao para exibir mensagens em azul
+BLUE_MSG() {
+    echo -e "${BLUE} $1${NO_COLOR}"
+}
+
+# Funcao para exibir mensagens em magenta
+MAGENTA_MSG() {
+    echo -e "${MAGENTA} $1${NO_COLOR}"
+}
+
+# Funcao para exibir mensagens em ciano
+CYAN_MSG() {
+    echo -e "${CYAN} $1${NO_COLOR}"
+}
+
+# ------------------------------------------------------------------------------
+
+
+INICIAR () {
+    while true; do
+        read -p "Dejesa iniciar a atualizacao? (S/N) " confirma_inicio
+
+        case $confirma_inicio in
+            "S" | "s" )
+                echo "Atualizador Integral"
+		clear
+                break
+                ;;
+            "N" | "n")
+		clear
+                echo "AVANCO INFORMATICA"
+                exit 0
+                ;;
+            *)
+                echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                ;;
+        esac
+    done
+}
+
+# funcao para verificar se o sistema foi atualizado no dia
+VERIFICA_ATUALIZACAO () {
+    if [ -f "$info_loja_txt" ]; then
+        ultima_atu=$(grep "DATA: " "$info_loja_txt" | cut -d ' ' -f 2)
+        if [ "$ultima_atu" == "$(date +'%d/%m/%Y')" ]; then
+            echo "O Integral ja foi atualizado hoje $(date +'%d/%m/%Y')."
+            sleep 2
+        exit 0
+	else
+        echo "Atualizando..." > /dev/null
+        cronometro_start_volta=$SECONDS
+        fi
+    fi
+}
+
+
+VERIFICA_ONLINE () {
+    
+
+        if [ $CONTAUSER != 0 ]; then
+            ALERTA_MSG "Existem usuarios logados no INTEGRAL! Por favor peca para deslogarem do sistema para a atualizacao!"
+            echo "USUARIOS LOGADOS"
+            w -shu
+            exit 0
+        fi
+}
+
+#if [ $dia_semana_lido -eq 5 ] || [ $dia_semana_lido -eq 6 ] || [ $dia_semana_lido -eq 7 ]; then
+#    echo "O sistema nao pode ser atualizado hoje! Tente novamente na 'Segunda-Feira'!"
+#    exit 0
+#fi
+
+if [ $dia_semana_lido -eq 2 ] && [ $hora_lida -ge 6 ] && [ $hora_lida -lt 15 ]; then
+    echo "Favor atualizar apos as 16h!"
+    exit 0
+fi
+
+if [ $dia_semana_lido -eq 4 ] && [ $hora_lida -ge 17 ]; then
+    echo "Recomendamos atualizar na 'Segunda-Feira', devido ao horario!"
+    echo "Bom tarde e bom fim de semana"
+    exit 0
+fi
+
+
+
+if [ "$status_ON" = "ATIVADO" ]; then
+    status_ON=$(cobrun status-online.gnt "D") > /dev/null
+fi
+
+sleep 1
+
+# Criando diretorio de logs e atualizacoes
+if [ ! -d "/u/rede/avanco/atualizacoes" ]; then
+    mkdir -p "/u/rede/avanco/atualizacoes"
+    chmod 777 -R "/u/rede/avanco/atualizacoes"
+fi
+
+if [ ! -d "/u/rede/avanco/atualizacoes/logs" ]; then
+    mkdir -p "/u/rede/avanco/atualizacoes/logs"
+fi
+
+if [ ! -d "/u/sist/controle" ]; then
+    mkdir -p "/u/sist/controle"
+    chmod 766 -R "/u/sist/controle"
+fi
+
+if [ ! -d "/u/sist/logs" ]; then
+    mkdir -p "/u/sist/logs"
+    chmod 766 -R "/u/sist/logs"
+fi
+
+if [ ! -f "/u/sist/logs/log-de-remocao.log" ]; then
+    echo "               Controle de Backups Removidos" > /u/sist/logs/log-de-remocao.log
+    echo "      DATA        -    HORA   -             DIRETORIO" >> /u/sist/logs/log-de-remocao.log
+fi
+
+
+if [ ! -f "/u/sist/logs/infos_extras.log" ]; then
+    echo "Controle de Desempenho do Atualizador no servidor" > "/u/sist/logs/infos_extras.log"
+    echo "DIA DA ATUALIZACAO  -    HORA INICIAL    -    HORA FINAL     -    TEMPO GASTO" >> "/u/sist/logs/infos_extras.log"
+fi
+
+if [ ! -f $controle_versao_release ]; then
+    echo "VERSAO ATUAL E PROXIMAS RELEASES DO TRIMESTRE ATUAL" > $controle_versao_release
+    echo "" >> $controle_versao_release
+fi
+
+
+# Funcao para verificar permissao e grupo dos programas .gnt
+SEGURANCA(){
+    
+
+    if [ -f "$TESTE_GNT_LOG" ] && [ "$(date -r "$TESTE_GNT_LOG" +%Y%m%d)" = "$DIA_HOJE" ]; then
+        mapfile -t gnt_files < "$TESTE_GNT_LOG"
+    else
+        gnt_files=($(find "$LOCAL_GNT" -name "*.gnt"))
+    fi
+
+    if [ ${#gnt_files[@]} -eq 0 ]; then
+        echo "Nenhum arquivo '.gnt' encontrado no diretorio '$LOCAL_GNT'."
+        exit 1
+    fi
+
+    all_valide=true
+    total_files_teste=${#gnt_files[@]}
+    contagem_gnt=0
+
+    > "$TESTE_GNT_LOG"
+
+    for file in "${gnt_files[@]}"; do
+        clear
+        contagem_gnt=$((contagem_gnt + 1))
+        porc_gnt=$((contagem_gnt * 100 / total_files_teste))
+        echo "validando os programas... ($porc_gnt%)"
+        permissions=$(stat -c "%a" "$file")
+        if [ "$permissions" -ne 777 ]; then
+            ALERTA_MSG "O programa $file nao tem permissao total!"
+            echo "O programa $file nao tem permissao total!" >> $VALIDADOS_GNT
+            echo "Favor acionar o suporte Avanco!"
+            all_valide=false
+            echo "$file" >> "$TESTE_GNT_LOG"
+        fi
+
+        dono=$(stat -c "%U %G" "$file")
+
+        if [ "$dono" != "avanco sist" ]; then
+            ALERTA_MSG "O programa $file nao esta com o usuario: avanco e o grupo: sist."
+            echo "O programa $file nao esta com o usuario: avanco e o grupo: sist." >> $VALIDADOS_GNT
+            ALERTA_MSG "Favor acionar o suporte Avanco!"
+            all_valide=false
+            echo "$file" >> "$TESTE_GNT_LOG"
+        fi
+    done
+
+    if [ "$all_valide" = true ]; then
+        INFO_MSG "Iniciando a atualizacao automatica!"
+        rm -f "$TESTE_GNT_LOG"
+	    rm -f "$VALIDADOS_GNT"
+    else
+        ALERTA_MSG "E necessario acionar o suporte Avanco para executar as permissoes"
+        sleep 1
+	exit 1
+    fi
+}
+
+
+
+# funcao para validar data
+validar_data() {
+    data_verificada=$(date -d "$1" +"%d%m%y" 2>/dev/null)
+    if [ $? -eq 0 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+
+# Funcao para criar o arquivo 'info_loja.txt'
+CRIAR_INFO_LOJA() {
+    info_loja_txt="/u/rede/avanco/info_loja.txt"
+    data_configuracao=$(date +'%d/%m/%Y')
+
+    VERIFICA_COBOL
+
+    # loop para validar versao
+        while true; do
+            read -p "Informe a VERSAO ATUAL do Integral: (DDMMAA) " inf_versaoLoja
+            if validar_data "$inf_versaoLoja"; then
+                if [[ ! "$inf_versaoLoja" =~ ^[0-9]{6}$ ]]; then
+                    ERRO_MSG "Versao informada invalida! Por favor, digite novamente (DDMMAA)"
+                else
+                    break
+                fi
+                break
+            else
+                ERRO_MSG "Versao informada invalida! Por favor, digite novamente (DDMMAA)"
+            fi
+        done
+
+        # loop para validar release
+        while true; do
+            read -p "Informe a RELEASE ATUAL do Integral (se nao existir deixe em branco): " inf_releaseLoja
+            inf_releaseLoja=$(echo "$inf_releaseLoja" | tr '[:lower:]' '[:upper:]')
+            if [[ ! "$inf_releaseLoja" =~ ^[A-M]$ ]] && [ ! -z "$inf_releaseLoja" ]; then
+                ERRO_MSG "Release invalida. A release deve conter e ser apenas uma letra ou vazia se nao existir!"
+            else
+                break
+            fi
+        done
+        
+        while true; do
+            echo
+            echo "VERSAO COBOL: $inf_versaoCobol"
+            echo "VERSAO INTEGRAL: $inf_versaoLoja"
+            echo "RELEASE INTEGRAL: $inf_releaseLoja"
+            read -p "Confirma as informacoes fornecidas? (S/N) " confirmar_infos
+
+            case $confirmar_infos in
+                "S" | "s")
+                    echo "Informacoes validadas"
+                    break
+                    ;;
+                "N" | "n")
+                    echo "Saindo"
+                    exit 0
+                    ;;
+                *)
+                    echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                    ;;
+            esac
+        done
+    
+    echo
+    echo "Gravando informacoes. Por favor, aguarde..."
+    # cria arquivo txt que vai ser lido pelo cron e pelo atualizadorAutomatico que ficara em '/u/bats'
+    if [ ! -e "$info_loja_txt" ]; then
+        touch "$info_loja_txt"
+    fi
+    
+    echo "DATA: $data_configuracao" > "$info_loja_txt"
+    echo "VERSAO COBOL: $inf_versaoCobol" >> "$info_loja_txt"
+    echo "VERSAO INTEGRAL: $inf_versaoLoja" >> "$info_loja_txt"
+    echo "RELEASE: $inf_releaseLoja" >> "$info_loja_txt"
+    echo "DATA RELEASE: " >> "$info_loja_txt"
+}
+
+# Funcao para ler o arquivo 'info_loja_txt'
+LER_ARQUIVO_TEXTO() {
+    local arquivo="$info_loja_txt"
+
+    # verifica se o arquivo existe
+    if [ ! -f "$arquivo" ]; then
+        echo "O arquivo com as informacoes de versao e release nao existe." 2> >(tee -a "$ERRO_LOG_FILE")
+        CRIAR_INFO_LOJA
+        return 1
+    fi
+
+    # Le o arquivo linha por linha e armazena o conteudo em variaveis
+    while IFS= read -r linha; do
+        # verifica se a linha nao esta vazia
+        if [ -n "$linha" ]; then
+            # divide a linha em partes usando ":" como delimitador
+            chave=$(echo "$linha" | awk -F': ' '{print $1}')
+            valor=$(echo "$linha" | awk -F': ' '{print $2}')
+
+            # Armazenando a chave e o valor em variaveis
+            case "$chave" in
+                "DATA")
+                    inf_data="$valor"
+                    echo
+                    echo "Data da ultima atualizacao executada: $inf_data"
+                    ;;
+                "VERSAO COBOL")
+                    inf_versaoCobol="$valor"
+                    #echo "$inf_versaoCobol"
+                ;;
+                "VERSAO INTEGRAL")
+                    inf_versaoLoja="$valor"
+                    echo "Versao atual no Servidor: $inf_versaoLoja"
+                ;;
+                "RELEASE")
+                    inf_releaseLoja="$valor"
+                    echo "Release atual no Servidor: $inf_releaseLoja"
+                    echo
+                ;;
+                "DATA RELEASE")
+                    data_release_servidor="$valor"
+                    echo "Data da release no Servidor: $data_release_servidor"
+                    echo
+                ;;
+                *) echo "Chave desconhecida: "
+                ;;
+            esac
+        fi
+    done < "$arquivo"
+}
+
+
+# Funcao para verificar qual o cobol usado
+VERIFICA_COBOL() {
+    # Rebece as informacoes a funcao LER_ARQUIVO_TEXTO
+    RESULTADO=$(cobrun 2>&1)
+    if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
+        versaoCobol="${BASH_REMATCH[1]}"
+        echo "Versao do Cobol: $versaoCobol"
+        inf_versaoCobol="$versaoCobol"
+    fi
+}
+
+
+
+# -----------------------------------------------------------------------------
+# Funcoes de log
+
+# Funcao para controlar registro de logs
+MANTER_LOG_ATUAL() {
+
+    log_atual=$ANO_ATUAL$MES_ATUAL
+    log_anterior=$ANO_ANTERIOR$MES_ANTERIOR
+    log_remover=$MES_ANTERIOR$ANO_ANTERIOR
+
+
+    if [ ! -e "$LOCAL_LOG/log_$MES_ANO.log" ]; then
+        touch "$LOCAL_LOG/log_$MES_ANO.log"
+    fi
+
+    if [ "$log_atual" != "$log_anterior" ]; then
+        if [ -e "$LOCAL_LOG/log_$log_remover.log" ]; then
+            rm "$LOCAL_LOG/log_$log_remover.log"
+        fi
+    fi
+
+    for arquivo in "$LOCAL_LOG"/log_*.log; do
+        if [ "$arquivo" != "$LOCAL_LOG/log_$MES_ANO.log" ] && [ "$arquivo" != "$LOCAL_LOG/log_erro_$MES_ANO.log" ]; then
+            rm "$arquivo"
+        fi
+    done
+
+    echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/log_$MES_ANO.log"
+    echo "" >> "$LOCAL_LOG/log_$MES_ANO.log"
+}
+
+
+MANTER_LOG_ERRO_ATUAL() {
+    log_erro_atual=$ANO_ATUAL$MES_ATUAL
+    log_erro_anterior=$ANO_ANTERIOR$MES_ANTERIOR
+    log_erro_remover=$MES_ANTERIOR$ANO_ANTERIOR
+
+
+    if [ ! -e "$LOCAL_LOG/log_erro_$MES_ANO.log" ]; then
+        touch "$LOCAL_LOG/log_$MES_ANO.log"
+    fi
+
+    if [ "$log_erro_atual" != "$log_erro_anterior" ]; then
+        if [ -e "$LOCAL_LOG/log_erro_$log_erro_remover.log" ]; then
+            rm "$LOCAL_LOG/log_erro_$log_erro_remover.log"
+        fi
+    fi
+
+    echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/log_erro_$MES_ANO.log"
+    echo "" >> "$LOCAL_LOG/log_erro_$MES_ANO.log"
+}
+
+# Funcao para criar e ou atualizar o arquivo de log com as informacoes padroes
+LOG_INFO() {
+    MANTER_LOG_ATUAL
+    local info="$1"
+    local log_msg="\n#################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versao \n- RELEASE INTEGRAL ANTES: $inf_release \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $releasePortal $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $HORA_ATUAL no $BKP_DESTINO\n#################################################################################"
+
+    # Escreve no arquivo de log
+    echo -e "$log_msg\n" >> "$LOG_FILE"
+
+    # Verifica se o arquivo foi criado com sucesso
+    if [ $? -ne 0 ]; then
+        echo "Erro ao escrever no arquivo de log." >&2
+        exit 1
+    fi
+}
+
+# Funcao para criar e ou atualizar o arquivo de logERRO com as informacoes padroes
+LOG_ERROR() {
+    MANTER_LOG_ERRO_ATUAL
+    local error="$1"
+    echo "$(date '+%d/%m/%Y %H:%M:%S') - $error" >> "$ERRO_LOG_FILE"
+}
+
+
+# ------------------------------------------------------------------------------
+
+# Funcao para converter datas no formato YYYYMMDD, para ser usado em equacoes de comparacao, maior, menor e igual
+CONVERTER_DATAS() {
+    local dia="${1:0:2}"
+    local mes="${1:2:2}"
+    local ano="${1:4:2}"
+    
+    #echo "Dia: $dia"
+    #echo "Mes: $mes"
+    #echo "Ano: $ano"
+    
+    # Convertendo para o formato 'YYYYMMDD' para facilitar a adição de dias
+    local data_formatada="20${ano}${mes}${dia}"
+    echo "$data_formatada"
+    
+}
+
+# Funcao para tratar datas e inserir barras entre os digitos deixando DD/MM/AA
+TRATAR_DATAS () {
+    entrada_data=$1
+    dia_td=${entrada_data:0:2}
+    mes_td=${entrada_data:2:2}
+    ano_td=${entrada_data:4:2}
+    data_tratada="${dia_td}/${mes_td}/${ano_td}"
+    echo "$data_tratada"
+}
+
+# Lendo versao e release no portal
+
+# Funcao para obter o link da versao atual, com base em comparacao de data por trimestre
+OBTER_LINK_VERSAO() {
+    VERIFICA_COBOL
+    dia=01
+    link_encontrado=false
+    echo "Buscando atualizacoes! Por favor, aguarde..."
+    
+    formantando_data_comparar=$(CONVERTER_DATAS "$DATA_ATUAL")
+    #echo "$formantando_data_comparar"
+    # Obtendo o mês atual
+    mesObtido=$(date +"%m")
+    #echo "Mes obtido: $mesObtido"
+
+    # Definindo o mês de busca de acordo com as especificações
+    if (( 1 <= mesObtido && mesObtido <= 3 )); then
+        mesBusca="01"
+    elif (( 4 <= mesObtido && mesObtido <= 6 )); then
+        mesBusca="04"
+    elif (( 7 <= mesObtido && mesObtido <= 9 )); then
+        mesBusca="07"
+    else
+        mesBusca="10"
+    fi
+
+    #echo "Realizando busca para o mes $mesBusca..."
+
+    # Verificando a versao do COBOL
+    if [ "$versaoCobol" == "4.0" ]; then
+        URL_BUSCAR_VERSAO="$URL_BASE_VERSAO40"
+    elif [ "$versaoCobol" == "4.1" ]; then
+        URL_BUSCAR_VERSAO="$URL_BASE_VERSAO41"
+    else
+        ERRO_MSG "Versao do COBOL invalida."
+        echo "Versao do COBOL invalida." >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+    # Loop para encontrar o link
+    for ((i = 0; i <= 15 ; i++)); do
+        dia_formatado=$(printf "%02d" $dia)
+        #echo "$dia_formatado"
+        URL_ATUALIZADO="$URL_BUSCAR_VERSAO$dia_formatado$mesBusca$(date +"%y").rar"
+        #echo "$URL_ATUALIZADO"
+        if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO"; then
+            link_encontrado=true
+            #echo "Link encontrado para 'versao'"
+            break
+        fi
+        ((dia++))
+    done
+
+    
+
+    if $link_encontrado; then
+        # Expressao regular para extrair a data do link
+        padrao="([0-9]{2})([0-9]{2})([0-9]{2})"
+        if [[ $URL_ATUALIZADO =~ $padrao ]]; then
+            dia="${BASH_REMATCH[1]}"
+            mes="${BASH_REMATCH[2]}"
+            ano="${BASH_REMATCH[3]}"
+            novoPortal="${dia}${mes}${ano}"
+            #echo "$novoPortal"
+            versaoPortal=$novoPortal
+            #echo "$versaoPortal"
+            novoPortalPosRelease="${dia}${mes}"
+            #echo "$novoPortalPosRelease"
+            releasePortal=$(adicionar_7_dias "$novoPortalPosRelease")
+            data_portal=$(TRATAR_DATAS "$novoPortal")
+            INFO_MSG "Versao disponivel no portal: $data_portal"
+            echo "Versao disponivel no portal: $novoPortal" >> $controle_versao_release
+            echo "" >> $controle_versao_release
+        else
+            ERRO_MSG "Nao foi possivel encontrar a versao disponivel no Portal."
+            LOG_ERROR "Nao foi possivel encontrar a versao disponivel no Portal."
+        fi
+    else
+        ERRO_MSG "Nao foi possivel encontrar um link valido para a versao."
+        LOG_ERROR "Nao foi possivel encontrar um link valido para a versao."
+        exit 1
+    fi
+
+    sleep 1
+}
+
+# Funcao pra criar o link
+GERAR_LINK () {
+    data_release_baixar=${nova_data}
+    link_ok=false
+    if [ "$versaoCobol" == "4.0" ]; then
+        URL_ATUALIZADO_RELEASE_V40="$URL_BASE_RELEASE40${novoPortalPosRelease}-a-${data_release_baixar}.rar"
+        if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE_V40"; then
+            link_ok=true
+            return 0
+        else
+            ALERTA_MSG "Nenhum link encontrado para a release atual." >> $ERRO_LOG_FILE
+            echo "Nenhum link encontrado para a release atual."
+            return 1
+        fi
+    elif [ "$versaoCobol" == "4.1" ]; then
+        URL_ATUALIZADO_RELEASE_V41="$URL_BASE_RELEASE41${novoPortalPosRelease}-a-${data_release_baixar}.rar"
+        if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE_V41"; then
+            link_ok=true
+            return 0
+        else
+            ALERTA_MSG "Nenhum link encontrado para a release atual." >> $ERRO_LOG_FILE
+            echo "Nenhum link encontrado para a release atual."
+            return 1
+        fi
+    else
+        echo "Versao do COBOL invalida." >> $ERRO_LOG_FILE
+        ALERTA_MSG "Versao do COBOL invalida."
+        return 1
+    fi
+}
+
+
+# Funcao para verificar se a release e valida e mais recente
+OBTER_LINK_RELEASE() {
+    dia_semana_lido=$(date +%u)
+    DIA_MES=$(date +"%m%d")
+    DATA_COMPLETA=$(date +"%Y%m%d")
+    nova_data=""
+    link_ok=false
+
+    if [ $dia_semana_lido -eq 1 ]; then
+        nova_data=$(date -d "${DATA_COMPLETA} -8 days" +"%m%d")
+        while [ "$link_ok" == "false" ]; do
+            if [ "$nova_data" -lt "$DIA_MES" ]; then
+                DATA_COMPLETA=$(date -d "${DATA_COMPLETA} +1 day" +"%Y%m%d")
+                nova_data=$(date -d "${DATA_COMPLETA}" +"%d%m")
+                GERAR_LINK
+                if [ "$link_ok" == "true" ]; then
+                    break
+                else
+                    nova_data=$(date -d "${nova_data}" +"%m%d")
+                fi
+            fi
+        done
+    elif [ $dia_semana_lido -ge 2 ] && [ $dia_semana_lido -le 6 ]; then
+        while [ $(date -d "$DATA_COMPLETA" +%u) -ne 2 ]; do
+            DATA_COMPLETA=$(date -d "${DATA_COMPLETA} -1 day" +"%Y%m%d")
+        done
+        nova_data=$(date -d "${DATA_COMPLETA}" +"%d%m")
+        GERAR_LINK
+    else
+        echo "Tente executar a atualizacao no proximo dia util!" >> $ERRO_LOG_FILE
+        ALERTA_MSG "Tente executar a atualizacao no proximo dia util!"
+        return 1
+    fi
+
+    if [ "$link_ok" == "true" ]; then
+        echo "Link válido encontrado: $URL_ATUALIZADO_RELEASE_V40 ou $URL_ATUALIZADO_RELEASE_V41" > /dev/null
+    else
+        echo "Nenhum link válido encontrado." > /dev/null
+        return 1
+    fi
+
+}
+
+
+# Funcao para adicionar 7 dias a uma data no formato DDMMYY, usada para obter as futuras releases e poder gerar as comparacoes de release
+adicionar_7_dias() {
+    local dia="${1:0:2}"
+    local mes="${1:2:2}"
+    local ano="${1:4:2}"
+    
+    # Convertendo para o formato 'YYYYMMDD' para facilitar a adição de dias
+    local data_formatada="20${ano}-${mes}-${dia}"
+    
+    # Adicionando 7 dias à data
+    local nova_data=$(date -d "$data_formatada +7 days" "+%d%m%y")
+    
+    echo "$nova_data"
+}
+
+# Funcao para adicionar 14 dias a uma data no formato DDMMYY, usada para obter as futuras releases e poder gerar as comparacoes de release
+adicionar_14_dias() {
+    local dia="${1:0:2}"
+    local mes="${1:2:2}"
+    local ano="${1:4:2}"
+    
+    # Convertendo para o formato 'YYYYMMDD' para facilitar a adição de dias
+    local data_formatada="20${ano}-${mes}-${dia}"
+    
+    # Adicionando 7 dias à data
+    local nova_data=$(date -d "$data_formatada +14 days" "+%d%m%y")
+    
+    echo "$nova_data"
+}
+
+# Funcao para adicionar meses a uma data no formato DDMMYY, usada para obter a futura versao
+adicionar_meses() {
+    local dia="${1:0:2}"
+    local mes="${1:2:2}"
+    local ano="${1:4:2}"
+    
+    # Convertendo para o formato 'YYYYMMDD' para facilitar a adição de dias
+    local data_formatada="20${ano}-${mes}-${dia}"
+    
+    # Adicionando 7 dias à data
+    local nova_data=$(date -d "$data_formatada +3 months" "+%d%m%y")
+    
+    echo "$nova_data"
+}
+
+# Funcao para adicionar meses a uma data no formato DDMMYY, usada para obter a futura versao
+adicionar_meses_ddmm() {
+    local dia="${1:0:2}"
+    local mes="${1:2:2}"
+    local ano="${1:4:2}"
+    
+    # Convertendo para o formato 'YYYYMMDD' para facilitar a adição de dias
+    local data_formatada="20${ano}-${mes}-${dia}"
+    
+    # Adicionando 7 dias à data
+    local nova_data=$(date -d "$data_formatada +3 months" "+%d%m")
+    
+    echo "$nova_data"
+}
+
+# Funcao para definir Datas das proximas Releases e suas respectivas Letras
+DEFINIR_DATAS() {
+    # Array para armazenar as datas
+    declare -a datas
+    declare -a datas_salvas
+    declare -a datas_YMD # Ano Mes Dia - Y M D
+    
+    # Array para armazenar as letras do alfabeto
+    declare -a letras=(A B C D E F G H I J K L)
+
+    echo "PROXIMAS RELEASES" >> $controle_versao_release
+    # Adicionando as datas ao array
+    for ((i = 0; i < 12; i++)); do
+        # Adicionando 7 dias à data inicial
+        salvar_data="$versaoPortal"
+        datas_salvas[$i]=$salvar_data
+        versaoPortal=$(adicionar_7_dias "$versaoPortal")
+        #echo "salvar data: $salvar_data"
+        conv_salvar_data=$(CONVERTER_DATAS "$salvar_data")
+        #echo "converter data salva: $conv_salvar_data"
+        datas_YMD[$i]=$conv_salvar_data
+        #echo "Mostrando data: ${datas_YMD[$i]}"
+        # Armazenando a data e a letra associada
+        datas[$i]=$versaoPortal
+        # Exibindo a data e a letra associada
+        echo "RELEASE ${letras[$i]} - DATA: ${datas[$i]}" >> $controle_versao_release
+        
+    done
+    # Comparar o dia atual com as datas das releases
+    data_hoje=$(date +"%Y%m%d")
+    #echo "data_hoje: $data_hoje"
+
+    for ((i = 0; i < ${#datas_YMD[@]}; i++)); do
+        ind_ant=$((i - 1))
+        # Converter a data para o formato YYYYMMDD antes de comparar
+        release_semana=$(date -d "${datas_YMD[$i]} + 7 days" +"%Y%m%d")
+        #echo "exibindo a release atual: $release_semana"
+        proxima_release=$(date -d "$release_semana + 7 days" +"%Y%m%d")
+        #echo "exibindo a proxima release: $proxima_release"
+        sleep 1
+
+        if [ "$data_hoje" -ge "$release_semana" ] && [ "$data_hoje" -lt "$proxima_release" ]; then
+            releasePortal="${datas[$i]}"
+            letraRelease="${letras[$i]}"
+            release_busca="$release_semana"
+            #echo "busca atual: $release_busca"
+            if [ $? -eq 1 ]; then
+                release_busca=$(date -d "$proxima_release - 7 days" +"%Y%m%d")
+                releasePortal="${datas[$ind_ant]}"
+                letraRelease="${letras[$ind_ant]}"
+                INFO_MSG "'RELEASE ATUAL ${letras[$ind_ant]}' do dia ${datas[$ind_ant]}"
+            else
+                INFO_MSG "'RELEASE ATUAL ${letras[$i]}' do dia ${datas[$i]}"
+            fi
+            break
+
+        else
+            clear
+            echo "Buscando atualizacao, aguarde..." > /dev/null
+            sleep 1
+        fi
+    done
+
+}
+
+
+# Funcao para verificar versao e release para baixar corretamente no site
+VERIFICAR_VERSAO_RELEASE() {
+    echo
+    inf_versao="$inf_versaoLoja"
+    #echo "Versao informada: $inf_versao"
+    inf_release="$inf_releaseLoja"
+    #echo "Release informada: $inf_release"
+    local data_atual=$(date "+%Y%m%d")
+    
+    # Convertendo as datas para o formato YYYYMMDD
+    inf_versao_convertida="20${inf_versao:4:2}${inf_versao:2:2}${inf_versao:0:2}"
+    novoPortal_convertido="20${novoPortal:4:2}${novoPortal:2:2}${novoPortal:0:2}"
+
+    # Verificando se as datas foram convertidas corretamente
+    if [[ ! "$inf_versao_convertida" =~ ^[0-9]{8}$ ]] || [[ ! "$novoPortal_convertido" =~ ^[0-9]{8}$ ]]; then
+        ERRO_MSG "Erro ao converter datas."
+        return 1
+    fi
+
+    # Separando as partes das datas
+    inf_ano=${inf_versao_convertida:0:4}
+    inf_mes=${inf_versao_convertida:4:2}
+    inf_dia=${inf_versao_convertida:6:2}
+
+    novoPortal_ano=${novoPortal_convertido:0:4}
+    novoPortal_mes=${novoPortal_convertido:4:2}
+    novoPortal_dia=${novoPortal_convertido:6:2}
+
+    # Comparando as datas
+    if [ "$inf_ano" -lt "$novoPortal_ano" ]; then
+        # Se o ano informado for menor do que o do novoPortal
+        clear
+        versaoLoja="$inf_versao"
+        versao_lj=$(TRATAR_DATAS "$versaoLoja")
+        versao_portal=$(TRATAR_DATAS "$novoPortal")
+        ALERTA_MSG "Versao $versao_lj desatualizada! Baixando a 'Versao $versao_portal'!"
+        BAIXAR_VERSAO
+        BAIXAR_RELEASE
+        return
+    elif [ "$inf_ano" -eq "$novoPortal_ano" ]; then
+        # Se os anos forem iguais, comparar os meses
+        if [ "$inf_mes" -lt "$novoPortal_mes" ]; then
+            # Se o mês informado for menor do que o do novoPortal
+            versaoLoja="$inf_versao"
+            ALERTA_MSG "Versao $versaoLoja desatualizada! Baixando a 'Versao $novoPortal'!"
+            BAIXAR_VERSAO
+            BAIXAR_RELEASE
+            return
+        elif [ "$inf_mes" -eq "$novoPortal_mes" ]; then
+            # Se os meses forem iguais, comparar os dias
+            if [ "$inf_dia" -lt "$novoPortal_dia" ]; then
+                # Se o dia informado for menor do que o do novoPortal
+                versaoLoja="$inf_versao"
+                ALERTA_MSG "Versao $versaoLoja desatualizada! Baixando a 'Versao $novoPortal'!"
+                BAIXAR_VERSAO
+                BAIXAR_RELEASE
+                return
+            elif [ "$inf_dia" -eq "$novoPortal_dia" ]; then
+                # Se as datas forem iguais
+                versaoLoja="$inf_versao"
+                INFO_MSG "O Integral esta com a versao mais recente!"
+                # Se a versao do servidor e igual a informada pelo usuario, validar somente a release
+                if [ "$inf_release" == "$letraRelease" ]; then
+                    releaseLoja="$inf_release"
+                    INFO_MSG "E esta com a release mais recente!"
+                    echo
+                    return
+                else
+                    releaseLoja="$inf_release"
+                    INFO_MSG "Atualizando a 'Release'!"
+                    BAIXAR_RELEASE
+                    return
+                fi
+            fi
+        fi
+    fi
+
+}
+
+# Funcao para baixar a versao do site correspondente a versao do sistema
+BAIXAR_VERSAO() {
+    arquivo_versao_atual=""
+    
+    # Define a URL base com base na versao do sistema
+    if [ "$versaoCobol" == "4.0" ]; then
+        # Baixa o arquivo
+        echo "Por favor aguarde..."
+        wget -c --progress=dot "$URL_ATUALIZADO" -P "$PASTA_DESTINO" 2>&1 | \
+        grep --line-buffered "%" | \
+        sed -u -e "s,\.,,g" | \
+        awk '{ printf("\rBaixando: %s", $2) }'
+        echo ""
+        sleep 1
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao40-$novoPortal.rar")
+        testar_arquivos_versao=$(rar t "$arquivo_versao_atual" | wc -l)
+        arquivo_atual_testando=0
+        if rar t $arquivo_versao_atual | while read -r line; do
+            ((arquivo_atual_testando++))
+            porcentagem=$((arquivo_atual_testando * 100 / testar_arquivos_versao))
+            echo -ne "Testando .gnt: [$porcentagem%]\r"
+        done
+        then
+            INFO_MSG "Versao '$novoPortal' baixada e programas 'Testados'!"
+        else
+            ERRO_MSG "Arquivo corrompido!"
+            echo "Arquivo de versao $novoPortal corrompido!" >> $ERRO_LOG_FILE
+        fi
+
+    elif [ "$versaoCobol" == "4.1" ]; then
+        # Baixa o arquivo
+        echo "Por favor aguarde..."
+        wget -c --progress=dot "$URL_ATUALIZADO" -P "$PASTA_DESTINO" 2>&1 | \
+        grep --line-buffered "%" | \
+        sed -u -e "s,\.,,g" | \
+        awk '{ printf("\rBaixando: %s", $2) }'
+        echo ""
+        sleep 1
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao-$novoPortal.rar")
+        testar_arquivos_versao=$(rar t "$arquivo_versao_atual" | wc -l)
+        arquivo_atual_testando=0
+        if rar t $arquivo_versao_atual | while read -r line; do
+            ((arquivo_atual_testando++))
+            porcentagem=$((arquivo_atual_testando * 100 / testar_arquivos_versao))
+            echo -ne "Testando .gnt: [$porcentagem%]\r"
+        done
+        then
+            INFO_MSG "Versao '$novoPortal' baixada e programas 'Testados'!"
+        else
+            ERRO_MSG "Arquivo corrompido!"
+            echo "Arquivo de versao $novoPortal corrompido!" >> $ERRO_LOG_FILE
+        fi
+    else
+        ERRO_MSG "Versao do Cobol desconhecida: $versaoCobol"
+        LOG_ERROR "Versao do Cobol desconhecida: $versaoCobol"
+        exit 1
+    fi
+}
+
+# Funcao para baixar release
+BAIXAR_RELEASE() {
+    arquivo_release_atual=""
+    buscarV40="release40"
+    buscarV41="release"
+    releaseBusca=""
+
+    # Define a URL base com base na versao do sistema
+    if [ "$versaoCobol" == "4.0" ]; then
+        releaseBusca=$buscarV40
+        # Baixa o arquivo
+        echo "Por favor aguarde..."
+        wget -c --progress=dot "$URL_ATUALIZADO_RELEASE_V40" -P "$PASTA_DESTINO" 2>&1 | \
+        grep --line-buffered "%" | \
+        sed -u -e "s,\.,,g" | \
+        awk '{ printf("\rBaixando: %s", $2) }'
+        echo ""
+        
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$data_release_baixar.rar")
+        sleep 1
+
+        testar_arquivos_release=$(rar t "$arquivo_release_atual" | wc -l)
+        arquivo_release_testando=0
+        if rar t $arquivo_release_atual | while read -r line; do
+            ((arquivo_atual_testando++))
+            porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
+            echo -ne "Testando .gnt: [$porcentagem%]\r"
+        done
+        then
+            INFO_MSG "Release '$releasePortal - $letraRelease' baixada e programas 'Testados'!"
+        else
+            ERRO_MSG "Arquivo corrompido!"
+            echo "Arquivo de release '$releasePortal - $letraRelease' corrompido!" >> $ERRO_LOG_FILE
+        fi
+        return
+
+    elif [ "$versaoCobol" == "4.1" ]; then
+        releaseBusca=$buscarV41
+        # Baixa o arquivo
+        echo "Por favor aguarde..."
+        wget -c --progress=dot "$URL_ATUALIZADO_RELEASE_V41" -P "$PASTA_DESTINO" 2>&1 | \
+        grep --line-buffered "%" | \
+        sed -u -e "s,\.,,g" | \
+        awk '{ printf("\rBaixando: %s", $2) }'
+        echo ""
+
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$data_release_baixar.rar")
+        sleep 1
+        testar_arquivos_release=$(rar t "$arquivo_release_atual" | wc -l)
+        arquivo_release_testando=0
+        if rar t $arquivo_release_atual | while read -r line; do
+            ((arquivo_atual_testando++))
+            porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
+            echo -ne "Testando .gnt: [$porcentagem%]\r"
+        done
+        then
+            INFO_MSG "Release '$releasePortal - $letraRelease' baixada e programas 'Testados'!"
+        else
+            ERRO_MSG "Arquivo corrompido!"
+            echo "Arquivo de release '$releasePortal - $letraRelease' corrompido!" >> $ERRO_LOG_FILE
+        fi
+        return
+
+    else
+        ERRO_MSG "Versao do Cobol desconhecida: $versaoCobol"
+        LOG_ERROR "Versao do Cobol desconhecida: $versaoCobol"
+        exit 1
+    fi
+}
+
+# Funcao para realizar backup
+FAZER_BKP() {
+    # Caminho completo para o destino do backup
+
+    if [ -e "$BKP_DESTINO" ]; then
+        # se o backup existir com a data atual permite atualizar
+        sleep 1
+        return 0
+    else
+        ALERTA_MSG "Realizando backup dos programas..."
+        total_bkp_files=$(find $LOCAL_GNT -type f -name "*.gnt" | wc -l)
+        contagem_arquivo=0
+        # Verifica se o comando anterior foi executado com sucesso
+        if rar a "$BKP_DESTINO" $LOCAL_GNT/*gnt | while read -r line; do
+            ((contagem_arquivo++))
+            porcentagem_bkp=$((contagem_arquivo *100 / total_bkp_files))
+            echo -ne "Criando Backup: [$porcentagem_bkp%]\r"
+        done
+        then
+            INFO_MSG "Backup concluido!"
+        else
+            ERRO_MSG "Erro ao realizar Backup em $DATE!"
+            LOG_ERROR "Erro ao relizar Backup em $DATE"
+        fi
+    fi
+
+    find /u/sist/exec-a/ -name "BKPTOTAL_*" -type f -printf '%T@ %p\n' | sort -n | head -n -4 | cut -d' ' -f2- | while read file; do echo "No dia $(date +'%d/%m/%Y as %H:%M:%S') - o backup foi removido de: $file" >> /u/sist/logs/log-de-remocao.log; rm -f "$file"; done
+
+}
+
+# Funcao para verificar se o backup foi feito no dia atual
+VERIFICA_BACKUP() {
+    
+    if [ -e "$BKP_DESTINO" ]; then
+        # se o backup existir com a data atual permite atualizar
+        INFO_MSG "Backup verificado!"
+        return 0
+    else
+        # se o backup nao existir, alertar ao usuario e voltar ao menu principal
+        ALERTA_MSG "POR FAVOR FACA O BACKUP ANTES DE ATUALIZAR"
+        echo "Arquio de BACKUP nao foi localizado! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        sleep 1
+        return 1
+    fi
+}
+
+
+# Funcao para atualizar o sistema
+ATUALIZAR() {
+    arquivo_versao_atual=""
+    arquivo_release_atual=""
+    buscarV40="release40"
+    buscarV41="release"
+    releaseBusca=""
+    
+
+    # Define o diretorio com base na versao do Cobol
+    if [ "$versaoCobol" == "4.0" ]; then
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao40-$novoPortal.rar")
+        releaseBusca=$buscarV40
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$nova_data.rar")
+	sleep 1
+    elif [ "$versaoCobol" == "4.1" ]; then
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao-$novoPortal.rar")
+        releaseBusca=$buscarV41
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$nova_data.rar")
+    sleep 1
+    else
+        ERRO_MSG "Versao do Cobol desconhecida: $versaoCobol"
+        echo "Versao do Cobol desconhecida: $versaoCobol" >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+
+    local DIRCERTO="/u/sist/exec"
+    if [ ! -d "$DIRCERTO" ]; then
+        ERRO_MSG "O diretorio nao existe."
+        echo "O diretorio nao existe." >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+    cd "$DIRCERTO"
+
+    FAZER_BKP
+    VERIFICA_BACKUP
+    
+    # Verifica se a vesao esta desatualizada
+    if [ "$versaoLoja" != "$novoPortal" ]; then
+        # Verifica se o arquivo de atualizacao foi encontrado.
+        if [ -z "$arquivo_versao_atual" ]; then
+            ERRO_MSG "Pacote de atualizacao da versao nao encontrado"
+            echo "Pacote de atualizacao da versao nao encontrado" >> $ERRO_LOG_FILE
+            return
+        else
+            ALERTA_MSG "Descompactando a 'versao'... Por favor aguarde!"
+            # Conta o numero total de arquivos no arquivo RAR
+            total_files=$(rar lb "$arquivo_versao_atual" | wc -l)
+            current_file=0
+
+            if rar e -o+ "$arquivo_versao_atual" | while read -r line; do
+                ((current_file++))
+                percent=$((current_file * 100 / total_files))
+                echo -ne "Atualizando: [$percent %]\r"
+            done
+            then
+                INFO_MSG "Atualizacao de Versao concluida!"
+            
+                # atualizando a versao da loja apos descompactacao
+                versaoLoja="$novoPortal"
+                releaseLoja=""
+                rm $arquivo_versao_atual
+                #echo "Atualizacao concluida com sucesso." > >(tee -a "$LOG_FILE")
+                INFO_MSG "Versao atualizada para '$novoPortal'" > >(tee -a "$LOG_FILE")
+                sleep 1
+                #arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$data_release_baixar.rar")
+
+                if [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" != "$letraRelease" ]; then
+                    # Verifica se o arquivo da release foi encontrado.
+                    if [ -z "$arquivo_release_atual" ]; then
+                        ERRO_MSG "Pacote de atualizacao da release nao encontrado"
+                        echo "Pacote de atualizacao da release nao encontrado! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+                        return
+                    else
+                        # Descompacta somente a release
+                        ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
+                        # Conta o numero total de arquivos no arquivo RAR
+                        total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                        current_file_release=0
+                        if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                            ((current_file_release++))
+                            porcento=$((current_file_release * 100 / total_files_release))
+                            echo -ne "Atualizando: [$porcento %]\r"
+                        done
+                        then
+                            INFO_MSG "Atualizacao de Release Concluida!"
+                        else
+                            ALERTA_MSG "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte!"
+                            echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+                            exit 1
+                        fi
+
+                        rm $arquivo_release_atual
+                        echo
+                        INFO_MSG "Atualizacao concluida com sucesso."
+                        LOG_INFO "Atualizacao realizada com sucesso pela rotina AUTOMATICA!"
+                        # atualizando a release da loja apos descompactacao
+                        releaseLoja="$letraRelease"
+                    fi
+                fi
+            else
+                ALERTA_MSG "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte!"
+                echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+                exit 1
+            fi
+        fi
+    fi
+
+
+    # Verifica se versao esta atualizada e release desatualizada
+    if [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" != "$letraRelease" ]; then
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$data_release_baixar.rar")
+        #echo "Pacote de release encontrado: $arquivo_release_atual"
+
+        # Verifica se o arquivo da release foi encontrado.
+        if [ -z "$arquivo_release_atual" ]; then
+            ERRO_MSG "Pacote de atualizacao da release nao encontrado"
+            echo "Pacote de atualizacao da release nao encontrado! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+            return
+        else
+            
+            # Conta o numero total de arquivos no arquivo RAR
+            total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+            current_file_release=0
+            # Descompacta somente a release
+            ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
+            if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                ((current_file_release++))
+                porcento=$((current_file_release * 100 / total_files_release))
+                echo -ne "Atualizando: [$porcento%]\r"
+            done
+            then
+                INFO_MSG "Atualizacao de Release concluida!"
+                rm $arquivo_release_atual
+            else
+                ERRO_MSG "Erro ao atualizar!"
+                echo "Erro ao atualizar INTEGRAL" >> $ERRO_LOG_FILE
+                exit 1
+            fi
+
+            # Restaura a linha após a barra de progresso
+            echo ""
+            INFO_MSG "Release atualizada"
+            # atualizando a release da loja apos descompactacao
+            releaseLoja="$letraRelease"
+        fi
+    else
+        INFO_MSG "Sistema atualizado"
+    fi
+    echo "aguarde..."
+    sleep 1
+
+    # Executa o comando 'atu-help manual'
+    atu-help manual
+    if [ $? -ne 0 ]; then
+        ERRO_MSG "Erro ao executar 'atu-help manual'."
+        echo "Erro ao executar 'atu-help manual'. $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+    chmod 777 /u/sist/exec/*.gnt || {
+        ERRO_MSG "Erro ao conceder permissoes."
+        echo "Erro ao conceder permissoes! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        $DATA_ATUAL - $HORA_ATUAL
+        exit 1
+    }
+
+    INFO_MSG "Atualizacao realizada com sucesso!"
+}
+
+# Funcao para ler os parametros gravados em arquivos facilitando verificar qual versao e release o cliente esta
+LER_PARAMETROS () {
+    parametros_gravados=true
+
+    if [[ -s $controle_servidor/versaoIntegralLoja ]]; then
+        versaoLoja_leitura=$(<"$controle_servidor/versaoIntegralLoja")
+    else
+        parametros_gravados=false
+    fi
+
+    if [[ -s $controle_servidor/releaseIntegralLoja ]]; then
+        releaseLoja_leitura=$(<"$controle_servidor/releaseIntegralLoja")
+    else
+        parametros_gravados=false
+    fi
+
+    if [[ -s $controle_servidor/dataReleaseIntegralLoja ]]; then
+        letraReleaseLoja_leitura=$(<"$controle_servidor/dataReleaseIntegralLoja")
+    else
+        parametros_gravados=false
+    fi
+}
+
+PROXIMOS_PARAMETROS () {
+    LER_PARAMETROS
+    parametros_gravados_prox=true
+    if [[ -n $versaoLoja_leitura && -n $releaseLoja_leitura && -n $letraReleaseLoja_leitura ]]; then
+        cod_ascii=$(printf "%d" "'$letraReleaseLoja_leitura")
+        cod_ascii_prox=$((cod_ascii + 1))
+
+        proxima_versaoLoja_leitura=$(adicionar_meses "$versaoLoja_leitura")
+        proxima_releaseLoja_leitura=$(adicionar_7_dias "$releaseLoja_leitura")
+        proxima_letraReleaseLoja_leitura=$(printf "\\$(printf "%o" "$cod_ascii_prox")")
+    else
+        echo "Erro: Nao foi possivel ler os parametros! Sera realizado nova busca no Portal Avanco"
+        parametros_gravados_prox=false
+    fi
+}
+
+# Funcao que gravara a versao e release apos a atualizacao
+GRAVANDO_ATUALIZACOES() {
+    cobrun status-online.gnt "A" > /dev/null
+    inf_versaoLoja="$versaoLoja"
+    inf_releaseLoja="$releaseLoja"
+    data_configuracao=$(date +'%d/%m/%Y')
+    data_exibir=$(TRATAR_DATAS "$inf_versaLoja")
+    #clear
+    echo
+    echo "GRAVANDO INFORMACOES..."
+    echo
+    #echo "VERSAO COBOL: $inf_versaoCobol"
+    echo "VERSAO INTEGRAL INSTALADA: $data_exibir"
+    echo "RELEASE INTEGRAL INSTALADA: $inf_releaseLoja"
+
+    #echo "Gravando informacoes novas informacoes. Por favor, aguarde..."
+    # cria arquivo txt que vai ser lido pelo cron e pelo atualizadorAutomatico que ficara em '/u/bats'
+    if [ ! -e "$info_loja_txt" ]; then
+        touch "$info_loja_txt"
+    fi
+    
+    echo "DATA: $data_configuracao" > "$info_loja_txt"
+    echo "VERSAO COBOL: $inf_versaoCobol" >> "$info_loja_txt"
+    echo "VERSAO INTEGRAL: $inf_versaoLoja" >> "$info_loja_txt"
+    echo "RELEASE: $inf_releaseLoja" >> "$info_loja_txt"
+    echo "DATA RELEASE: $releasePortal" >> "$info_loja_txt"
+
+    echo "$inf_versaoLoja" > "$controle_servidor/versaoIntegralLoja"
+    echo "$inf_releaseLoja" > "$controle_servidor/releaseIntegralLoja"
+    echo "$releasePortal" > "$controle_servidor/dataReleaseIntegralLoja"
+
+    echo
+    echo "INFORMACOES GRAVADAS COM SUCESSO!"
+    echo
+    echo "Sistema atualizado em $data_configuracao"
+    cronometro_start=$cronometro_start
+    cronometro_stop="$(date +'%H:%M:%S')"
+    cronometro_stop_volta=$SECONDS
+    tempo_gasto=$(( cronometro_stop_volta - cronometro_start_volta ))
+    tempo_gasto_formatado=$(date -u -d @${tempo_gasto} +"%M min  e %S seg")
+    echo "     $DATA_ATUAL       -     $cronometro_start     -     $cronometro_stop    -  $tempo_gasto_formatado" >> "/u/sist/logs/infos_extras.log"
+    echo "---------------------------------------------------------------------------------" >> "/u/sist/logs/infos_extras.log"
+    echo "$AVANCO"
+    sleep 2
+    exit 0
+}
+
+MENU_SECRETO () {
+    clear
+    while true; do
+        echo " ___________________________________________________________________________"
+        echo "|                                                                           |"
+        echo "|  1) OBTER INFORMACOES DO SISTEMA         5) CONFIGURAR ROTINA NO CRON     |"
+        echo "|  2) ATUALIZAR                            6) OBTER UPDATE DO ATUALIZADOR   |"
+        echo "|  3) RESTAURAR ATUALIZACAO ANTERIOR       7) MANUAL                        |"
+        echo "|  4) CONFIGURAR PARAMETROS                99) SAIR                         |"
+        echo "|___________________________________________________________________________|"
+        read -p "ESCOLHA UMA OPCAO: " opcao
+        case $opcao in
+            1)
+                clear
+                echo "OBTER INFORMACOES DO SISTEMA"
+                ;;
+            2)
+                clear
+                echo "ATUALIZAR"
+                ;;
+            3)
+                clear
+                echo "RESTAURAR ATUALIZACAO ANTERIOR"
+                ;;
+            4)
+                clear
+                echo "CONFIGURAR PARAMETROS"
+                if [ $USER = avanco ]; then
+                    echo "LIBERADO PARA CONFIGURAR"
+                else
+                    echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                    exit
+                fi
+                ;;
+            5)
+                clear
+                echo "CONFIGURAR ROTINA NO CRON"
+                if [ $USER = avanco ]; then
+                    echo "LIBERADO PARA CONFIGURAR"
+                else
+                    echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                    exit
+                fi
+                ;;
+            6)
+                clear
+                echo "OBTER UPDATE DO ATUALIZADOR"
+                ;;
+            7)
+                clear
+                echo "$MANUAL_USO"
+                ;;
+            1188)
+                clear
+                if [ $USER = avanco ]; then
+                    echo "LIBERADO PARA CONFIGURAR"
+                else
+                    echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                    exit
+                fi
+                echo "MANUAL AVANCO"
+                echo ""
+                ;;
+            "avanco" | "AVANCO")
+                clear
+                if [ $USER = avanco ]; then
+                    echo "LIBERADO PARA CONFIGURAR"
+                else
+                    echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                    exit
+                fi
+                echo "menuzao secreto"
+                ;;
+            99)
+                clear
+                echo "AVANCO INFORMATICA"
+                sleep 1
+                exit 0
+                ;;
+            *)
+                echo "OPCAO INVALIDA! TENTE NOVAMENTE."
+                ;;
+        esac
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
+        clear
+    done
+}
+
+
+
+
+# Funcao para extrair e exibir a versao do programa
+mostrar_versao() {
+    local versao=$(grep '^# DATA:' "$0" | head -1 | cut -d '-' -f 2 | sed 's/Versao //')
+    echo -n "-Programa: $(basename "$0")"
+    echo
+    echo "-Versao:  $versao"
+}
+
+
+
+
+###############################
+# Tratamento das opcoes que serao responsaveis por controlar na linha de comando
+# ------------------------------------------------------------------------------
+
+case "$1" in
+-h | --help)
+    echo "$MANUAL_USO"
+    exit 0
+    ;;
+-V | --version)
+    # Extrai a versao diretamente do cabecalho do programa
+    mostrar_versao
+    exit 0
+    ;;
+-i | --info)
+
+    VERIFICA_ONLINE
+
+    exit 0
+    ;;
+
+-m | --menu)
+    MENU_SECRETO
+    exit 0
+    ;;
+-up | --update)
+    # criar rotina pra baixar nova versao do atualizador.
+    echo "Buscando update para o Atualizador..."
+    exit 0
+    ;;
+*)
+    if test -n "$1"; then
+        echo Opcao invalida: $1
+        exit 1
+    fi
+    ;;
+esac
+
+###############################
+
+# Chamandos as funcoes na ordem
+
+
+VERIFICA_ATUALIZACAO
+INICIAR
+
+chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
+LER_ARQUIVO_TEXTO
+SEGURANCA
+OBTER_LINK_VERSAO
+DEFINIR_DATAS
+OBTER_LINK_RELEASE
+VERIFICAR_VERSAO_RELEASE
+ATUALIZAR
+chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
+GRAVANDO_ATUALIZACOES
+
+# acabar aqui

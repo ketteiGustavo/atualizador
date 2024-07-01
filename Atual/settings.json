@@ -1,0 +1,255 @@
+{
+    "workbench.colorTheme": "OM Theme (Default Dracula Italic)",
+    "workbench.iconTheme": "material-icon-theme",
+    "symbols.hidesExplorerArrows": false,
+    "editor.fontFamily": "'JetBrains Mono'",
+    "editor.fontSize": 15,
+    "redhat.telemetry.enabled": true,
+    "java.debug.settings.console": "integratedTerminal",
+    "editor.linkedEditing": true,
+    "code-runner.runInTerminal": true,
+    "explorer.compactFolders": false,
+    "cSpell.language": "en,pt_BR",
+    "editor.fontLigatures": true,
+    "code-runner.executorMap": {
+        "python": "clear && python3 -u",
+        "Java": "clear && integratedTerminal"
+    },
+    "code-runner.ignoreSelection": true,
+    "python.defaultInterpreterPath": "python",
+    "explorer.confirmDragAndDrop": false,
+    "todo-tree.highlights.defaultHighlight": {
+        "icon": "alert",
+        "type": "text",
+        "foreground": "red",
+        "background": "white",
+        "opacity": 50,
+        "iconColour": "blue"
+    },
+    "todo-tree.highlights.customHighlight": {
+        "TODO": {
+            "icon": "check",
+            "type": "line"
+        },
+        "FIXME": {
+            "foreground": "black",
+            "iconColour": "yellow",
+            "gutterIcon": true
+        }
+    },
+    "remoteHub.commitDirectlyWarning": "off",
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "editor.minimap.enabled": true,
+    "editor.rulers": [
+        {
+            "column": 80,
+            "color": "#00FF0010"
+        },
+        {
+            "column": 100,
+            "color": "#BDB76B15"
+        },
+        {
+            "column": 120,
+            "color": "#FA807219"
+        }
+    ],
+    "editor.unicodeHighlight.includeComments": true,
+    "emmet.variables": {
+        "lang": "pt"
+    },
+    "workbench.colorCustomizations": {
+        "[Default Dark Modern]": {
+            "tab.activeBorderTop": "#00FF00",
+            "tab.unfocusedActiveBorderTop": "#00FF0088",
+            "textCodeBlock.background": "#00000055"
+        },
+        "editor.wordHighlightStrongBorder": "#FF6347",
+        "editor.wordHighlightBorder": "#FFD700",
+        "editor.selectionHighlightBorder": "#A9A9A9"
+    },
+    "workbench.editor.revealIfOpen": true,
+    "workbench.tree.indent": 20,
+    "terminal.integrated.tabs.hideCondition": "never",
+    "terminal.integrated.enablePersistentSessions": false,
+    "java.configuration.detectJdksAtStart": false,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.debug.settings.hotCodeReplace": "auto",
+    "java.sources.organizeImports.staticStarThreshold": 1,
+    "cSpell.diagnosticLevel": "Hint",
+    "trailing-spaces.includeEmptyLines": false,
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-1.8",
+            "path": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/8"
+        },
+        {
+            "name": "JavaSE-11",
+            "path": "/usr/lib/jvm/java-11-openjdk-amd64"
+        },
+        {
+            "name": "JavaSE-17",
+            "path": "/usr/lib/jvm/java-17-openjdk-amd64"
+        },
+        {
+            "name": "JavaSE-21",
+            "path": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/21",
+            "default": true
+        },
+        {
+            "name": "JavaSE-22",
+            "path": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/latest"
+        }
+    ],
+    "terminal.integrated.profiles.linux": {
+        "bash": {
+            "path": "bash",
+            "env": {
+                "JAVA_HOME": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/21"
+            },
+            "args": [
+                "--rcfile",
+                "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/.bashrc"
+            ]
+        },
+        "JavaSE-1.8 LTS": {
+            "overrideName": true,
+            "env": {
+                "JAVA_HOME": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/8"
+            },
+            "path": "bash",
+            "args": [
+                "--rcfile",
+                "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/.bashrc"
+            ]
+        },
+        "JavaSE-11 LTS": {
+            "overrideName": true,
+            "env": {
+                "JAVA_HOME": "/usr/lib/jvm/java-11-openjdk-amd64"
+            },
+            "path": "bash",
+            "args": [
+                "--rcfile",
+                "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/.bashrc"
+            ]
+        },
+        "JavaSE-17 LTS": {
+            "overrideName": true,
+            "env": {
+                "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64"
+            },
+            "path": "bash",
+            "args": [
+                "--rcfile",
+                "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/.bashrc"
+            ]
+        },
+        "JavaSE-21 LTS": {
+            "overrideName": true,
+            "env": {
+                "JAVA_HOME": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/21"
+            },
+            "path": "bash",
+            "args": [
+                "--rcfile",
+                "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/.bashrc"
+            ]
+        },
+        "JavaSE-22": {
+            "overrideName": true,
+            "env": {
+                "JAVA_HOME": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/latest"
+            },
+            "path": "bash",
+            "args": [
+                "--rcfile",
+                "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/.bashrc"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "JavaSE-21 LTS",
+    "maven.terminal.customEnv": [
+        {
+            "environmentVariable": "JAVA_HOME",
+            "value": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/21"
+        },
+        {
+            "environmentVariable": "ZDOTDIR",
+            "value": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk"
+        }
+    ],
+    "java.import.gradle.java.home": "/usr/lib/jvm/java-17-openjdk-amd64",
+    "git.autofetch": true,
+    "cSpell.userWords": [
+        "numeros"
+    ],
+    "maven.executable.path": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/maven/latest/bin/mvn",
+    "java.import.gradle.home": "/home/luiz/.config/Code/User/globalStorage/pleiades.java-extension-pack-jdk/gradle/latest",
+    "terminal.integrated.profiles.osx": {
+        "zsh": {
+            "path": "zsh",
+            "env": {
+                "JAVA_HOME": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/21",
+                "ZDOTDIR": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk"
+            }
+        },
+        "JavaSE-1.8": {
+            "overrideName": true,
+            "env": {
+                "ZDOTDIR": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk",
+                "JAVA_HOME": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/8"
+            },
+            "path": "zsh"
+        },
+        "JavaSE-11": {
+            "overrideName": true,
+            "env": {
+                "ZDOTDIR": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk",
+                "JAVA_HOME": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/11"
+            },
+            "path": "zsh"
+        },
+        "JavaSE-17": {
+            "overrideName": true,
+            "env": {
+                "ZDOTDIR": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk",
+                "JAVA_HOME": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/17"
+            },
+            "path": "zsh"
+        },
+        "JavaSE-21": {
+            "overrideName": true,
+            "env": {
+                "ZDOTDIR": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk",
+                "JAVA_HOME": "/Users/gustavo/Library/Application Support/Code/User/globalStorage/pleiades.java-extension-pack-jdk/java/21"
+            },
+            "path": "zsh"
+        }
+    },
+    "terminal.integrated.defaultProfile.osx": "JavaSE-21",
+    "github-actions.workflows.pinned.workflows": [],
+    "shellformat.effectLanguages": [
+        
+        "shellscript",
+        "dockerfile",
+        "dotenv",
+        "hosts",
+        "jvmoptions",
+        "ignore",
+        "gitignore",
+        "properties",
+        "spring-boot-properties",
+        "azcli",
+        "bats"
+    ],
+    "shellformat.useEditorConfig": true,
+    "github.copilot.chat.localeOverride": "pt-br",
+    "inlineChat.accessibleDiffView": "on",
+    "trailing-spaces.backgroundColor": "rgba(255,0,0,0.1)",
+    "java.dependency.packagePresentation": "hierarchical"
+}
