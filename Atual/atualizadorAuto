@@ -888,7 +888,9 @@ OBTER_LINK_VERSAO() {
 
 # Funcao pra criar o link
 GERAR_LINK () {
+    echo "$nova_data"
     data_release_baixar=${nova_data}
+    echo "$data_release_baixar"
     link_ok=false
     if [ "$versaoCobol" == "4.0" ]; then
         URL_ATUALIZADO_RELEASE_V40="$URL_BASE_RELEASE40${novoPortalPosRelease}-a-${data_release_baixar}.rar"
@@ -929,16 +931,14 @@ OBTER_LINK_RELEASE() {
 
     if [ $dia_semana_lido -eq 1 ]; then
         nova_data=$(date -d "${DATA_COMPLETA} -8 days" +"%m%d")
-        echo "$nova_data"
+        echo "apos testar: $nova_data"
         
         if [ "$nova_data" -lt "$DIA_MES" ]; then
-            echo "$nova_data"
+            echo "antes do while: $nova_data"
             while [ "$link_ok" == "false" ]; do
-                nova_data=$(date -d "${nova_data} +1 day" +"%Y%m%d")
-                echo "$nova_data"
-                nova_data=$(date -d "${nova_data}" +"%Y%m%d")
-                echo "$nova_data"
-                nova_data=$(date -d "${nova_data}" +"%d%m")
+                data_busca=$(date -d "${nova_data} +1 day" +"%Y%m%d")
+                echo "data busca: $data_busca"
+                nova_data=$(date -d "${data_busca}" +"%d%m")
                 echo "$nova_data"
                 GERAR_LINK
                 if [ "$link_ok" == "true" ]; then
