@@ -931,7 +931,8 @@ OBTER_LINK_RELEASE() {
         echo "$nova_data"
         while [ "$link_ok" == "false" ]; do
             if [ "$nova_data" -lt "$DIA_MES" ]; then
-                DATA_COMPLETA=$(date -d "${DATA_COMPLETA} +1 day" +"%Y%m%d")
+                DATA_COMPLETA=$(date -d "${nova_data} +1 day" +"%Y%m%d")
+                echo "$DATA_COMPLETA"
                 nova_data=$(date -d "${DATA_COMPLETA}" +"%d%m")
                 echo "$nova_data"
                 GERAR_LINK
@@ -945,8 +946,10 @@ OBTER_LINK_RELEASE() {
     elif [ $dia_semana_lido -ge 2 ] && [ $dia_semana_lido -le 6 ]; then
         while [ $(date -d "$DATA_COMPLETA" +%u) -ne 2 ]; do
             DATA_COMPLETA=$(date -d "${DATA_COMPLETA} -1 day" +"%Y%m%d")
+            echo "$DATA_COMPLETA"
         done
         nova_data=$(date -d "${DATA_COMPLETA}" +"%d%m")
+        echo "$nova_data"
         GERAR_LINK
     else
         echo "Tente executar a atualizacao no proximo dia util!" >> $ERRO_LOG_FILE
