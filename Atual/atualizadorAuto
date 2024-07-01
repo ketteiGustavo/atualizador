@@ -898,6 +898,7 @@ GERAR_LINK () {
         else
             ALERTA_MSG "Nenhum link encontrado para a release atual." >> $ERRO_LOG_FILE
             echo "Nenhum link encontrado para a release atual."
+            link_ok=false
             return 1
         fi
     elif [ "$versaoCobol" == "4.1" ]; then
@@ -907,6 +908,7 @@ GERAR_LINK () {
             return 0
         else
             ALERTA_MSG "Nenhum link encontrado para a release atual." >> $ERRO_LOG_FILE
+            link_ok=false
             echo "Nenhum link encontrado para a release atual."
             return 1
         fi
@@ -927,7 +929,7 @@ OBTER_LINK_RELEASE() {
     link_ok=false
 
     if [ $dia_semana_lido -eq 1 ]; then
-        nova_data=$(date -d "${DATA_COMPLETA} -8 days" +"%m%d")
+        nova_data=$(date -d "${DATA_COMPLETA} -6 days" +"%m%d")
         echo "$nova_data"
         while [ "$link_ok" == "false" ]; do
             if [ "$nova_data" -lt "$DIA_MES" ]; then
