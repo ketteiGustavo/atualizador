@@ -1665,7 +1665,7 @@ MENU_SECRETO () {
             6)
                 clear
                 echo "OBTER UPDATE DO ATUALIZADOR"
-                UPGRADE
+                UPDATE
                 ;;
             7)
                 clear
