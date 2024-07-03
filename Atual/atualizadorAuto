@@ -263,9 +263,6 @@ URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao-"
 URL_BASE_RELEASE40="https://s3.amazonaws.com/avancoprogramas/integral/release40-"
 URL_BASE_RELEASE41="https://s3.amazonaws.com/avancoprogramas/integral/release-"
 
-URL_ATUALIZADOV40=""
-URL_ATUALIZADOV41=""
-
 URL_ATUALIZADO_RELEASE_V40=""
 URL_ATUALIZADO_RELEASE_V41=""
 
