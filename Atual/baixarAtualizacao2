@@ -66,8 +66,12 @@ mostrar_versao() {
 }
 
 
+arquivo_url="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel"
+arquivo="/u/sist/controle/controle_ver_rel.txt"
 
-arquivo="/u/sist/controle/controle_ver_rel"
+if [ ! -f "/u/sist/controle/controle_ver_rel.txt" ]; then
+    wget -P "$arquivo" "$arquivo_url"
+fi
 
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
@@ -82,7 +86,7 @@ VERIFICA_COBOL() {
 
 # Função para ler o arquivo e armazenar as informações em variáveis
 ler_arquivo() {
-    local arquivo="/u/sist/controle/controle_ver_rel"
+    local arquivo="/u/sist/controle/controle_ver_rel.txt"
     local versao
     declare -A releases
 
@@ -94,7 +98,7 @@ ler_arquivo() {
         fi
     done < "$arquivo"
 
-    echo "Versão disponível no portal: $versao"
+    echo "Versao disponivel no portal: $versao"
     versao_Portal="$versao"
     echo "$versao" > "/u/sist/controle/versaoIntegral"
     
