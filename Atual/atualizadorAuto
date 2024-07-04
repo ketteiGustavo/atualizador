@@ -213,6 +213,17 @@ readonly NO_COLOR='\e[0m'
 
 # Variaveis globais
 info_loja_txt="/u/sist/controle/info_loja.txt"
+
+# variaveis nos arquivos
+versaoLoja_leitura=""
+releaseLoja_leitura=""
+letraReleaseLoja_leitura=""
+
+proxima_versaoLoja_leitura=""
+proxima_releaseLoja_leitura=""
+proxima_letraReleaseLoja_leitura=""
+
+
 dia_semana_lido=$(date +%u)
 hora_lida=$(date +%H)
 CONTAUSER=$(ps ax | grep rts32 | grep -v 'grep' | wc -l)
@@ -231,6 +242,7 @@ ANO_ANTERIOR=$(date -d "4 weeks ago" +"%y")
 # Locais dentro do sevidor
 LOCAL_GNT="/u/sist/exec"
 PASTA_AVANCO="/u/rede/avanco"
+REMOVIDOS="$PASTA_AVANCO/removidos"
 PASTA_DESTINO="/u/rede/avanco/atualizacoes"
 LOCAL_LOG="/u/sist/logs"            # arquivo de log
 BKP_DESTINO="/u/sist/exec-a/BKPTOTAL_$DATE.rar" # local de onde serao salvos os backups
@@ -245,7 +257,7 @@ infos_extras="/u/sist/logs/infos_extras.log"
 # Arquivo de log
 LOG_FILE="/u/sist/logs/log_$MES_ANO.log"
 # Arquivo de log de erro
-ERRO_LOG_FILE="/u/sist/logs/log_erro_$MES_ANO.log"
+ERRO_LOG_FILE="/u/sist/logs/erro_$MES_ANO.log"
 
 # arquivo de pre leitura
 controle_servidor="/u/sist/controle"
@@ -297,15 +309,6 @@ cronometro_start_volta=""
 cronometro_stop=""
 cronometro_stop_volta=""
 tempo_gasto=""
-
-# variaveis nos arquivos
-versaoLoja_leitura=""
-releaseLoja_leitura=""
-letraReleaseLoja_leitura=""
-
-proxima_versaoLoja_leitura=""
-proxima_releaseLoja_leitura=""
-proxima_letraReleaseLoja_leitura=""
 
 # flags
 parametros_gravados=""
@@ -438,6 +441,12 @@ sleep 1
 if [ ! -d "/u/rede/avanco/atualizacoes" ]; then
     mkdir -p "/u/rede/avanco/atualizacoes"
     chmod 777 -R "/u/rede/avanco/atualizacoes"
+fi
+
+# Criando diretorio de logs e atualizacoes
+if [ ! -d "$REMOVIDOS" ]; then
+    mkdir -p "$REMOVIDOS"
+    chmod 777 -R "$REMOVIDOS"
 fi
 
 if [ ! -d "/u/rede/avanco/atualizacoes/logs" ]; then
@@ -599,11 +608,7 @@ CRIAR_INFO_LOJA() {
     
     echo
     echo "Gravando informacoes. Por favor, aguarde..."
-    # cria arquivo txt que vai ser lido pelo cron e pelo atualizadorAutomatico que ficara em '/u/bats'
-    if [ ! -e "$info_loja_txt" ]; then
-        touch "$info_loja_txt"
-    fi
-    
+        
     echo "DATA: $data_configuracao" > "$info_loja_txt"
     echo "VERSAO COBOL: $inf_versaoCobol" >> "$info_loja_txt"
     echo "VERSAO INTEGRAL: $inf_versaoLoja" >> "$info_loja_txt"
@@ -674,7 +679,23 @@ VERIFICA_COBOL() {
     fi
 }
 
+# Funcao para limpar qualquer arquivo ou pasta que esteja errado no sist/exec
+LIMPA_EXEC () {
+    local data_clear=$(date +'%d/%m%/%Y')
+    local rar_file="$REMOVIDOS/removidos_$DATA_ATUAL.rar"
+    echo "Arquivos e Pastas que estavam no 'u/sist/exec' no dia $data_clear"
+    for item in "$LOCAL_GNT"/*; do
+        # valida se e um programa gnt
+        if [[ ! "$item" =~ \.gnt$ ]]; then
+            echo "Arquivo/Pasta encontrado -> $item" > "/u/sist/logs/removidos_$DATA_ATUAL.log"
 
+            # compactando arquivo encontrado
+            rar a "$rar_file" "$item"
+
+            rm -rf "$item"
+        fi
+    done
+}
 
 # -----------------------------------------------------------------------------
 # Funcoes de log
@@ -714,18 +735,18 @@ MANTER_LOG_ERRO_ATUAL() {
     log_erro_remover=$MES_ANTERIOR$ANO_ANTERIOR
 
 
-    if [ ! -e "$LOCAL_LOG/log_erro_$MES_ANO.log" ]; then
-        touch "$LOCAL_LOG/log_$MES_ANO.log"
+    if [ ! -e "$LOCAL_LOG/erro_$MES_ANO.log" ]; then
+        touch "$LOCAL_LOG/erro_$MES_ANO.log"
     fi
 
     if [ "$log_erro_atual" != "$log_erro_anterior" ]; then
-        if [ -e "$LOCAL_LOG/log_erro_$log_erro_remover.log" ]; then
-            rm "$LOCAL_LOG/log_erro_$log_erro_remover.log"
+        if [ -e "$LOCAL_LOG/erro_$log_erro_remover.log" ]; then
+            rm "$LOCAL_LOG/erro_$log_erro_remover.log"
         fi
     fi
 
-    echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/log_erro_$MES_ANO.log"
-    echo "" >> "$LOCAL_LOG/log_erro_$MES_ANO.log"
+    echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/erro_$MES_ANO.log"
+    echo "" >> "$LOCAL_LOG/erro_$MES_ANO.log"
 }
 
 # Funcao para criar e ou atualizar o arquivo de log com as informacoes padroes
@@ -1532,7 +1553,7 @@ ATUALIZAR() {
 UPDATE () {
     script_path="$0"
     echo "Baixando versao mais recente do atualizador"
-    curl -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -o "$SCRIPT_PATH.tmp" "$SCRIPTH_URL"
+    curl -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL"
 
     if [ $? -eq 0 ]; then
         mv "$SCRIPT_PATH.tmp" "$SCRIPT_PATH"
@@ -1549,20 +1570,20 @@ UPDATE () {
 LER_PARAMETROS () {
     parametros_gravados=true
 
-    if [[ -s $controle_servidor/versaoIntegralLoja ]]; then
-        versaoLoja_leitura=$(<"$controle_servidor/versaoIntegralLoja")
+    if [[ -s $controle_servidor/versaoIntegralLoja.txt ]]; then
+        versaoLoja_leitura=$(<"$controle_servidor/versaoIntegralLoja.txt")
     else
         parametros_gravados=false
     fi
 
-    if [[ -s $controle_servidor/releaseIntegralLoja ]]; then
-        releaseLoja_leitura=$(<"$controle_servidor/releaseIntegralLoja")
+    if [[ -s $controle_servidor/releaseIntegralLoja.txt ]]; then
+        releaseLoja_leitura=$(<"$controle_servidor/releaseIntegralLoja.txt")
     else
         parametros_gravados=false
     fi
 
-    if [[ -s $controle_servidor/dataReleaseIntegralLoja ]]; then
-        letraReleaseLoja_leitura=$(<"$controle_servidor/dataReleaseIntegralLoja")
+    if [[ -s $controle_servidor/dataReleaseIntegralLoja.txt ]]; then
+        letraReleaseLoja_leitura=$(<"$controle_servidor/dataReleaseIntegralLoja.txt")
     else
         parametros_gravados=false
     fi

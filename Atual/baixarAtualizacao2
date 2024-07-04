@@ -66,11 +66,12 @@ mostrar_versao() {
 }
 
 
-arquivo_url="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel"
+arquivo_url="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel.txt"
 arquivo="/u/sist/controle/controle_ver_rel.txt"
+dir_arquivo="/u/sist/controle"
 
 if [ ! -f "/u/sist/controle/controle_ver_rel.txt" ]; then
-    wget -P "$arquivo" "$arquivo_url"
+    wget -c "$arquivo_url" -P "$dir_arquivo"
 fi
 
 # Funcao para verificar qual o cobol usado
@@ -185,7 +186,7 @@ BAIXAR_VERSAO() {
 # Funcao para verificar se a release e valida e mais recente
 BAIXAR_RELEASE() {
     VERIFICA_COBOL
-    release_busca=$(<"//u/sist/controle/dataReleaseIntegral")
+    release_busca=$(<"/u/sist/controle/dataReleaseIntegral")
     versao_busca=$(<"/u/sist/controle/versaoIntegral")
     echo "arquivo txt release: $release_busca"
     echo "arquivo txt versao : $versao_busca"
