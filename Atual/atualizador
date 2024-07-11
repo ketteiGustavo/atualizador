@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 ################################################################################
-# atualizarIntegralAutomatico - Programa para atualizar o sistema Integral
+# atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.0.10
+# DATA: 13/04/2024 11:27 - Versao 0.1.0
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -20,6 +20,8 @@
 #               nado acidentamente.
 # Versao 0.0.9: Desativado validacao de usuarios logados.
 # Versao 0.0.10: Novos recursos e opcoes para linha de comando.
+# Versao 0.1.0:  Diversas correcoes e melhorias.
+#                Dentre elas melhor logica para obter os links atuais.
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -190,7 +192,7 @@ digite o nome do programa e a opcao desejada como acima na linha de comando.
 "
 
 GUIA_ERROS="
-
+    Elaborar ainda.
 "
 
 AVANCO="
@@ -287,14 +289,6 @@ script_baixar_atualizacao="/u/bats/baixarAtualizacao"
 SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizador"
 SCRIPT_PATH="$0"
 
-URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
-URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao41-"
-
-URL_BASE_RELEASE40="https://s3.amazonaws.com/avancoprogramas/integral/release40-"
-URL_BASE_RELEASE41="https://s3.amazonaws.com/avancoprogramas/integral/release41-"
-
-URL_ATUALIZADO_RELEASE_V40=""
-URL_ATUALIZADO_RELEASE_V41=""
 
 versaoCobol=""    # usada para armazenar o cobol, apos rodar cobrun integral
 
@@ -609,8 +603,8 @@ CRIAR_INFO_LOJA() {
     echo "VERSAO INTEGRAL: $inf_versaoLoja" >> "$info_loja_txt"
     echo "RELEASE: $inf_releaseLoja" >> "$info_loja_txt"
     echo "DATA RELEASE: " >> "$info_loja_txt"
-    echo "$inf_versaoLoja" > "/home/luiz/Documentos/inf_versaoLoja.txt"
-    echo "$inf_releaseLoja" > "/home/luiz/Documentos/inf_releaseLoja.txt"
+    echo "$inf_versaoLoja" > "/u/sist/controle/inf_versaoLoja.txt"
+    echo "$inf_releaseLoja" > "/u/sist/controle/Documentos/inf_releaseLoja.txt"
 }
 
 # Funcao para ler o arquivo 'info_loja_txt'
@@ -648,13 +642,13 @@ LER_ARQUIVO_TEXTO() {
                     inf_versaoLoja="$valor"
                     inf_versao="$valor"
                     echo "Versao atual no Servidor: $inf_versaoLoja"
-                    echo "$inf_versaoLoja" > "/home/luiz/Documentos/inf_versaoLoja.txt"
+                    echo "$inf_versaoLoja" > "/u/sist/controle/inf_versaoLoja.txt"
                 ;;
                 "RELEASE")
                     inf_releaseLoja="$valor"
                     echo "Release atual no Servidor: $inf_releaseLoja"
                     inf_release="$valor"
-                    echo "$inf_releaseLoja" > "/home/luiz/Documentos/inf_releaseLoja.txt"
+                    echo "$inf_releaseLoja" > "/u/sist/controle/inf_releaseLoja.txt"
                     echo
                 ;;
                 "DATA RELEASE")
@@ -757,7 +751,7 @@ MANTER_LOG_ERRO_ATUAL() {
 LOG_INFO() {
     MANTER_LOG_ATUAL
     local info="$1"
-    local log_msg="\n#################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versao \n- RELEASE INTEGRAL ANTES: $inf_release \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $releasePortal $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $HORA_ATUAL no $BKP_DESTINO\n#################################################################################"
+    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versao \n- RELEASE INTEGRAL ANTES: $inf_release \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $releasePortal $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $HORA_ATUAL no $BKP_DESTINO\n################################################################################"
 
     # Escreve no arquivo de log
     echo -e "$log_msg\n" >> "$LOG_FILE"
@@ -805,11 +799,11 @@ TRATAR_DATAS () {
 BAIXAR_ATUALIZACOES () {
     echo ""
     bash "$script_baixar_atualizacao"
-    if [ -f "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/versaoIntegral" ] && [ -s "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/versaoIntegral" ]; then
-        novoPortal=$(<"/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/versaoIntegral")
+    if [ -f "/u/sist/controle/versaoIntegral" ] && [ -s "/u/sist/controle/versaoIntegral" ]; then
+        novoPortal=$(<"/u/sist/controle/versaoIntegral")
     fi
-    if [ -f "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/releaseIntegral" ] && [ -s "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/releaseIntegral" ]; then
-        letraRelease=$(<"/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/releaseIntegral")
+    if [ -f "/u/sist/controle/releaseIntegral" ] && [ -s "/u/sist/controle/releaseIntegral" ]; then
+        letraRelease=$(<"/u/sist/controle/releaseIntegral")
     else
         letraRelease=""
     fi
@@ -931,7 +925,7 @@ ATUALIZAR() {
                 releaseLoja=""
                 rm -rf $arquivo_versao_atual
                 #echo "Atualizacao concluida com sucesso." > >(tee -a "$LOG_FILE")
-                INFO_MSG "Versao atualizada para '$novoPortal'" > >(tee -a "$LOG_FILE")
+                INFO_MSG "Versao atualizada para '$novoPortal'"
                 sleep 1
                 #arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$data_release_baixar.rar")
 

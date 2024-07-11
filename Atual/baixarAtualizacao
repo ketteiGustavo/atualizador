@@ -36,7 +36,7 @@ URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
 URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao41-"
 
 URL_BASE_RELEASE40="https://s3.amazonaws.com/avancoprogramas/integral/release40-"
-URL_BASE_RELEASE41="https://s3.amazonaws.com/avancoprogramas/integral/release-"
+URL_BASE_RELEASE41="https://s3.amazonaws.com/avancoprogramas/integral/release41-"
 
 URL_ATUALIZADOV40=""
 URL_ATUALIZADOV41=""
@@ -51,22 +51,28 @@ URL_BUSCAR_RELEASE=""
 versao_Portal=""
 release=""
 data_release=""
+cobolBusca=""
 
 release_busca=""
 
-PASTA_DESTINO="/home/luiz/Downloads/atualizacoes"
+PASTA_DESTINO="/u/rede/avanco/atualizacoes"
 
-infos_extras="/home/luiz/Downloads/atualizacoes/infos_extras.log"
+infos_extras="/u/sist/logs/infos_extras.log"
 
 SCRIPT_PATH="$0"
 SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao2"
 URL_CONTROLE_VERSAO_RELEASE="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel.txt"
 
-#data_atual=$(date +%Y%m%d)
-data_atual="20241219"
+data_atual=$(date +%Y%m%d)
+#data_atual="20240718"
 
 
 
+versao_informada=$(<"/u/sist/controle/inf_versaoLoja.txt")
+letra_informada=$(<"/u/sist/controle/inf_releaseLoja.txt")
+
+sleep 1
+clear
 # Funcao para extrair e exibir a versao do programa
 mostrar_versao() {
     local versao=$(grep '^# DATA:' "$0" | head -1 | cut -d '-' -f 2 | sed 's/Versao //')
@@ -77,7 +83,7 @@ mostrar_versao() {
 
 
 
-arquivo="/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/controle_ver_rel.txt"
+arquivo="/u/sist/controle/controle_ver_rel.txt"
 
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
@@ -88,6 +94,16 @@ VERIFICA_COBOL() {
     #    inf_versaoCobol="$versaoCobol"
     #fi
     versaoCobol="4.0"
+}
+
+# Funcao para tratar datas e inserir barras entre os digitos deixando DD/MM/AA
+TRATAR_DATAS () {
+    entrada_data=$1
+    dia_td=${entrada_data:0:2}
+    mes_td=${entrada_data:2:2}
+    ano_td=${entrada_data:4:2}
+    data_tratada="${dia_td}/${mes_td}/${ano_td}"
+    echo "$data_tratada"
 }
 
 
@@ -105,12 +121,13 @@ ler_arquivo() {
         fi
     done < "$arquivo"
 
-    echo "Versao disponivel no portal: $versao"
+    data_exibicao=$(TRATAR_DATAS "$versao")
+    echo "VERSAO DISPONIVEL NO PORTAL: $data_exibicao"
     versao_Portal="$versao"
-    echo "$versao" > "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/versaoIntegral"
-    
+    echo "$versao" > "/u/sist/controle/versaoIntegral"
     for release in "${!releases[@]}"; do
-        echo "Release $release - Data: ${releases[$release]}" > /dev/null
+        
+        echo "RELEASE $release - DATA: ${releases[$release]}" > /dev/null
     done
     
     # Verificar a release disponível de acordo com a data atual
@@ -128,21 +145,22 @@ verificar_release_disponivel() {
     local versao="$1"
     declare -n releases_ref="$2"
 
-    echo "mostrando data de hoje: $data_atual"
+    #echo "mostrando data de hoje: $data_atual"
 
     for release in "${!releases_ref[@]}"; do
         local data_release="${releases_ref[$release]}"
         local data_release_yyyymmdd=$(date -d "$(converter_data "$data_release")" +%Y%m%d)
 
         if [[ "$data_atual" -ge "$data_release_yyyymmdd" ]]; then
-            echo "Release atual: $release - Data: $data_release"
-            echo "$release" > "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/releaseIntegral"
-            echo "$data_release" > "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/dataReleaseIntegral"
+            release_formatada=$(TRATAR_DATAS "$data_release")
+            echo "RELEASE DISPONIVEL NO PORTAL: $release - DATA: $release_formatada"
+            echo "$release" > "/u/sist/controle/releaseIntegral"
+            echo "$data_release" > "/u/sist/controle/dataReleaseIntegral"
             return
         fi
     done
 
-    echo "Nenhuma release disponível encontrada para a data atual."
+    echo "RELEASE ESTARA DISPONIVEL NOS PROXIMOS DIAS!"
 }
 
 # Funcao para converter datas no formato YYYYMMDD, para ser usado em equacoes de comparacao, maior, menor e igual
@@ -164,13 +182,15 @@ CONVERTER_DATAS() {
 # Funcao para obter o link da versao atual, com base em comparacao de data por trimestre
 BAIXAR_VERSAO() {
     VERIFICA_COBOL
-    versaoBusca=$(<"/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/versaoIntegral")
-    echo "$versaoBusca"
+    versaoBusca=$(<"/u/sist/controle/versaoIntegral")
+    #echo "$versaoBusca"
     # Verificando a versao do COBOL
     if [ "$versaoCobol" == "4.0" ]; then
         URL_BUSCAR_VERSAO="$URL_BASE_VERSAO40"
+        cobolBusca="40"
     elif [ "$versaoCobol" == "4.1" ]; then
         URL_BUSCAR_VERSAO="$URL_BASE_VERSAO41"
+        cobolBusca="41"
     else
         echo "Versao do COBOL invalida."
         echo "Versao do COBOL invalida." >> $ERRO_LOG_FILE
@@ -178,10 +198,28 @@ BAIXAR_VERSAO() {
     fi
 
     URL_ATUALIZADO="$URL_BUSCAR_VERSAO$versaoBusca.rar"
-    echo "$URL_ATUALIZADO"
     if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO"; then
-        echo "Link encontrado para 'versao'"
-        wget -c "$URL_ATUALIZADO" -P "$PASTA_DESTINO"
+        wget -c --progress=dot "$URL_ATUALIZADO" -P "$PASTA_DESTINO" 2>&1 | \
+        grep --line-buffered "%" | \
+        sed -u -e "s,\.,,g" | \
+        awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
+        echo ""
+        sleep 1
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
+        testar_arquivos_versao=$(rar t "$arquivo_versao_atual" | wc -l)
+        arquivo_atual_testando=0
+        if rar t $arquivo_versao_atual | while read -r line; do
+            ((arquivo_atual_testando++))
+            porcentagem=$((arquivo_atual_testando * 100 / testar_arquivos_versao))
+            echo -ne "TESTANDO INTEGRIDADE DOS .gnt: [$porcentagem%]\r"
+        done
+        then
+            versao_exibir=$(TRATAR_DATAS "$versaoBusca")
+            echo "DOWNLOAD DA VERSAO '$versao_exibir' CONCLUIDO E PROGRAMAS 'TESTADOS'!"
+        else
+            echo "ARQUIVO CORROMPIDO!"
+            echo "ARQUIVO DA VERSAO $versaoBusca CORROMPIDO!"
+        fi
         return 0
     fi
     sleep 1
@@ -190,36 +228,73 @@ BAIXAR_VERSAO() {
 # Funcao para verificar se a release e valida e mais recente
 BAIXAR_RELEASE() {
     VERIFICA_COBOL
-    release_busca=$(<"/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/dataReleaseIntegral")
-    versao_busca=$(<"/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/versaoIntegral")
-    echo "arquivo txt release: $release_busca"
-    echo "arquivo txt versao : $versao_busca"
+    arquivo_release_atual=""
+    buscarV40="release40"
+    buscarV41="release41"
+    releaseBusca=""
+
+    if [ -f "/u/sist/controle/dataReleaseIntegral" ] && [ -s "/u/sist/controle/dataReleaseIntegral" ]; then
+        release_busca=$(<"/u/sist/controle/dataReleaseIntegral")
+    else
+        release_busca=""
+    fi
+    if [ -f "/u/sist/controle/versaoIntegral" ] && [ -s "/u/sist/controle/versaoIntegral" ]; then
+        versao_busca=$(<"/u/sist/controle/versaoIntegral")
+    fi
+
+    #echo "arquivo txt release: $release_busca"
+    #echo "arquivo txt versao : $versao_busca"
     local rel="${release_busca:0:4}"
     local ver="${versao_busca:0:4}"
     
-    echo "tratada versao: $ver"
-    echo "tratada release: $rel"
+    #echo "tratada versao: $ver"
+    #echo "tratada release: $rel"
     
 
     # Verificando a versao do COBOL
     if [ "$versaoCobol" == "4.0" ]; then
         URL_BUSCAR_RELEASE="$URL_BASE_RELEASE40"
+        cobolBusca="40"
+        releaseBusca=$buscarV40
     elif [ "$versaoCobol" == "4.1" ]; then
         URL_BUSCAR_RELEASE="$URL_BASE_RELEASE41"
+        cobolBusca="41"
+        releaseBusca=$buscarV41
     else
-        echo "Versao do COBOL invalida."
+        echo "VERSAO DO COBOL INVALIDA."
         exit 1
-    fi
-    if curl --output /dev/null --silent --head -fail "https://s3.amazonaws.com/avancoprogramas/integral/versao41-090724.rar"; then
-        wget -c "https://s3.amazonaws.com/avancoprogramas/integral/versao41-090724.rar" -P "$PASTA_DESTINO"
-        return 0
     fi
 
     URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
     if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
-        wget -c "$URL_ATUALIZADO_RELEASE" -P "$PASTA_DESTINO"
+        wget -c --progress=dot "$URL_ATUALIZADO_RELEASE" -P "$PASTA_DESTINO" 2>&1 | \
+        grep --line-buffered "%" | \
+        sed -u -e "s,\.,,g" | \
+        awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
+        echo ""
+
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
+        sleep 1
+
+        testar_arquivos_release=$(rar t "$arquivo_release_atual" | wc -l)
+        release_release_testando=0
+        if rar t $arquivo_release_atual | while read -r line; do
+            ((release_atual_testando++))
+            porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
+            echo -ne "TESTANDO INTEGRIDADE DOS .gnt: [$porcentagem%]\r"
+        done
+        then
+            release_download=$(TRATAR_DATAS "$release_busca")
+            echo "DOWNLOAD DA RELEASE '$letra_release_atual, DO DIA $release_download' CONCLUIDO E PROGRAMAS 'TESTADOS'!!"
+        else
+            echo "Arquivo corrompido!"
+            echo "Arquivo de release '$release_download - $letra_release_atual' corrompido!"
+        fi
+
+        echo "PACOTE DE ATUALIZACAO BAIXADO!"
         return 0
     fi
+    sleep 1
 }
 
 # Funcao para validar versao e release no cliente e baixar somente o necessario
@@ -228,36 +303,36 @@ VALIDAR_VERSAO_RELEASE () {
     local letra_release_atual="$release"
     local calculo_data=$(date -d "${data_versao_comparar} +6 days" +"%Y%m%d")
     local calculo_data_limite=$(date -d "${data_versao_comparar} +3 months" +"%Y%m%d")
-    echo "1: $calculo_data"
-    echo "2: $calculo_data_limite"
-    echo "3: $data_versao_comparar"
+    #echo "1: $calculo_data"
+    #echo "2: $calculo_data_limite"
+    #echo "3: $data_versao_comparar"
 
-    read -p "Informe a versao: " versao_informada
+    #read -p "LER VERSAO: " versao_informada
 
     local data_informada_comparar=$(CONVERTER_DATAS "$versao_informada")
-    echo "$data_informada_comparar"
+    #echo "$data_informada_comparar"
     if [ "$data_informada_comparar" -gt "$calculo_data" ] && [ $data_informada_comparar -lt $calculo_data_limite ]; then
-        echo "A release atual e: $letra_release_atual"
+        echo "A RELEASE ATUAL E: $letra_release_atual" > /dev/null
     fi
-    read -p "informe uma letra: " letra_informada
+    #read -p "LER RELEASE: " letra_informada
     letra_informada=$(echo "$letra_informada" | tr '[:lower:]' '[:upper:]')
 
-    echo "voce informou: $letra_informada"
+    #echo "voce informou: $letra_informada"
     if [[ "$letra_informada" > "M" ]]; then
         echo "RELEASE INVALIDA"
     fi
 
     if [ "$data_informada_comparar" -lt "$data_versao_comparar" ]; then
-        echo "Baixando versao e release..."
+        echo "INICIANDO DOWNLOAD..."
         BAIXAR_VERSAO
         BAIXAR_RELEASE
     elif [ "$data_informada_comparar" -eq "$data_versao_comparar" ]; then
-        echo "INTEGRAL NA VERSAO ATUAL"
-        echo "$data_atual"
+        echo "INTEGRAL ESTA COM A VERSAO ATUAL!"
+        #echo "$data_atual"
         if [ "$data_atual" -gt "$calculo_data" ]; then
-            echo "A release atual e: $letra_release_atual"
+            echo "A RELEASE ATUAL E: $letra_release_atual" > /dev/null
             if [[ "$letra_informada" < "$letra_release_atual" ]]; then
-                echo "Baixando release..."
+                echo "BAIXANDO RELEASE..."
                 BAIXAR_RELEASE
             elif [[ "$letra_informada" == "$letra_release_atual" ]]; then
                 echo "INTEGRAL ESTA COM A RELEASE ATUAL!"
@@ -295,12 +370,12 @@ UPDATE () {
 # Funcao para baixar arquivo atualizado
 BAIXAR_CONTROLE () {
     echo "OBTENDO VERSAO E RELEASE"
-    curl -os "$arquivo.tmp" "$URL_CONTROLE_VERSAO_RELEASE" || wget -ocq "$arquivo.tmp" "$URL_CONTROLE_VERSAO_RELEASE"
+    curl -o "$arquivo.tmp" "$URL_CONTROLE_VERSAO_RELEASE" || wget -ocq "$arquivo.tmp" "$URL_CONTROLE_VERSAO_RELEASE"
 
     if [ $? -eq 0 ]; then
         mv "$arquivo.tmp" "$arquivo"
         chmod 766 "$arquivo"
-
+        clear
         echo "DETALHES DE VERSAO E RELEASE OBTIDOS!"
     else
         echo "ERRO AO OBTER VERSAO E RELEASE RECENTES!"
