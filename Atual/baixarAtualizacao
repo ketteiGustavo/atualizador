@@ -31,9 +31,9 @@ MODO DE USAR:
 "
 #
 
-# variaveis 
+# variaveis
 URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
-URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao-"
+URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao41-"
 
 URL_BASE_RELEASE40="https://s3.amazonaws.com/avancoprogramas/integral/release40-"
 URL_BASE_RELEASE41="https://s3.amazonaws.com/avancoprogramas/integral/release-"
@@ -58,6 +58,14 @@ PASTA_DESTINO="/home/luiz/Downloads/atualizacoes"
 
 infos_extras="/home/luiz/Downloads/atualizacoes/infos_extras.log"
 
+SCRIPT_PATH="$0"
+SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao2"
+URL_CONTROLE_VERSAO_RELEASE="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel.txt"
+
+#data_atual=$(date +%Y%m%d)
+data_atual="20241219"
+
+
 
 # Funcao para extrair e exibir a versao do programa
 mostrar_versao() {
@@ -69,7 +77,7 @@ mostrar_versao() {
 
 
 
-arquivo="/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/controle_ver_rel"
+arquivo="/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/controle_ver_rel.txt"
 
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
@@ -82,6 +90,7 @@ VERIFICA_COBOL() {
     versaoCobol="4.0"
 }
 
+
 # Função para ler o arquivo e armazenar as informações em variáveis
 ler_arquivo() {
     local arquivo="$1"
@@ -91,12 +100,12 @@ ler_arquivo() {
     while IFS= read -r linha; do
         if [[ "$linha" =~ ^Versao\ disponivel\ no\ portal:\ ([0-9]+)$ ]]; then
             versao="${BASH_REMATCH[1]}"
-        elif [[ "$linha" =~ ^RELEASE\ ([A-N])\ -\ DATA:\ ([0-9]+)$ ]]; then
+        elif [[ "$linha" =~ ^RELEASE\ ([A-Z])\ -\ DATA:\ ([0-9]+)$ ]]; then
             releases["${BASH_REMATCH[1]}"]="${BASH_REMATCH[2]}"
         fi
     done < "$arquivo"
 
-    echo "Versão disponível no portal: $versao"
+    echo "Versao disponivel no portal: $versao"
     versao_Portal="$versao"
     echo "$versao" > "/home/luiz/Workspaces/Linux_privado/Novos_Shell_Script/Atualizador Automatico/Atual/versaoIntegral"
     
@@ -118,8 +127,6 @@ converter_data() {
 verificar_release_disponivel() {
     local versao="$1"
     declare -n releases_ref="$2"
-    local data_atual=$(date +%Y%m%d)
-    #local data_atual="20240712"
 
     echo "mostrando data de hoje: $data_atual"
 
@@ -203,6 +210,10 @@ BAIXAR_RELEASE() {
         echo "Versao do COBOL invalida."
         exit 1
     fi
+    if curl --output /dev/null --silent --head -fail "https://s3.amazonaws.com/avancoprogramas/integral/versao41-090724.rar"; then
+        wget -c "https://s3.amazonaws.com/avancoprogramas/integral/versao41-090724.rar" -P "$PASTA_DESTINO"
+        return 0
+    fi
 
     URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
     if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
@@ -215,37 +226,87 @@ BAIXAR_RELEASE() {
 VALIDAR_VERSAO_RELEASE () {
     local data_versao_comparar=$(CONVERTER_DATAS "$versao_Portal")
     local letra_release_atual="$release"
+    local calculo_data=$(date -d "${data_versao_comparar} +6 days" +"%Y%m%d")
+    local calculo_data_limite=$(date -d "${data_versao_comparar} +3 months" +"%Y%m%d")
+    echo "1: $calculo_data"
+    echo "2: $calculo_data_limite"
+    echo "3: $data_versao_comparar"
+
     read -p "Informe a versao: " versao_informada
 
-    echo "A release atual e: $letra_release_atual"
+    local data_informada_comparar=$(CONVERTER_DATAS "$versao_informada")
+    echo "$data_informada_comparar"
+    if [ "$data_informada_comparar" -gt "$calculo_data" ] && [ $data_informada_comparar -lt $calculo_data_limite ]; then
+        echo "A release atual e: $letra_release_atual"
+    fi
     read -p "informe uma letra: " letra_informada
+    letra_informada=$(echo "$letra_informada" | tr '[:lower:]' '[:upper:]')
 
-    if [ "$versao_informada" -lt "$data_versao_comparar" ]; then
+    echo "voce informou: $letra_informada"
+    if [[ "$letra_informada" > "M" ]]; then
+        echo "RELEASE INVALIDA"
+    fi
+
+    if [ "$data_informada_comparar" -lt "$data_versao_comparar" ]; then
         echo "Baixando versao e release..."
         BAIXAR_VERSAO
         BAIXAR_RELEASE
-    elif [ "$versao_informada" -eq "$data_versao_comparar" ]; then
-        echo "Versao atual ok"
-        if [[ $letra_informada < $letra_release_atual ]]; then
-            echo "Baixando release..."
-            BAIXAR_RELEASE
-        elif [[ $letra_informada == $letra_release_atual ]]; then
-            echo "Voce esta na release atual"
-        else
-            echo "Release informada invalida"
+    elif [ "$data_informada_comparar" -eq "$data_versao_comparar" ]; then
+        echo "INTEGRAL NA VERSAO ATUAL"
+        echo "$data_atual"
+        if [ "$data_atual" -gt "$calculo_data" ]; then
+            echo "A release atual e: $letra_release_atual"
+            if [[ "$letra_informada" < "$letra_release_atual" ]]; then
+                echo "Baixando release..."
+                BAIXAR_RELEASE
+            elif [[ "$letra_informada" == "$letra_release_atual" ]]; then
+                echo "INTEGRAL ESTA COM A RELEASE ATUAL!"
+            else
+                echo "RELEASE INVALIDA!"
+            fi
+        
         fi
+
+
+            
     else
-        echo "Voce informou uma versao invalida!"
+        echo "VERSAO INVALIDA!"
     fi
 }
 
+# Funcao para atualizar o script sempre para a versao mais recente
+UPDATE () {
+    script_path="$0"
+    echo "Baixando versao mais recente do atualizador"
+    curl -os "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -ocq "$SCRIPT_PATH.tmp" "$SCRIPT_URL"
+
+    if [ $? -eq 0 ]; then
+        mv "$SCRIPT_PATH.tmp" "$SCRIPT_PATH"
+        chmod +x "$SCRIPT_PATH"
+        echo "Atualizacao concluida. Execute o script novamente..."
+    else
+        echo "Erro ao baixar a atualizacao."
+        rm -f "$SCRIPT_PATH.tmp"
+    fi
+    exit
+}
 
 
-# Chamar a função com o caminho do arquivo
-clear
-ler_arquivo "$arquivo"
-VALIDAR_VERSAO_RELEASE
+# Funcao para baixar arquivo atualizado
+BAIXAR_CONTROLE () {
+    echo "OBTENDO VERSAO E RELEASE"
+    curl -os "$arquivo.tmp" "$URL_CONTROLE_VERSAO_RELEASE" || wget -ocq "$arquivo.tmp" "$URL_CONTROLE_VERSAO_RELEASE"
 
+    if [ $? -eq 0 ]; then
+        mv "$arquivo.tmp" "$arquivo"
+        chmod 766 "$arquivo"
+
+        echo "DETALHES DE VERSAO E RELEASE OBTIDOS!"
+    else
+        echo "ERRO AO OBTER VERSAO E RELEASE RECENTES!"
+        rm -f "$SCRIPT_PATH.tmp"
+    fi
+}
 
 
 
@@ -265,6 +326,11 @@ case "$1" in
     mostrar_versao
     exit 0
     ;;
+-up | --update)
+    clear
+    UPDATE
+    exit 0
+    ;;
 *)
     if test -n "$1"; then
         echo Opcao invalida: $1
@@ -274,3 +340,10 @@ case "$1" in
 esac
 
 ###############################
+
+
+# Chamar a função com o caminho do arquivo
+clear
+BAIXAR_CONTROLE
+ler_arquivo "$arquivo"
+VALIDAR_VERSAO_RELEASE

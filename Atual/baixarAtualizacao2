@@ -76,13 +76,13 @@ fi
 
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
-    RESULTADO=$(cobrun 2>&1)
-    if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
-        versaoCobol="${BASH_REMATCH[1]}"
-        echo "Versao do Cobol: $versaoCobol"
-        inf_versaoCobol="$versaoCobol"
-    fi
-    #versaoCobol="4.0"
+    #RESULTADO=$(cobrun 2>&1)
+    #if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
+    #    versaoCobol="${BASH_REMATCH[1]}"
+    #    echo "Versao do Cobol: $versaoCobol"
+    #    inf_versaoCobol="$versaoCobol"
+    #fi
+    versaoCobol="4.0"
 }
 
 # Função para ler o arquivo e armazenar as informações em variáveis
