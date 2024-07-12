@@ -60,7 +60,7 @@ PASTA_DESTINO="/u/rede/avanco/atualizacoes"
 infos_extras="/u/sist/logs/infos_extras.log"
 
 SCRIPT_PATH="$0"
-SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao2"
+SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao"
 URL_CONTROLE_VERSAO_RELEASE="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel.txt"
 
 data_atual=$(date +%Y%m%d)
