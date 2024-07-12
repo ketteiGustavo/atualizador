@@ -130,6 +130,7 @@ else
     exit
 fi
 
+# executar mandb
 
 # Tratamento das opcoes que serao responsaveis por controlar na linha de comando
 # ------------------------------------------------------------------------------
@@ -155,3 +156,4 @@ case "$1" in
 esac
 
 ###############################
+su - avanco

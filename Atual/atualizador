@@ -424,8 +424,10 @@ VERIFICA_ONLINE () {
 # Funcao para verificar o dia da semana e hora
 verificar_dia () {
     if [ $dia_semana_lido -eq 5 ] || [ $dia_semana_lido -eq 6 ] || [ $dia_semana_lido -eq 7 ]; then
-        echo "O sistema nao pode ser atualizado hoje! Tente novamente na 'Segunda-Feira'!"
+        clear
         tput smso
+        echo "  O sistema nao pode ser atualizado hoje! Tente novamente na 'Segunda-Feira'!   "
+        echo ""
         echo "                                AVANCO INFORMATICA                              "
         echo ""
         echo "                            TELESUPORTE (31) 3025-1188                          "
@@ -439,8 +441,10 @@ verificar_dia () {
     fi
 
     if [ $dia_semana_lido -eq 2 ] && [ $hora_lida -ge 6 ] && [ $hora_lida -lt 15 ]; then
-        echo "Favor atualizar apos as 16h!"
+        clear
         tput smso
+        echo "                           Favor atualizar apos as 16h!                         "
+        echo ""
         echo "                                AVANCO INFORMATICA                              "
         echo ""
         echo "                            TELESUPORTE (31) 3025-1188                          "
@@ -455,10 +459,11 @@ verificar_dia () {
 
     if [ $dia_semana_lido -eq 4 ] && [ $hora_lida -ge 17 ]; then
         clear
-        echo "Recomendamos atualizar na 'Segunda-Feira', devido ao horario!"
-        echo "Bom tarde e bom fim de semana"
-
         tput smso
+        echo "         Recomendamos atualizar na 'Segunda-Feira', devido ao horario!          "
+        echo ""
+        echo "                           Bom tarde e bom fim de semana                        "
+        echo ""
         echo "                                AVANCO INFORMATICA                              "
         echo ""
         echo "                            TELESUPORTE (31) 3025-1188                          "
@@ -470,7 +475,7 @@ verificar_dia () {
         stty sane
         exit 0
     fi
-    sleep 1
+    sleep 3
 }
 
 if [ "$status_ON" = "ATIVADO" ]; then
@@ -1273,8 +1278,18 @@ MENU_SECRETO () {
                 ;;
             99)
                 clear
-                echo "AVANCO INFORMATICA"
-                sleep 1
+                tput smso
+                echo ""
+                echo "                                AVANCO INFORMATICA                              "
+                echo ""
+                echo "                            TELESUPORTE (31) 3025-1188                          "
+                echo ""
+                echo "                                    TELEGRAM                                    "
+                echo ""
+                echo "                            t.me/avancoinformatica_bot                          "
+                tput rmso
+                stty sane
+                sleep 5
                 exit 0
                 ;;
             *)
@@ -1310,7 +1325,7 @@ case "$1" in
     echo "$MANUAL_USO"
     exit 0
     ;;
--V | --version)
+-V | -v | --version)
     # Extrai a versao diretamente do cabecalho do programa
     mostrar_versao
     exit 0
@@ -1321,11 +1336,15 @@ case "$1" in
     more "/u/sist/controle/info_loja.txt"
     exit 0
     ;;
--b | --baixar)
+-d | --download)
     BAIXAR_ATUALIZACOES
     exit 0
     ;;
-
+-b | --backup)
+    FAZER_BKP
+    VERIFICA_BACKUP
+    exit 0
+    ;;
 -m | --menu)
     MENU_SECRETO
     exit 0
@@ -1336,10 +1355,38 @@ case "$1" in
     UPDATE
     exit 0
     ;;
+--man)
+    man atualizador
+    exit 0
+    ;;
 -o | --obter)
     # Busca no servidor a versao e release atualizada e exibi no terminal
     BAIXAR_CONTROLE
     bash "$script_baixar_atualizacao" "-o"
+    exit 0
+    ;;
+-r | --restore)
+    echo "criar opcao de restaurar"
+    exit 0
+    ;;
+-l | --log)
+    echo "criar chamada do ultimo log"
+    exit 0
+    ;;
+--config)
+    echo "criar opcao de configurar parametros"
+    exit 0
+    ;;
+--alterar)
+    echo "criar opcao para alterar os parametros configurados"
+    exit 0
+    ;;
+--list)
+    echo "criar opcao de listar configuracao"
+    exit 0
+    ;;
+--cron)
+    echo "criar opcao de adicionar no cron"
     exit 0
     ;;
 *)

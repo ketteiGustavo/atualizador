@@ -1,0 +1,168 @@
+.\" NAO MODIFICAR ESSE ARQUIVO! 
+.TH ATUALIZADOR "1" "Julho de 2024" "Versao 1.0.0" "Manual do Usuario"
+.SH NOME
+atualizador \- Executa a atualizacao do Sistema Integral.
+.SH SINOPSE
+.B atualizador 
+[\fIOPCAO\fR]...
+.br
+.SH RESUMO
+atualizar de forma facil e intuitiva o Integral, sendo necessario um comando ou alguns comandos, de acordo com sua necessidade.
+.SH DESCRICAO
+.PP
+ATUALIZADOR e um programa para realizar a atualizacao do Sistema Integral da Avanco Informatica. Ao utilizar o programa sera realizado a atualizacao para a versao e releases mais recentes disponiveis no Portal Avanco. 
+.PP
+O Atualizador conta com um guia de ajuda rapida, que pode ser visualizado atraves do help e tambem conta com esse manual completo.
+.PP
+O Atualizador foi projetado para ser facil de usar e configurar, permitindo que os administradores de sistema mantenham o Integral sempre atualizado com o minino de esforco.
+.SH OPCOES DISPONIVEIS
+[\fIOPCAO\fR]
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Chamara o help do atualizador, com um resumo de principais funcoes e seus
+possiveis usos.
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+Exibira a versao atual do atualizador. Procure o manter sempre atualizado.
+.TP
+\fB\-up\fR, \fB\-\-update\fR
+Atualizara o programa, com a nova versao do Atualizador, se disponivel.
+.TP
+\fB\-i\fR, \fB\-\-info\fR
+Obtera as informacoes atuais do servidor que estao gravadas no Atualizador.
+.TP
+\fB\-b\fR, \fB\-\-backup\fR
+Realizara o backup.
+.TP
+\fB\-d\fR, \fB\-\-download\fR
+Realizara o download das atualizacoes mais recentes disponiveis no Portal Avanco.
+.TP
+\fB\-m\fR, \fB\-\-menu\fR
+Exibira um menu com todas as funcoes disponiveis no atualizador.
+.TP
+\fB\-\-man\fR
+Chamara essa tela do manual.
+.TP
+\fB\-o\fR, \fB\-\-obter\fR
+Obtera a informacao da versao atual no Portal Avanco e a release atual.
+.TP
+\fB\-r\fR, \fB\-\-restore\fR
+Exibira as opcoes disponiveis de backup para realizar a restauracao.
+.TP
+\fB\-l\fR, \fB\-\-log\fR
+Exibira o log do mes atual, e podera ser paginado com as setas do teclado.
+.TP
+\fB\-\-config\fR
+Entrara no modo de configuracao de parametros. (Opcao disponivel somente para o usuario 'Avanco')
+.TP
+\fB\-\-alterar\fR
+Editara os parametros configurados. (Opcao disponivel somente para o usuari 'Avanco')
+.TP
+\fB\-\-list\fR
+Exibira os parametros configurados do Atualizador.
+.TP
+\fB\-\-cron\fR
+Entra no modo de configuracao da atualizacao pelo Cron. Podendo ativar, alterar ou desativar a atualizacao automatica pelo 'Cron'.
+.SH EXEMPLOS DE USO
+.PP
+Obter ajuda rapida para utilizacao.
+.IP
+ \f(CW$ atualizador -h
+.IP
+ \f(CW$ atualizador --help
+.PP
+Verificar a versao do Atualizador.
+.IP
+ \f(CW$ atualizador -v
+.IP
+ \f(CW$ atualizador -V
+.IP
+ \f(CW$ atualizador --version
+.PP
+Obter as informacoes que estao gravadas no Integral no Atualizador.
+.IP
+ \f(CW$ atualizador -i
+.IP
+ \f(CW$ atualizador --info
+.PP
+Realizar o Download das Atualizacoes mais recentes para o Integral.
+.IP
+ \f(CW$ atualizador -d
+.IP
+ \f(CW$ atualizador --download
+.PP
+Exibir o menu com outras funcoes disponiveis no Atualizador.
+.IP
+ \f(CW$ atualizador -m
+.IP
+ \f(CW$ atualizador --menu
+.PP
+Buscar atualizacao para o Atualizador.
+.IP
+ \f(CW$ atualizador -up
+.IP
+ \f(CW$ atualizador --update
+.PP
+Exibir este manual completo do Atualizador.
+.IP
+ \f(CW$ atualizador --man
+.PP
+Obter as informacoes das atualizacoes disponives no Portal Avanco.
+.IP
+ \f(CW$ atualizador -o
+.IP
+ \f(CW$ atualizador --obter
+.PP
+Restaurar atualizacao executada de acordo com a lista disponivel dos backups.
+.IP
+ \f(CW$ atualizador -r
+.IP
+ \f(CW$ atualizador --restore
+.PP
+Configurar os parametros Automaticos do Atualizador.
+.IP
+ \f(CW$ atualizador --config
+.PP
+Alterar ou excluir os parametros configurados do Atualizador.
+.IP
+ \f(CW$ atualizador --alterar
+.PP
+Exibir os parametros configurados do Atualizador.
+.IP
+ \f(CW$ atualizador --list
+.PP
+Configurar no Cron a atualizacao automatica
+.IP
+ \f(CW$ atualizador --cron
+.SH AMBIENTE
+ATUALIZADOR armazena as variaveis do servidor local, para buscar as atualizacoes, '/u/sist/controle/info_loja.txt'. E essas variaveis sao:
+.PP
+.TP 8
+.B DATA
+Data que foi executada a ultima atualizacao.
+.TP 8
+.B VERSAO COBOL
+Versao do cobol utilizada no servidor atual.
+.TP 8
+.B VERSAO INTEGRAL
+Versao referente ao Integral, que e exibida no menu inicial do Integral.
+.TP 8
+.B RELEASE
+Letra da release que esta instalada no Integral.
+.TP 8
+.B DATA RELEASE
+Exibira a data referente ao lancamento da release.
+.SH ARQUIVO
+ATUALIZADOR precisa de permissao de execucao, escrita e leitura, devido a executar e gravar informacoes em outros arquivos, e por obter a atualizacao do Atualizador.
+.SH DIAGNOSTICOS
+Caso enfrente dificuldades para utilizar o Atualizador e se deperar com algumas mensagens de erro ou falha para atualizar, consulte aqui as solucoes.
+
+
+.SH SUGESTOES E 'BUG REPORTS'
+Qualquer bug referente ao Atualizador que for encontrado devera ser reportado para o e-mail <luiz.gustavo@avancoinfo.com.br>, se for possivel anexar capturas de tela do terminal com o erro ou mensagem que foi exibida na tela.
+.SH COPYRIGHT
+Todos os direitos sao reservados a Avanco Informatica.
+.SH AUTOR
+Escrito por Luiz Gustavo
+.SH VEJA TAMBEM
+Documentacao completa <https://>
