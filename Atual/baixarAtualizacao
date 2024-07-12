@@ -68,8 +68,8 @@ data_atual=$(date +%Y%m%d)
 
 
 
-versao_informada=$(<"/u/sist/controle/inf_versaoLoja.txt")
-letra_informada=$(<"/u/sist/controle/inf_releaseLoja.txt")
+versao_informada=$(<"/u/sist/controle/inf_versaoLoja.txt") 2> /dev/null
+letra_informada=$(<"/u/sist/controle/inf_releaseLoja.txt") 2> /dev/null
 
 sleep 1
 clear
@@ -125,8 +125,9 @@ ler_arquivo() {
     done < "$arquivo"
 
     data_atualizada=$(TRATAR_DATAS "$lendo_atualizado")
-    echo "$lendo_atualizado"
-    echo "Informacoes atualizadas em: $data_atualizada"
+    echo ""
+    echo "INFORMACOES ATUALIZADAS EM: $data_atualizada"
+    echo ""
     data_exibicao=$(TRATAR_DATAS "$versao")
     echo "VERSAO DISPONIVEL NO PORTAL: $data_exibicao"
     versao_Portal="$versao"
@@ -411,6 +412,12 @@ case "$1" in
 -up | --update)
     clear
     UPDATE
+    exit 0
+    ;;
+-o | --obter)
+    clear
+    BAIXAR_CONTROLE
+    ler_arquivo
     exit 0
     ;;
 *)

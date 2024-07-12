@@ -244,7 +244,7 @@ info_loja_txt="/u/sist/controle/info_loja.txt"
 dia_semana_lido=$(date +%u)
 hora_lida=$(date +%H)
 CONTAUSER=$(ps ax | grep rts32 | grep -v 'grep' | wc -l)
-status_ON=$(cobrun status-online.gnt "L") > /dev/null
+status_ON=$(cobrun status-online.gnt "L") > /dev/null 2>&1
 
 # datas
 MES_ANO=$(date +"%m%y")
@@ -1259,7 +1259,9 @@ case "$1" in
     exit 0
     ;;
 -o | --obter)
+    # Busca no servidor a versao e release atualizada e exibi no terminal
     BAIXAR_CONTROLE
+    bash "$script_baixar_atualizacao" "-o"
     exit 0
     ;;
 *)
