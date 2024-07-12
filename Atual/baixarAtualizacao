@@ -359,13 +359,13 @@ VALIDAR_VERSAO_RELEASE () {
 
 # Funcao para atualizar o script sempre para a versao mais recente
 UPDATE () {
-    script_path="$0"
+    SCRIPT_PATH="$0"
     echo "Baixando versao mais recente do atualizador"
-    curl -os "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -ocq "$SCRIPT_PATH.tmp" "$SCRIPT_URL"
+    curl -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL"
 
     if [ $? -eq 0 ]; then
         mv "$SCRIPT_PATH.tmp" "$SCRIPT_PATH"
-        chmod +x "$SCRIPT_PATH"
+        chmod 766 "$SCRIPT_PATH"
         echo "Atualizacao concluida. Execute o script novamente..."
     else
         echo "Erro ao baixar a atualizacao."
