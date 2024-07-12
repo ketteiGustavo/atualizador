@@ -604,7 +604,7 @@ CRIAR_INFO_LOJA() {
     echo "RELEASE: $inf_releaseLoja" >> "$info_loja_txt"
     echo "DATA RELEASE: " >> "$info_loja_txt"
     echo "$inf_versaoLoja" > "/u/sist/controle/inf_versaoLoja.txt"
-    echo "$inf_releaseLoja" > "/u/sist/controle/Documentos/inf_releaseLoja.txt"
+    echo "$inf_releaseLoja" > "/u/sist/controle/inf_releaseLoja.txt"
 }
 
 # Funcao para ler o arquivo 'info_loja_txt'
