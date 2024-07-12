@@ -373,7 +373,16 @@ INICIAR () {
                 ;;
             "N" | "n")
 		clear
-                echo "AVANCO INFORMATICA"
+                tput smso
+                echo "                                AVANCO INFORMATICA                              "
+                echo ""
+                echo "                            TELESUPORTE (31) 3025-1188                          "
+                echo ""
+                echo "                                    TELEGRAM                                    "
+                echo ""
+                echo "                            t.me/avancoinformatica_bot                          "
+                tput rmso
+                stty sane
                 exit 0
                 ;;
             *)
@@ -382,6 +391,9 @@ INICIAR () {
         esac
     done
 }
+
+
+
 
 # funcao para verificar se o sistema foi atualizado no dia
 VERIFICA_ATUALIZACAO () {
@@ -409,30 +421,61 @@ VERIFICA_ONLINE () {
             exit 0
         fi
 }
+# Funcao para verificar o dia da semana e hora
+verificar_dia () {
+    if [ $dia_semana_lido -eq 5 ] || [ $dia_semana_lido -eq 6 ] || [ $dia_semana_lido -eq 7 ]; then
+        echo "O sistema nao pode ser atualizado hoje! Tente novamente na 'Segunda-Feira'!"
+        tput smso
+        echo "                                AVANCO INFORMATICA                              "
+        echo ""
+        echo "                            TELESUPORTE (31) 3025-1188                          "
+        echo ""
+        echo "                                    TELEGRAM                                    "
+        echo ""
+        echo "                            t.me/avancoinformatica_bot                          "
+        tput rmso
+        stty sane
+        exit 0
+    fi
 
-#if [ $dia_semana_lido -eq 5 ] || [ $dia_semana_lido -eq 6 ] || [ $dia_semana_lido -eq 7 ]; then
-#    echo "O sistema nao pode ser atualizado hoje! Tente novamente na 'Segunda-Feira'!"
-#    exit 0
-#fi
+    if [ $dia_semana_lido -eq 2 ] && [ $hora_lida -ge 6 ] && [ $hora_lida -lt 15 ]; then
+        echo "Favor atualizar apos as 16h!"
+        tput smso
+        echo "                                AVANCO INFORMATICA                              "
+        echo ""
+        echo "                            TELESUPORTE (31) 3025-1188                          "
+        echo ""
+        echo "                                    TELEGRAM                                    "
+        echo ""
+        echo "                            t.me/avancoinformatica_bot                          "
+        tput rmso
+        stty sane
+        exit 0
+    fi
 
-if [ $dia_semana_lido -eq 2 ] && [ $hora_lida -ge 6 ] && [ $hora_lida -lt 15 ]; then
-    echo "Favor atualizar apos as 16h!"
-    exit 0
-fi
+    if [ $dia_semana_lido -eq 4 ] && [ $hora_lida -ge 17 ]; then
+        clear
+        echo "Recomendamos atualizar na 'Segunda-Feira', devido ao horario!"
+        echo "Bom tarde e bom fim de semana"
 
-#if [ $dia_semana_lido -eq 4 ] && [ $hora_lida -ge 17 ]; then
- #   echo "Recomendamos atualizar na 'Segunda-Feira', devido ao horario!"
-  #  echo "Bom tarde e bom fim de semana"
-   # exit 0
-#fi
-
-
+        tput smso
+        echo "                                AVANCO INFORMATICA                              "
+        echo ""
+        echo "                            TELESUPORTE (31) 3025-1188                          "
+        echo ""
+        echo "                                    TELEGRAM                                    "
+        echo ""
+        echo "                            t.me/avancoinformatica_bot                          "
+        tput rmso
+        stty sane
+        exit 0
+    fi
+    sleep 1
+}
 
 if [ "$status_ON" = "ATIVADO" ]; then
     status_ON=$(cobrun status-online.gnt "D") > /dev/null
 fi
-
-sleep 1
 
 # Criando diretorio de logs e atualizacoes
 if [ ! -d "/u/rede/avanco/atualizacoes" ]; then
@@ -446,9 +489,6 @@ if [ ! -d "$REMOVIDOS" ]; then
     chmod 777 -R "$REMOVIDOS"
 fi
 
-if [ ! -d "/u/rede/avanco/atualizacoes/logs" ]; then
-    mkdir -p "/u/rede/avanco/atualizacoes/logs"
-fi
 
 if [ ! -d "/u/sist/controle" ]; then
     mkdir -p "/u/sist/controle"
@@ -528,6 +568,44 @@ SEGURANCA(){
     fi
 }
 
+
+# Funcao para testar e verificar sinal e qualidade da internet
+checar_internet () {
+    # Endereço para pingar (Google DNS)
+    local host="8.8.8.8"
+    
+    # Pingar o endereço 4 vezes e capturar a saída
+    ping_output=$(ping -c 4 $host)
+    ping_exit_status=$?
+
+    # Verificar se o comando ping teve sucesso
+    if [ $ping_exit_status -eq 0 ]; then
+        # Extrair os tempos de resposta
+        rtt_min=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $4}')
+        rtt_avg=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $5}')
+        rtt_max=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $6}')
+        
+        echo "CONEXAO COM A INTERNET OK"
+        echo "TEMPO DE RESPOSTA (ms):"
+        echo "MINIMO: $rtt_min"
+        echo "MEDIO: $rtt_avg"
+        echo "MAXIMO: $rtt_max"
+
+        # Verificar se a conexão está lenta ou instável
+        if (( $(echo "$rtt_avg > 100" | bc -l) )); then
+            echo "AVISO: A CONEXAO ESTA LENTA"
+        fi
+        if (( $(echo "$rtt_max - $rtt_min > 100" | bc -l) )); then
+            echo "AVISO: A CONEXAO ESTA INSTAVEL"
+        fi
+    else
+        # Mensagem de erro centralizada
+        clear
+        tput cup $(($(tput lines)/2)) $(($(tput cols)/2-20))
+        echo "NAO HA CONEXAO COM A INTERNET"
+        exit 1
+    fi
+}
 
 
 # funcao para validar data
@@ -1015,12 +1093,12 @@ ATUALIZAR() {
     sleep 1
 
     # Executa o comando 'atu-help manual'
-    #atu-help manual
-    #if [ $? -ne 0 ]; then
-    #    ERRO_MSG "Erro ao executar 'atu-help manual'."
-    #    echo "Erro ao executar 'atu-help manual'. $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
-    #    exit 1
-    #fi
+    atu-help manual
+    if [ $? -ne 0 ]; then
+        ERRO_MSG "Erro ao executar 'atu-help manual'."
+        echo "Erro ao executar 'atu-help manual'. $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        exit 1
+    fi
 
     chmod 777 /u/sist/exec/*.gnt || {
         ERRO_MSG "Erro ao conceder permissoes."
@@ -1276,7 +1354,8 @@ esac
 
 # Chamandos as funcoes na ordem
 
-
+verificar_dia
+checar_internet
 VERIFICA_ATUALIZACAO
 INICIAR
 
