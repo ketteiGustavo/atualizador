@@ -286,6 +286,8 @@ script_baixar_atualizacao="/u/bats/baixarAtualizacao"
 
 SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizador"
 SCRIPT_PATH="$0"
+URL_CONTROLE_VERSAO_RELEASE="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel.txt"
+
 
 
 versaoCobol=""    # usada para armazenar o cobol, apos rodar cobrun integral
@@ -1094,6 +1096,22 @@ GRAVANDO_ATUALIZACOES() {
     exit 0
 }
 
+# Funcao para baixar arquivo atualizado
+BAIXAR_CONTROLE () {
+    echo "ATUALIZANDO INFORMACOES DE VERSAO E RELEASE"
+    curl -o "$info_loja_txt.tmp" "$URL_CONTROLE_VERSAO_RELEASE" || wget -ocq "$info_loja_txt.tmp" "$URL_CONTROLE_VERSAO_RELEASE"
+
+    if [ $? -eq 0 ]; then
+        mv "$info_loja_txt.tmp" "$arquivo"
+        chmod 766 "$info_loja_txt"
+        clear
+        echo "DETALHES DE VERSAO E RELEASE OBTIDOS!"
+    else
+        echo "ERRO AO OBTER VERSAO E RELEASE RECENTES!"
+        rm -f "$info_loja_txt.tmp"
+    fi
+}
+
 MENU_SECRETO () {
     clear
     while true; do
@@ -1110,7 +1128,7 @@ MENU_SECRETO () {
         case $opcao in
             1)
                 clear
-                echo "OBTER INFORMACOES DO SISTEMA"
+                echo "OBTER INFORMACOES ATUAIS DO INTEGRAL"
                 more "/u/sist/controle/info_loja.txt"
                 ;;
             2)
@@ -1219,6 +1237,12 @@ case "$1" in
     mostrar_versao
     exit 0
     ;;
+-i | --info)
+    clear
+    echo "OBTER INFORMACOES DO ATUAIS DO INTEGRAL"
+    more "/u/sist/controle/info_loja.txt"
+    exit 0
+    ;;
 -b | --baixar)
     BAIXAR_ATUALIZACOES
     exit 0
@@ -1232,6 +1256,10 @@ case "$1" in
     # criar rotina pra baixar nova versao do atualizador.
     echo "Buscando update para o Atualizador..."
     UPDATE
+    exit 0
+    ;;
+-o | --obter)
+    BAIXAR_CONTROLE
     exit 0
     ;;
 *)

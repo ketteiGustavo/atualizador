@@ -109,21 +109,28 @@ TRATAR_DATAS () {
 
 # Função para ler o arquivo e armazenar as informações em variáveis
 ler_arquivo() {
-    local arquivo="$1"
+    local arquivo="/u/sist/controle/controle_ver_rel.txt"
     local versao
+    local lendo_atualizado
     declare -A releases
 
     while IFS= read -r linha; do
-        if [[ "$linha" =~ ^Versao\ disponivel\ no\ portal:\ ([0-9]+)$ ]]; then
+        if [[ "$linha" =~ ^Informacoes\ atualizadas\ em:\ ([0-9]+)$ ]]; then
+            lendo_atualizado="${BASH_REMATCH[1]}"
+        elif [[ "$linha" =~ ^Versao\ disponivel\ no\ portal:\ ([0-9]+)$ ]]; then
             versao="${BASH_REMATCH[1]}"
         elif [[ "$linha" =~ ^RELEASE\ ([A-Z])\ -\ DATA:\ ([0-9]+)$ ]]; then
             releases["${BASH_REMATCH[1]}"]="${BASH_REMATCH[2]}"
         fi
     done < "$arquivo"
 
+    data_atualizada=$(TRATAR_DATAS "$lendo_atualizado")
+    echo "$lendo_atualizado"
+    echo "Informacoes atualizadas em: $data_atualizada"
     data_exibicao=$(TRATAR_DATAS "$versao")
     echo "VERSAO DISPONIVEL NO PORTAL: $data_exibicao"
     versao_Portal="$versao"
+    
     echo "$versao" > "/u/sist/controle/versaoIntegral"
     for release in "${!releases[@]}"; do
         
@@ -379,7 +386,7 @@ BAIXAR_CONTROLE () {
         echo "DETALHES DE VERSAO E RELEASE OBTIDOS!"
     else
         echo "ERRO AO OBTER VERSAO E RELEASE RECENTES!"
-        rm -f "$SCRIPT_PATH.tmp"
+        rm -f "$arquivo.tmp"
     fi
 }
 
@@ -420,5 +427,5 @@ esac
 # Chamar a função com o caminho do arquivo
 clear
 BAIXAR_CONTROLE
-ler_arquivo "$arquivo"
+ler_arquivo
 VALIDAR_VERSAO_RELEASE
