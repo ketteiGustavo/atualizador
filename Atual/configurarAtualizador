@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 ################################################################################
-# configurarAtualizador.sh - realizar a configuracao basica do atualizador
+# configurarAtualizador - realizar a configuracao basica do atualizador
 #
 # DATA: 03/07/2024 09:53 - Versao 1
 #
