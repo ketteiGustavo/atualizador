@@ -6,7 +6,7 @@
 - [Sobre](#-sobre-o-projeto)
 - [Ferramentas](#-ferramentas)
 - [Links Úteis](#-links-úteis)
-- [Lincenças](#-licenças)
+- [Licenças](#-licenças)
 
 ##
 ```bash
