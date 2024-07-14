@@ -48,6 +48,10 @@ versaoCobol=""
 statusOnline="status-online.gnt"
 script="atualizador"
 script_baixar_atualizacao="baixarAtualizacao"
+url_baixarAtualizacao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao"
+url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizador"
+url_manual_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Manuais/atualizador.1.gz"
+url_ctrl_ver_rel="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel.txt"
 
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {

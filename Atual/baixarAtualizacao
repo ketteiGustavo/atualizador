@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 ################################################################################
-# baixarAtualizacao.sh - Ira ler o arquivo gerado e baixar a atualizacao referente a data
+# baixarAtualizacao - Ira ler o arquivo gerado e baixar a atualizacao referente a data
 #
 # DATA: 01/07/2024 20:48 - Versao 1
 #
