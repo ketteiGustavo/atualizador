@@ -129,13 +129,14 @@ mv $PASTA_AVANCO/atualizador /u/bats/
 mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
 mv $PASTA_AVANCO/controle_ver_rel.txt /u/sist/controle/
 mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
+mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
 
 mandb
 
-chown root:root /u/rede/avanco/configurarAtualizador.sh
-chmod 700 /u/rede/avanco/configurarAtualizador.sh
+chown root:root /u/rede/avanco/configurarAtualizador
+chmod 700 /u/rede/avanco/configurarAtualizador
 
-mv /u/rede/avanco/configurarAtualizador.sh /u/bats/
+mv /u/rede/avanco/configurarAtualizador /u/bats/
 
 
 chown avanco:sist /u/sist/exec/*.gnt
