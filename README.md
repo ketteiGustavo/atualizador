@@ -2,8 +2,8 @@
     <p> ATUALIZADOR INTEGRAL</p>
 </h1>
 
-[![Mantido](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
-[![Maintainer !](https://img.shields.io/badge/maintainer-theMaintainer-blue)](https://github.com/ketteiGustavo)
+[![Mantido](https://img.shields.io/badge/Mantido%3F-sim-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
+[![Maintainer !](https://img.shields.io/badge/mantenedor-luizgustavo-blue)](https://github.com/ketteiGustavo)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
@@ -12,24 +12,38 @@
 ![Slackware](https://img.shields.io/badge/-Slackware-%231357BD?style=for-the-badge&logo=slackware&logoColor=white)
 [![Notion !](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)](https://www.notion.so/Manual-Atualizador-Autom-tico-em-constru-o-44c13ed760b9426aaa7b0752f7e606e7?pvs=4)
 
+<div align="center">
+  Nos ajude com esse projeto
+  <br />
+  <br />
+  <a href="https://github.com/ketteiGustavo/atualizador/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=">Reporte um Bug</a>
+  ·
+  <a href="https://github.com/ketteiGustavo/atualizador/issues/new?assignees=&labels=&projects=&template=solicitar-um-recurso.md&title=">Solicitar um Recurso</a>
+  ·
+  <a href="https://github.com/ketteiGustavo/atualizador/discussions">Faça uma pergunta</a>
+</div>
 
-
+<div align="center">
+<br />
+</div>
 
 ## 📖 SOBRE O PROJETO
 
 A ideia desse projeto é facilitar a atualização do Integral nos servidores dos clientes, eliminando etapas que o usuário teria que digitar os inúmeros comandos necessários para atualizar, que vão desde realizar backup, validar cobol, descompactar, permissão total e etc...
 
 ## 🗂️ ÍNDICE
-<details open="open">
+<details closed="closed">
 <summary>Ver mais</summary>
 
 - [Sobre](#-sobre-o-projeto)
 - [Instruções](#-instruções-de-instalação)
 - [Ferramentas](#-ferramentas)
 - [Links Úteis](#-links-úteis)
+- [Contribua com esse projeto](#-contribuindo-com-esse-projeto)
+- [Suporte](#-suporte)
 - [Licenças](#-licenças)
 - [Gitflow](#-gitflow)
-- [Contribuições](#-contribuições)
+- [Contribuições](#-contribuições-e-contribuidores)
 
 
 </details>
@@ -37,7 +51,7 @@ A ideia desse projeto é facilitar a atualização do Integral nos servidores do
 ##
 
 ## 📋 INSTRUÇÕES DE INSTALAÇÃO
-<details open="open">
+<details closed="closed">
 <summary>Como instalar</summary>
 
 ### Pré-requisitos
@@ -76,6 +90,32 @@ avanco@servidor$ atualizador
 
 </details>
 
+## MANUAL
+<details open="open">
+<summary>Ver mais</summary>
+
+ - [Obtendo ajuda](#-ajuda-rápida)
+ - [Manual Completo](#-manual-atualizador)
+</details>
+
+### AJUDA RÁPIDA
+Nessa opção você obterá ajuda rápida para alguns recursos e comandos disponíveis no. Para conseguir visualizar o help do atualizador basta digitar:
+```bash
+avanco@servidor$ atualizador --help
+```
+ou
+
+```bash
+avanco@servidor$ atualizador -h
+```
+
+
+### MANUAL ATUALIZADOR
+Caso queria ler o manual completo acesse:
+```bash
+avanco@servidor$ man atualizador
+```
+Caso ainda prefira ler através de um arquivo PDF, basta [acessar aqui]()
 
 ## 🔨 FERRAMENTAS
 o Atualizador foi construído em Shell Script, caso queria conhecer mais sobre a linguagem, acesse o link abaixo.
@@ -89,13 +129,31 @@ o Atualizador foi construído em Shell Script, caso queria conhecer mais sobre a
 - [Atendimento Telegram](https://t.me/avancoinformatica_bot)
 - [Atendimento Portal](https://novo.avancoinfo.net/novoPortal/atendimento)
 
+## 🤝 CONTRIBUINDO COM ESSE PROJETO
+Primeiramente, obrigado por reservar um tempo para contribuir! Contribuições são o que torna a comunidade de código aberto um lugar tão incrível para aprender, inspirar e criar. Quaisquer contribuições que você fizer beneficiarão a todos os outros e serão muito apreciadas .
+
+Tente criar relatórios de bugs que sejam:
+
+- Reproduzível. Inclua etapas para reproduzir o problema.
+- Específico. Inclua o máximo de detalhes possível: qual versão, qual ambiente, etc.
+- Único. Não duplique problemas abertos existentes.
+- Escopo para um único bug. Um bug por relatório.
+
+Siga o [Código de Conduta](documentos/CODIGO_DE_CONDUTA.md) desse proejto.
+
+## 🆘 SUPORTE
+Entre em contato com o mantenedor em um dos seguintes locais:
+- [Discusões no GitHub](https://github.com/ketteiGustavo/atualizador/discussions)
+- Através do perfil no [GitHub](https://github.com/ketteiGustavo)
+- Ou através desse [e-mail](mailto:luiz.gustavo@avancoinfo.com.br)
+
 ## 📋 LICENÇAS
 
 ## GITFLOW
 Qualquer alteração ou manutenção deve ser realizada em Branch 'manutencao', após ser validada e ok, subir para 'main'.
 
 
-## 🤝 CONTRIBUIÇÕES
+## 🤝 CONTRIBUIÇÕES E CONTRIBUIDORES
 
 Um agradecimento especial a todas as pessoas que contribuíram para este projeto.
 
