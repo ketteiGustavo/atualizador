@@ -76,74 +76,164 @@ else
     echo "INICIANDO A CONFIGURACAO"
 fi
 
+configurar_offline () {
 
-local novo_URL
-VERIFICA_COBOL
-cd /u/sist/exec
-pwd
-if [ "$versaoCobol" == "4.0" ]; then
-    buscaStatusOnline=40
-    novo_URL=$url_base_status_online_gnt$buscaStatusOnline$statusOnline
-elif [ "$versaoCobol" == "4.1" ]; then
-    buscaStatusOnline=41
-    novo_URL=$url_base_status_online_gnt$buscaStatusOnline$statusOnline
-else
-    echo "Versao do COBOL invalida."
-    exit 1
-fi
+    arquivos=$(find "$PASTA_AVANCO" -type f -name "PacoteAtualizador.rar")
+    if [[ -f $arquivos ]]; then
+        VERIFICA_COBOL
+        cd /u/sist/exec
+        pwd
+        echo "Pacote de configuracao encontrado"
+        echo ""
+        # Verificando a versao do COBOL
+        if [ "$versaoCobol" == "4.0" ]; then
+            rar e "$arquivos" "40$statusOnline" -o+ -y
+            mv 40$statusOnline $statusOnline
+        elif [ "$versaoCobol" == "4.1" ]; then
+            rar e "$arquivos" "41$statusOnline" -o+ -y
+            mv 41$statusOnline $statusOnline
+        else
+            echo "Versao do COBOL invalida."
+            exit 1
+        fi
 
-#baixando o programa status-online.gnt
-if curl --output /dev/null --silent --head --fail "$novo_URL"; then
-    wget -c "$novo_URL" -P "/u/sist/exec"
-fi
+        chown avanco:sist /u/sist/exec/*.gnt
+        chmod 777 /u/sist/exec/*.gnt
 
-# baixando o atualizador
-if curl --output /dev/null --silent --head --fail "$url_atualizador"; then
-    wget -c "$url_atualizador" -P "$PASTA_AVANCO"
-fi
+        if [ $? -eq 0 ]; then
+            echo "Programa '$statusOnline extraido com sucesso"
+        else
+            echo "Falha ao extrair"
+        fi
+        echo ""
+        cd /u/bats
+        pwd
+        rar e "$arquivos" "$script" -o+ -y
+        if [ $? -eq 0 ]; then
+            echo "'$script extraido com sucesso"
+            chown avanco:sist /u/bats/$script
+            chmod 700 /u/bats/$script
+        else
+            echo "Falha ao extrair"
+        fi
 
-# baixando o baixarAtualizacao
-if curl --output /dev/null --silent --head --fail "$url_baixarAtualizacao"; then
-    wget -c "$url_baixarAtualizacao" -P "$PASTA_AVANCO"
-fi
-
-# baixando o manual do Atualizador
-if curl --output /dev/null --silent --head --fail "$url_manual_atualizador"; then
-    wget -c "$url_manual_atualizador" -P "$PASTA_AVANCO"
-fi
-
-# baixando o controle_ver_rel
-if curl --output /dev/null --silent --head --fail "$url_ctrl_ver_rel"; then
-    wget -c "$url_ctrl_ver_rel" -P "$PASTA_AVANCO"
-fi
-
-chown avanco:sist $PASTA_AVANCO/atualizador
-chown avanco:sist $PASTA_AVANCO/baixarAtualizacao
-chown root:root $PASTA_AVANCO/atualizador.1.gz
-chown avanco:sist $PASTA_AVANCO/controle_ver_rel.txt
-
-chmod 755 $PASTA_AVANCO/atualizador
-chmod 755 $PASTA_AVANCO/baixarAtualizacao
-
-mv $PASTA_AVANCO/atualizador /u/bats/
-mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
-mv $PASTA_AVANCO/controle_ver_rel.txt /u/sist/controle/
-mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
-mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
-
-mandb
-
-chown root:root /u/rede/avanco/configurarAtualizador
-chmod 700 /u/rede/avanco/configurarAtualizador
-
-mv /u/rede/avanco/configurarAtualizador /u/bats/
+        rar e "$arquivos" "$script_baixar_atualizacao" -o+ -y
+        if [ $? -eq 0 ]; then
+            echo "'$script_baixar_atualizacao extraido com sucesso"
+            chown avanco:sist /u/bats/$script_baixar_atualizacao
+            chmod 766 /u/bats/$script_baixar_atualizacao
+        else
+            echo "Falha ao extrair"
+        fi
+        
+        chmod 700 /u/rede/avanco/configurarAtualizador.sh
+        chown root:root /u/rede/avanco/configurarAtualizador.sh
+        mv /u/rede/avanco/configurarAtualizador.sh /u/bats/
 
 
-chown avanco:sist /u/sist/exec/*.gnt
-chmod 777 /u/sist/exec/*.gnt
+    else
+        while true; do
+            read -p "Deseja buscar o pacote do atualizador online? (S/n)" buscar_online
+
+            case $buscar_online in
+                "S" | "s" )
+                    clear
+                    echo "Realizando busca no servidor..."
+                    configurar_online
+                    break
+                    ;;
+                "N" | "n" )
+                    clear
+                    tput smso
+                    echo "                                AVANCO INFORMATICA                              "
+                    echo ""
+                    echo "                            TELESUPORTE (31) 3025-1188                          "
+                    echo ""
+                    echo "                                    TELEGRAM                                    "
+                    echo ""
+                    echo "                            t.me/avancoinformatica_bot                          "
+                    tput rmso
+                    stty sane
+                    exit 0
+                    ;;
+                *)
+                    echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                    ;;
+            esac
+        done
+        
+    fi
+}
+
+configurar_online () {
+
+    local novo_URL
+    VERIFICA_COBOL
+    cd /u/sist/exec
+    pwd
+    if [ "$versaoCobol" == "4.0" ]; then
+        buscaStatusOnline=40
+        novo_URL=$url_base_status_online_gnt$buscaStatusOnline$statusOnline
+    elif [ "$versaoCobol" == "4.1" ]; then
+        buscaStatusOnline=41
+        novo_URL=$url_base_status_online_gnt$buscaStatusOnline$statusOnline
+    else
+        echo "Versao do COBOL invalida."
+        exit 1
+    fi
+
+    #baixando o programa status-online.gnt
+    if curl --output /dev/null --silent --head --fail "$novo_URL"; then
+        wget -c "$novo_URL" -P "/u/sist/exec"
+    fi
+
+    # baixando o atualizador
+    if curl --output /dev/null --silent --head --fail "$url_atualizador"; then
+        wget -c "$url_atualizador" -P "$PASTA_AVANCO"
+    fi
+
+    # baixando o baixarAtualizacao
+    if curl --output /dev/null --silent --head --fail "$url_baixarAtualizacao"; then
+        wget -c "$url_baixarAtualizacao" -P "$PASTA_AVANCO"
+    fi
+
+    # baixando o manual do Atualizador
+    if curl --output /dev/null --silent --head --fail "$url_manual_atualizador"; then
+        wget -c "$url_manual_atualizador" -P "$PASTA_AVANCO"
+    fi
+
+    # baixando o controle_ver_rel
+    if curl --output /dev/null --silent --head --fail "$url_ctrl_ver_rel"; then
+        wget -c "$url_ctrl_ver_rel" -P "$PASTA_AVANCO"
+    fi
+
+    chown avanco:sist $PASTA_AVANCO/atualizador
+    chown avanco:sist $PASTA_AVANCO/baixarAtualizacao
+    chown root:root $PASTA_AVANCO/atualizador.1.gz
+    chown avanco:sist $PASTA_AVANCO/controle_ver_rel.txt
+
+    chmod 755 $PASTA_AVANCO/atualizador
+    chmod 755 $PASTA_AVANCO/baixarAtualizacao
+
+    mv $PASTA_AVANCO/atualizador /u/bats/
+    mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
+    mv $PASTA_AVANCO/controle_ver_rel.txt /u/sist/controle/
+    mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
+    mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
+
+    mandb
+
+    chown root:root /u/rede/avanco/configurarAtualizador
+    chmod 700 /u/rede/avanco/configurarAtualizador
+
+    mv /u/rede/avanco/configurarAtualizador /u/bats/
 
 
-# executar mandb
+    chown avanco:sist /u/sist/exec/*.gnt
+    chmod 777 /u/sist/exec/*.gnt
+
+}
+
 
 # Tratamento das opcoes que serao responsaveis por controlar na linha de comando
 # ------------------------------------------------------------------------------
@@ -160,6 +250,12 @@ case "$1" in
     mostrar_versao
     exit 0
     ;;
+--online)
+    echo "Iniciando a configuracao buscando online"
+    configurar_online
+    su - avanco
+    exit 0
+    ;;
 *)
     if test -n "$1"; then
         echo Opcao invalida: $1
@@ -169,4 +265,5 @@ case "$1" in
 esac
 
 ###############################
+configurar_offline
 su - avanco
