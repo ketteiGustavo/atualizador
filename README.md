@@ -92,7 +92,7 @@ avanco@servidor$ atualizador
 
 ## MANUAL
 <details open="open">
-<summary>Ver mais</summary>
+<summary>Opções</summary>
 
  - [Obtendo ajuda](#-ajuda-rápida)
  - [Manual Completo](#-manual-atualizador)
@@ -130,7 +130,7 @@ o Atualizador foi construído em Shell Script, caso queria conhecer mais sobre a
 - [Atendimento Portal](https://novo.avancoinfo.net/novoPortal/atendimento)
 
 ## 🤝 CONTRIBUINDO COM ESSE PROJETO
-Primeiramente, obrigado por reservar um tempo para contribuir! Contribuições são o que torna a comunidade de código aberto um lugar tão incrível para aprender, inspirar e criar. Quaisquer contribuições que você fizer beneficiarão a todos os outros e serão muito apreciadas .
+Primeiramente, obrigado por reservar um tempo para contribuir! Contribuições são o que torna a comunidade de código aberto um lugar tão incrível para aprender, inspirar e criar. Quaisquer contribuições que você fizer beneficiarão a todos os outros e serão muito apreciadas.
 
 Tente criar relatórios de bugs que sejam:
 
@@ -149,7 +149,7 @@ Entre em contato com o mantenedor em um dos seguintes locais:
 
 ## 📋 LICENÇAS
 
-## GITFLOW
+## 🔐 GITFLOW
 Qualquer alteração ou manutenção deve ser realizada em Branch 'manutencao', após ser validada e ok, subir para 'main'.
 
 
