@@ -2,6 +2,10 @@
     <p> Atualizador Integral</p>
 </h1>
 
+## 📖 Sobre o projeto
+
+A ideia desse projeto é facilitar a atualização do Integral nos servidores dos clientes, eliminando etapas que o usuário teria que digitar os inúmeros comandos necessários para atualizar, que vão desde realizar backup, validar cobol, descompactar, permissão total e etc...
+
 ## 🗂️ ÍNDICE
 - [Sobre](#-sobre-o-projeto)
 - [Ferramentas](#-ferramentas)
@@ -9,6 +13,17 @@
 - [Licenças](#-licenças)
 
 ##
+
+## Instruções de Instalação
+
+### Pré-requisitos
+
+```bash
+wget "bit.ly/configurarAtualizador" -P "/u/rede/avanco"
+
+```
+
+
 ```bash
                                                           ##                    
                                                         ####                    
@@ -40,9 +55,6 @@
 
 ```
 
-## 📖 Sobre o projeto
-
-A ideia desse projeto é facilitar a atualização do Integral nos servidores dos clientes, eliminando etapas que o usuário teria que digitar os inúmeros comandos necessários para atualizar, que vão desde realizar backup, validar cobol, descompactar, permissão total e etc...
 
 ## 🔨 Ferramentas
 o Atualizador foi construído em Shell Script, caso queria conhecer mais sobre a linguagem, acesse o link abaixo.

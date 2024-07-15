@@ -66,6 +66,9 @@ URL_CONTROLE_VERSAO_RELEASE="https://raw.githubusercontent.com/ketteiGustavo/atu
 data_atual=$(date +%Y%m%d)
 #data_atual="20240718"
 
+atualizado_flag=""
+controle_flag="/u/sist/controle/"
+
 
 
 versao_informada=$(<"/u/sist/controle/inf_versaoLoja.txt") 2> /dev/null
@@ -307,6 +310,7 @@ BAIXAR_RELEASE() {
 
 # Funcao para validar versao e release no cliente e baixar somente o necessario
 VALIDAR_VERSAO_RELEASE () {
+    atualizado_flag=false
     local data_versao_comparar=$(CONVERTER_DATAS "$versao_Portal")
     local letra_release_atual="$release"
     local calculo_data=$(date -d "${data_versao_comparar} +6 days" +"%Y%m%d")
@@ -334,16 +338,24 @@ VALIDAR_VERSAO_RELEASE () {
         echo "INICIANDO DOWNLOAD..."
         BAIXAR_VERSAO
         BAIXAR_RELEASE
+        atualizado_flag=false
+        echo "$staulizado_flag" > $controle_flag/controle_flag.txt
     elif [ "$data_informada_comparar" -eq "$data_versao_comparar" ]; then
         echo "INTEGRAL ESTA COM A VERSAO ATUAL!"
+        atualizado_flag=true
+        echo "$staulizado_flag" > $controle_flag/controle_flag.txt
         #echo "$data_atual"
         if [ "$data_atual" -gt "$calculo_data" ]; then
             echo "A RELEASE ATUAL E: $letra_release_atual" > /dev/null
             if [[ "$letra_informada" < "$letra_release_atual" ]]; then
                 echo "BAIXANDO RELEASE..."
                 BAIXAR_RELEASE
+                atualizado_flag=false
+                echo "$staulizado_flag" > $controle_flag/controle_flag.txt
             elif [[ "$letra_informada" == "$letra_release_atual" ]]; then
                 echo "INTEGRAL ESTA COM A RELEASE ATUAL!"
+                atualizado_flag=true
+                echo "$staulizado_flag" > $controle_flag/controle_flag.txt
             else
                 echo "RELEASE INVALIDA!"
             fi
@@ -355,6 +367,9 @@ VALIDAR_VERSAO_RELEASE () {
     else
         echo "VERSAO INVALIDA!"
     fi
+
+    echo "status flag: $atualizado_flag"
+    echo "$staulizado_flag" > $controle_flag/controle_flag.txt
 }
 
 # Funcao para atualizar o script sempre para a versao mais recente

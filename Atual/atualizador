@@ -316,6 +316,8 @@ cronometro_start_volta=""
 cronometro_stop=""
 cronometro_stop_volta=""
 tempo_gasto=""
+atualizado_flag=""
+controle_flag="/u/sist/controle/"
 
 
 
@@ -324,6 +326,7 @@ RESULTADO=""        # armazena a saida do comando cobrun, para separar somente a
 DATA_ATUAL=$(date +"%d%m%y")       # data obtida ao rodar o script, sera sempre o dia atual
 HORA_ATUAL=$(date +"%H:%M:%S")     # hora para gravacoes necessarias
 DIA_HOJE=$(date +"%Y%m%d")
+
 
 
 ################################################################################
@@ -978,8 +981,11 @@ ATUALIZAR() {
 
     cd "$DIRCERTO"
 
-    FAZER_BKP
-    VERIFICA_BACKUP
+    atualizado_flag=$(<"$controle_flag/controle_flag.txt")
+    if [ "$atualizado_flag" == "false" ]; then
+        FAZER_BKP
+        VERIFICA_BACKUP
+    fi
     
     # Verifica se a vesao esta desatualizada
     if [ "$inf_versaoLoja" != "$novoPortal" ]; then
@@ -1114,6 +1120,8 @@ ATUALIZAR() {
 
     INFO_MSG "Atualizacao realizada com sucesso!"
     LOG_INFO "Atualizacao realizada com sucesso pela rotina AUTOMATICA!"
+
+    rm "$controle_flag/controle_flag.txt"
 }
 
 # Funcao para atualizar o script sempre para a versao mais recente
