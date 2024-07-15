@@ -92,6 +92,7 @@ o Atualizador foi construído em Shell Script, caso queria conhecer mais sobre a
 ## 📋 LICENÇAS
 
 ## GITFLOW
+Qualquer alteração ou manutenção deve ser realizada em Branch 'manutencao', após ser validada e ok, subir para 'main'.
 
 
 ## 🤝 CONTRIBUIÇÕES
