@@ -71,8 +71,7 @@ controle_flag="/u/sist/controle/"
 
 
 
-versao_informada=$(<"/u/sist/controle/inf_versaoLoja.txt") 2> /dev/null
-letra_informada=$(<"/u/sist/controle/inf_releaseLoja.txt") 2> /dev/null
+
 
 sleep 1
 clear
@@ -90,13 +89,13 @@ arquivo="/u/sist/controle/controle_ver_rel.txt"
 
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
-    #RESULTADO=$(cobrun 2>&1)
-    #if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
-    #    versaoCobol="${BASH_REMATCH[1]}"
-    #    echo "Versao do Cobol: $versaoCobol"
-    #    inf_versaoCobol="$versaoCobol"
-    #fi
-    versaoCobol="4.0"
+    RESULTADO=$(cobrun 2>&1)
+    if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
+        versaoCobol="${BASH_REMATCH[1]}"
+        echo "Versao do Cobol: $versaoCobol"
+        inf_versaoCobol="$versaoCobol"
+    fi
+    #versaoCobol="4.0"
 }
 
 # Funcao para tratar datas e inserir barras entre os digitos deixando DD/MM/AA
@@ -318,6 +317,9 @@ VALIDAR_VERSAO_RELEASE () {
     #echo "1: $calculo_data"
     #echo "2: $calculo_data_limite"
     #echo "3: $data_versao_comparar"
+
+    versao_informada=$(<"/u/sist/controle/inf_versaoLoja.txt") 2> /dev/null
+    letra_informada=$(<"/u/sist/controle/inf_releaseLoja.txt") 2> /dev/null
 
     #read -p "LER VERSAO: " versao_informada
 

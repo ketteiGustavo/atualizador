@@ -594,10 +594,10 @@ checar_internet () {
         rtt_max=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $6}')
         
         echo "CONEXAO COM A INTERNET OK"
-        echo "TEMPO DE RESPOSTA (ms):"
-        echo "MINIMO: $rtt_min"
-        echo "MEDIO: $rtt_avg"
-        echo "MAXIMO: $rtt_max"
+        #echo "TEMPO DE RESPOSTA (ms):"
+        #echo "MINIMO: $rtt_min"
+        #echo "MEDIO: $rtt_avg"
+        #echo "MAXIMO: $rtt_max"
 
         # Verificar se a conexão está lenta ou instável
         if (( $(echo "$rtt_avg > 100" | bc -l) )); then
@@ -753,14 +753,14 @@ LER_ARQUIVO_TEXTO() {
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
     # Rebece as informacoes a funcao LER_ARQUIVO_TEXTO
-    #RESULTADO=$(cobrun 2>&1)
-    #if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
-    #    versaoCobol="${BASH_REMATCH[1]}"
-    #    echo "Versao do Cobol: $versaoCobol"
-    #    inf_versaoCobol="$versaoCobol"
-    #fi
-    versaoCobol="4.0"
-    inf_versaoCobol="$versaoCobol"
+    RESULTADO=$(cobrun 2>&1)
+    if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
+        versaoCobol="${BASH_REMATCH[1]}"
+        echo "Versao do Cobol: $versaoCobol"
+        inf_versaoCobol="$versaoCobol"
+    fi
+    #versaoCobol="4.0"
+    #inf_versaoCobol="$versaoCobol"
 }
 
 # Funcao para limpar qualquer arquivo ou pasta que esteja errado no sist/exec
@@ -982,6 +982,10 @@ ATUALIZAR() {
     cd "$DIRCERTO"
 
     atualizado_flag=$(<"$controle_flag/controle_flag.txt")
+    if [ $? -eq 1 ]; then
+        echo "STATUS NAO ENCONTRADO"
+    fi
+
     if [ "$atualizado_flag" == "false" ]; then
         FAZER_BKP
         VERIFICA_BACKUP
@@ -1413,13 +1417,11 @@ verificar_dia
 checar_internet
 VERIFICA_ATUALIZACAO
 INICIAR
-
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 LER_ARQUIVO_TEXTO
 LIMPA_EXEC
-#SEGURANCA
+SEGURANCA
 ATUALIZAR
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 GRAVANDO_ATUALIZACOES
 
-# acabar aqui
