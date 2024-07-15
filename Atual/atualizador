@@ -262,7 +262,9 @@ PASTA_AVANCO="/u/rede/avanco"
 REMOVIDOS="$PASTA_AVANCO/removidos"
 PASTA_DESTINO="/u/rede/avanco/atualizacoes"
 LOCAL_LOG="/u/sist/logs"            # arquivo de log
-BKP_DESTINO="/u/sist/exec-a/BKPTOTAL_$DATE.rar" # local de onde serao salvos os backups
+BKP_DESTINO="/u/sist/exec-a"
+BKP_TOTAL="BKPTOTAL_$DATE.rar" # local de onde serao salvos os backups
+BKP_RELEASE="BKPRELEASE_$DATE.rar" # local de onde serao salvos os backups
 
 
 # Arquivos de log para consulta.
@@ -949,19 +951,25 @@ ATUALIZAR() {
     arquivo_release_atual=""
     buscarV40="release40"
     buscarV41="release"
-    releaseBusca=""
     
+    cobolBusca=""
+    versaoBusca=$(<"/u/sist/controle/versaoIntegral")
+    releaseBusca=""
 
     # Define o diretorio com base na versao do Cobol
     if [ "$versaoCobol" == "4.0" ]; then
-        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao40-*.rar")
+        cobolBusca="40"
+        #arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao40-*.rar")
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
         echo "$arquivo_versao_atual"
         releaseBusca=$buscarV40
         arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-*.rar")
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
         echo "$arquivo_release_atual"
 	sleep 1
     elif [ "$versaoCobol" == "4.1" ]; then
-        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao41-*.rar")
+        cobolBusca="41"
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
         releaseBusca=$buscarV41
         arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-*.rar")
     sleep 1
@@ -1212,12 +1220,12 @@ MENU_SECRETO () {
     while true; do
         echo " ___________________________________________________________________________"
         echo "|                                                                           |"
-        echo "|  1) OBTER INFORMACOES DO SISTEMA         5) CONFIGURAR ROTINA NO CRON     |"
-        echo "|  2) ATUALIZAR                            6) OBTER UPDATE DO ATUALIZADOR   |"
-        echo "|  3) REVERTER ATUALIZACAO                  ) PARAMETRIZACAO                |"
-        echo "|  4) BACKUP EXECUTAVEIS                   7) MANUAL                        |"
-        echo "|  ) CORRIGIR FALHAS DE ATUALIZACAO       99) SAIR                         |"
-        echo "|  ) BACKUP EXECUTAVEIS                                                    |"
+        echo "|  1) OBTER INFORMACOES DO SISTEMA         7) CONFIGURAR ROTINA NO CRON     |"
+        echo "|  2) ATUALIZAR                            8) OBTER UPDATE DO ATUALIZADOR   |"
+        echo "|  3) REVERTER ATUALIZACAO                 9) PARAMETRIZACAO                |"
+        echo "|  4) BACKUP EXECUTAVEIS                   10) MANUAL                       |"
+        echo "|  5) CORRIGIR FALHAS DE ATUALIZACAO       99) SAIR                         |"
+        echo "|  6) VISUALIZAR LOGS                                                       |"
         echo "|___________________________________________________________________________|"
         read -p "ESCOLHA UMA OPCAO: " opcao
         case $opcao in
@@ -1241,14 +1249,24 @@ MENU_SECRETO () {
                 ;;
             3)
                 clear
-                echo "RESTAURAR ATUALIZACAO ANTERIOR"
+                echo "REVERTER ATUALIZACAO"
+                menu_restaura
                 ;;
             4)
+                clear
+                echo "BACKUP"
+                FAZER_BKP
+                ;;
+            5)
                 clear
                 echo "CORRIGIR FALHAS DE ATUALIZACAO"
                 echo "$GUIA_ERROS"
                 ;;
-            5)
+            6)
+                clear
+                echo
+                ;;
+            7)
                 clear
                 echo "CONFIGURAR ROTINA NO CRON"
                 if [ $USER = avanco ]; then
@@ -1258,12 +1276,16 @@ MENU_SECRETO () {
                     exit
                 fi
                 ;;
-            6)
+            8)
                 clear
                 echo "OBTER UPDATE DO ATUALIZADOR"
                 UPDATE
                 ;;
-            7)
+            9)
+                clear
+                echo "PARAMETRIZACAO"
+                ;;
+            10)
                 clear
                 echo "$MANUAL_USO"
                 ;;
@@ -1313,7 +1335,10 @@ MENU_SECRETO () {
     done
 }
 
-
+# funcao para controlar a restauracao.
+menu_restaura () {
+    echo "criar menu com opcoes"
+}
 
 
 # Funcao para extrair e exibir a versao do programa

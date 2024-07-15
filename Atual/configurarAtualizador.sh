@@ -46,12 +46,12 @@ BATS="/u/bats"
 EXEC="/u/sist/exec"
 versaoCobol=""
 statusOnline="status-online.gnt"
-script="atualizador"
+script_atualizador="atualizador"
 script_baixar_atualizacao="baixarAtualizacao"
+manual_atualizador="atualizador.1.gz"
 url_baixarAtualizacao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao"
 url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizador"
 url_manual_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Manuais/atualizador.1.gz"
-url_ctrl_ver_rel="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/controle_ver_rel.txt"
 url_base_status_online_gnt="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/gnt/"
 buscaStatusOnline=""
 
@@ -108,16 +108,16 @@ configurar_offline () {
         echo ""
         cd /u/bats
         pwd
-        rar e "$arquivos" "$script" -o+ -y
+        rar e -o+ "$arquivos" "$script_atualizador"
         if [ $? -eq 0 ]; then
             echo "'$script extraido com sucesso"
-            chown avanco:sist /u/bats/$script
-            chmod 700 /u/bats/$script
+            chown avanco:sist /u/bats/$script_atualizador
+            chmod 755 /u/bats/$script_atualizador
         else
             echo "Falha ao extrair"
         fi
 
-        rar e "$arquivos" "$script_baixar_atualizacao" -o+ -y
+        rar e -o+ "$arquivos" "$script_baixar_atualizacao"
         if [ $? -eq 0 ]; then
             echo "'$script_baixar_atualizacao extraido com sucesso"
             chown avanco:sist /u/bats/$script_baixar_atualizacao
@@ -125,6 +125,16 @@ configurar_offline () {
         else
             echo "Falha ao extrair"
         fi
+        
+        echo ""
+        cd /usr/share/man/man1
+        pwd
+        rar e -o+ "$arquivos" "$manual_atualizador"
+        mandb
+
+        echo ""
+        cd /u/sist/controle
+        pwd
         
         chmod 700 /u/rede/avanco/configurarAtualizador.sh
         chown root:root /u/rede/avanco/configurarAtualizador.sh
@@ -202,10 +212,6 @@ configurar_online () {
         wget -c "$url_manual_atualizador" -P "$PASTA_AVANCO"
     fi
 
-    # baixando o controle_ver_rel
-    if curl --output /dev/null --silent --head --fail "$url_ctrl_ver_rel"; then
-        wget -c "$url_ctrl_ver_rel" -P "$PASTA_AVANCO"
-    fi
 
     chown avanco:sist $PASTA_AVANCO/atualizador
     chown avanco:sist $PASTA_AVANCO/baixarAtualizacao
@@ -217,7 +223,6 @@ configurar_online () {
 
     mv $PASTA_AVANCO/atualizador /u/bats/
     mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
-    mv $PASTA_AVANCO/controle_ver_rel.txt /u/sist/controle/
     mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
     mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
 

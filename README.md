@@ -4,7 +4,7 @@
 
 [![Mantido](https://img.shields.io/badge/Mantido%3F-sim-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![Maintainer !](https://img.shields.io/badge/mantenedor-luizgustavo-blue)](https://github.com/ketteiGustavo)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![PRs Welcome](https://img.shields.io/badge/PRs-bem_vindas-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![Shell Script](https://img.shields.io/badge/shell_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white)
@@ -139,7 +139,7 @@ Tente criar relatórios de bugs que sejam:
 - Único. Não duplique problemas abertos existentes.
 - Escopo para um único bug. Um bug por relatório.
 
-Siga o [Código de Conduta](documentos/CODIGO_DE_CONDUTA.md) desse proejto.
+Siga o [Código de Conduta](documentos/CODIGO_DE_CONDUTA.md) desse projeto.
 
 ## 🆘 SUPORTE
 Entre em contato com o mantenedor em um dos seguintes locais:
