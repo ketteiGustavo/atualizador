@@ -67,7 +67,7 @@ data_atual=$(date +%Y%m%d)
 #data_atual="20240718"
 
 atualizado_flag=""
-controle_flag="/u/sist/controle/"
+controle_flag="/u/sist/controle"
 
 
 

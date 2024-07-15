@@ -317,7 +317,7 @@ cronometro_stop=""
 cronometro_stop_volta=""
 tempo_gasto=""
 atualizado_flag=""
-controle_flag="/u/sist/controle/"
+controle_flag="/u/sist/controle"
 
 
 
@@ -986,7 +986,7 @@ ATUALIZAR() {
         echo "STATUS NAO ENCONTRADO"
     fi
 
-    if [ "$atualizado_flag" == "false" ]; then
+    if [ "$atualizado_flag" != "true" ]; then
         FAZER_BKP
         VERIFICA_BACKUP
     fi
