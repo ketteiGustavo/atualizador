@@ -529,6 +529,8 @@ if [ ! -f "/u/sist/logs/infos_extras.log" ]; then
 fi
 
 
+rm -rf /u/rede/avanco/atualizacoes/versao*
+rm -rf /u/rede/avanco/atualizacoes/release*
 
 # Funcao para verificar permissao e grupo dos programas .gnt
 SEGURANCA(){
@@ -1270,6 +1272,10 @@ GRAVANDO_ATUALIZACOES() {
     data_configuracao=$(date +'%d/%m/%Y')
     data_exibir=$(TRATAR_DATAS "$inf_versaoLoja")
     data_rel_exibir=$(TRATAR_DATAS "$data_release")
+    
+    echo "$inf_versaoLoja" > "/u/sist/controle/inf_versaoLoja.txt"
+    echo "$inf_releaseLoja" > "/u/sist/controle/inf_releaseLoja.txt"
+    
 
     #clear
     echo
