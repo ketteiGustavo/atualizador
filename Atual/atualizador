@@ -317,6 +317,7 @@ mes=""
 ano=""
 data_release_servidor=""
 data_release_baixar=""
+data_release=""
 cronometro_start=$(date +'%H:%M:%S')
 cronometro_start_volta=""
 cronometro_stop=""
@@ -1266,7 +1267,7 @@ GRAVANDO_ATUALIZACOES() {
     inf_releaseLoja="$releaseLoja"
     data_configuracao=$(date +'%d/%m/%Y')
     data_exibir=$(TRATAR_DATAS "$inf_versaoLoja")
-    data_rel_exibir=$(TRATAR_DATAS "$inf_releaseLoja")
+    data_rel_exibir=$(TRATAR_DATAS "$data_release")
 
     #clear
     echo
@@ -1274,6 +1275,7 @@ GRAVANDO_ATUALIZACOES() {
     echo
     echo "VERSAO COBOL: $inf_versaoCobol"
     echo "VERSAO INTEGRAL INSTALADA: $data_exibir"
+    echo "RELEASE INTEGRAL INSTALADA: $inf_releaseLoja"
     echo "RELEASE INTEGRAL INSTALADA: $data_rel_exibir"
 
     #echo "Gravando informacoes novas informacoes. Por favor, aguarde..."
@@ -1286,7 +1288,7 @@ GRAVANDO_ATUALIZACOES() {
     echo "VERSAO COBOL: $inf_versaoCobol" >> "$info_loja_txt"
     echo "VERSAO INTEGRAL: $inf_versaoLoja" >> "$info_loja_txt"
     echo "RELEASE: $inf_releaseLoja" >> "$info_loja_txt"
-    echo "DATA RELEASE: $releasePortal" >> "$info_loja_txt"
+    echo "DATA RELEASE: $data_release" >> "$info_loja_txt"
 
 
     echo
