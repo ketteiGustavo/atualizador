@@ -908,7 +908,7 @@ BAIXAR_ATUALIZACOES () {
 FAZER_BKP() {
     # Caminho completo para o destino do backup
 
-    if [ -e "$BKP_DESTINO" ]; then
+    if [ -e "$BKP_DESTINO/BKPTOTAL_$DATE" ]; then
         # se o backup existir com a data atual permite atualizar
         sleep 1
         return 0
@@ -917,7 +917,7 @@ FAZER_BKP() {
         total_bkp_files=$(find $LOCAL_GNT -type f -name "*.gnt" | wc -l)
         contagem_arquivo=0
         # Verifica se o comando anterior foi executado com sucesso
-        if rar a "$BKP_DESTINO" $LOCAL_GNT/*gnt | while read -r line; do
+        if rar a "$BKP_DESTINO/BKPTOTAL_$DATE" $LOCAL_GNT/*gnt | while read -r line; do
             ((contagem_arquivo++))
             porcentagem_bkp=$((contagem_arquivo *100 / total_bkp_files))
             echo -ne "Criando Backup: [$porcentagem_bkp%]\r"
@@ -1025,15 +1025,15 @@ VERIFICA_BACKUP() {
     BKPRELEASE="$BKP_DESTINO/BKPRELEASE_$DATE.rar"
     BKPTOTAL_VERSAO="$BKP_DESTINO/BKPTOTAL_VERSAO_$DATE.rar"
     
-    if [ -e "$BKPRELEASE" ] || [ -e "$BKPTOTAL_VERSAO" ]; then
-        # se o backup existir com a data atual permite atualizar
-        INFO_MSG "Backup verificado!"
-        return 0
-
-    #if [ -e "$BKP_DESTINO" ]; then
+    #if [ -e "$BKPRELEASE" ] || [ -e "$BKPTOTAL_VERSAO" ]; then
         # se o backup existir com a data atual permite atualizar
     #    INFO_MSG "Backup verificado!"
     #    return 0
+
+    if [ -e "$BKP_DESTINO" ]; then
+        # se o backup existir com a data atual permite atualizar
+        INFO_MSG "Backup verificado!"
+        return 0
     else
         # se o backup nao existir, alertar ao usuario e voltar ao menu principal
         ALERTA_MSG "POR FAVOR FACA O BACKUP ANTES DE ATUALIZAR"
