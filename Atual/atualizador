@@ -261,6 +261,10 @@ LOCAL_GNT="/u/sist/exec"
 PASTA_AVANCO="/u/rede/avanco"
 REMOVIDOS="$PASTA_AVANCO/removidos"
 PASTA_DESTINO="/u/rede/avanco/atualizacoes"
+
+arquivo_versao_atual=""
+arquivo_release_atual=""
+
 LOCAL_LOG="/u/sist/logs"            # arquivo de log
 BKP_DESTINO="/u/sist/exec-a"
 BKP_TOTAL="BKPTOTAL_$DATE.rar" # local de onde serao salvos os backups
@@ -320,6 +324,8 @@ cronometro_stop_volta=""
 tempo_gasto=""
 atualizado_flag=""
 controle_flag="/u/sist/controle"
+flag_versao=false
+flag_release=false
 
 
 
@@ -927,6 +933,89 @@ FAZER_BKP() {
 
 }
 
+
+fzr_bkp () {
+    definirPacote_por_cobol
+
+    if [ -e "$arquivo_versao_atual" ]; then
+        rar lb "$arquivo_versao_atual" > "$controle_servidor/programasVersao.txt"
+        total_bkp_versao=$(cat "$controle_servidor/programasVersao.txt" | wc -l )
+        contagem_versao=0
+        flag_versao=true
+    else
+        flag_versao=false
+    fi
+
+    if [ -e "$arquivo_release_atual" ]; then
+        rar lb "$arquivo_release_atual" > "$controle_servidor/programasRelease.txt"
+        total_bkp_release=$(cat "$controle_servidor/programasRelease.txt" | wc -l )
+        contagem_release=0
+        flag_release=true
+    else
+        flag_release=false
+    fi
+
+    echo "atual flag da versao: $flag_versao"
+    echo "atual flag da release: $flag_release"
+
+    if [ $flag_versao = true ]; then
+        arquivos_bkp_versao=()
+        while IFS= read -r arquivo; do
+            caminho_completo="$LOCAL_GNT/$arquivo"
+            if [ -f "$caminho_completo" ]; then
+                arquivos_bkp_versao+=("$caminho_completo")
+            else
+                echo "Programa $caminho_completo nao encontrado."
+            fi
+        done < "$controle_servidor/programasVersao.txt"
+
+        if rar a "$BKP_DESTINO/BKPTOTAL_VERSAO_$DATE" "${arquivos_bkp_versao[@]}" | while read -r line; do
+            ((contagem_versao++))
+            porcentagem_bkp_versao=$((contagem_versao * 100 / total_bkp_versao))
+            echo -ne "CRIANDO BACKUP: [$porcentagem_bkp_versao%]\r"
+        done
+        then
+            echo "bkp concluido"
+        else
+            echo "erro ao fazer bkp"
+        fi
+    fi
+
+    if [ $flag_release = true ]; then
+        arquivos_bkp_release=()
+        while IFS= read -r arquivo; do
+            caminho_completo="$LOCAL_GNT/$arquivo"
+            if [ -f "$caminho_completo" ]; then
+                arquivos_bkp_release+=("$caminho_completo")
+            else
+                echo "Programa $caminho_completo nao encontrado."
+            fi
+        done < "$controle_servidor/programasRelease.txt"
+
+        if rar a "$BKP_DESTINO/BKPRELEASE_$DATE" "${arquivos_bkp_release[@]}" | while read -r line; do
+            ((contagem_release++))
+            porcentagem_bkp_release=$((contagem_release * 100 / total_bkp_release))
+            echo -ne "CRIANDO BACKUP: [$porcentagem_bkp_release%]\r"
+        done
+        then
+            echo "bkp concluido"
+        else
+            echo "erro ao fazer bkp"
+        fi
+    fi
+
+    if [ -e "$controle_servidor/programasVersao.txt" ]; then
+        rm "$controle_servidor/programasVersao.txt"
+    fi
+    if [ -e "$controle_servidor/programasRelease.txt" ]; then
+        rm "$controle_servidor/programasRelease.txt"
+    fi
+
+}
+
+
+
+
 # Funcao para verificar se o backup foi feito no dia atual
 VERIFICA_BACKUP() {
     
@@ -943,12 +1032,8 @@ VERIFICA_BACKUP() {
     fi
 }
 
+definirPacote_por_cobol () {
 
-# Funcao para atualizar o sistema
-ATUALIZAR() {
-    BAIXAR_ATUALIZACOES
-    arquivo_versao_atual=""
-    arquivo_release_atual=""
     buscarV40="release40"
     buscarV41="release"
     
@@ -978,6 +1063,12 @@ ATUALIZAR() {
         echo "Versao do Cobol desconhecida: $versaoCobol" >> $ERRO_LOG_FILE
         exit 1
     fi
+}
+
+# Funcao para atualizar o sistema
+ATUALIZAR() {
+    BAIXAR_ATUALIZACOES
+    definirPacote_por_cobol
 
 
     local DIRCERTO="/u/sist/exec"
@@ -994,7 +1085,7 @@ ATUALIZAR() {
         echo "STATUS NAO ENCONTRADO"
     fi
 
-    if [ "$atualizado_flag" != "true" ]; then
+    if [ $atualizado_flag = false ]; then
         FAZER_BKP
         VERIFICA_BACKUP
     fi
