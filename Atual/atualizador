@@ -1018,11 +1018,19 @@ fzr_bkp () {
 
 # Funcao para verificar se o backup foi feito no dia atual
 VERIFICA_BACKUP() {
+
+    BKPRELEASE="$BKP_DESTINO/BKPRELEASE_$DATE.rar"
+    BKPTOTAL_VERSAO="$BKP_DESTINO/BKPTOTAL_VERSAO_$DATE.rar"
     
-    if [ -e "$BKP_DESTINO" ]; then
+    if [ -e "$BKPRELEASE" ] || [ -e "$BKPTOTAL_VERSAO" ]; then
         # se o backup existir com a data atual permite atualizar
         INFO_MSG "Backup verificado!"
         return 0
+
+    #if [ -e "$BKP_DESTINO" ]; then
+        # se o backup existir com a data atual permite atualizar
+    #    INFO_MSG "Backup verificado!"
+    #    return 0
     else
         # se o backup nao existir, alertar ao usuario e voltar ao menu principal
         ALERTA_MSG "POR FAVOR FACA O BACKUP ANTES DE ATUALIZAR"
@@ -1086,7 +1094,7 @@ ATUALIZAR() {
     fi
 
     if [ $atualizado_flag = false ]; then
-        FAZER_BKP
+        fzr_bkp
         VERIFICA_BACKUP
     fi
     
