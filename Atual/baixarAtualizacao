@@ -341,11 +341,11 @@ VALIDAR_VERSAO_RELEASE () {
         BAIXAR_VERSAO
         BAIXAR_RELEASE
         atualizado_flag=false
-        echo "$staulizado_flag" > $controle_flag/controle_flag.txt
+        echo "$atualizado_flag" > $controle_flag/controle_flag.txt
     elif [ "$data_informada_comparar" -eq "$data_versao_comparar" ]; then
         echo "INTEGRAL ESTA COM A VERSAO ATUAL!"
         atualizado_flag=true
-        echo "$staulizado_flag" > $controle_flag/controle_flag.txt
+        echo "$atualizado_flag" > $controle_flag/controle_flag.txt
         #echo "$data_atual"
         if [ "$data_atual" -gt "$calculo_data" ]; then
             echo "A RELEASE ATUAL E: $letra_release_atual" > /dev/null
@@ -353,11 +353,11 @@ VALIDAR_VERSAO_RELEASE () {
                 echo "BAIXANDO RELEASE..."
                 BAIXAR_RELEASE
                 atualizado_flag=false
-                echo "$staulizado_flag" > $controle_flag/controle_flag.txt
+                echo "$atualizado_flag" > $controle_flag/controle_flag.txt
             elif [[ "$letra_informada" == "$letra_release_atual" ]]; then
                 echo "INTEGRAL ESTA COM A RELEASE ATUAL!"
                 atualizado_flag=true
-                echo "$staulizado_flag" > $controle_flag/controle_flag.txt
+                echo "$atualizado_flag" > $controle_flag/controle_flag.txt
             else
                 echo "RELEASE INVALIDA!"
             fi
@@ -371,7 +371,7 @@ VALIDAR_VERSAO_RELEASE () {
     fi
 
     echo "status flag: $atualizado_flag"
-    echo "$staulizado_flag" > $controle_flag/controle_flag.txt
+    echo "$atualizado_flag" > $controle_flag/controle_flag.txt
 }
 
 # Funcao para atualizar o script sempre para a versao mais recente
