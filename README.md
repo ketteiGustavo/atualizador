@@ -150,7 +150,7 @@ Entre em contato com o mantenedor em um dos seguintes locais:
 ## 📋 LICENÇAS
 
 ## 🔐 GITFLOW
-Qualquer alteração ou manutenção deve ser realizada em Branch 'manutencao', após ser validada e ok, subir para 'main'.
+Qualquer alteração ou manutenção deve ser realizada em Branch 'manutencao' ou 'testes-em-andamento', após ser validada e ok, subir para 'main'.
 
 
 ## 🤝 CONTRIBUIÇÕES E CONTRIBUIDORES

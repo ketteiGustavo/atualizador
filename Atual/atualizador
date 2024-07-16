@@ -894,10 +894,10 @@ BAIXAR_ATUALIZACOES () {
     echo ""
     bash "$script_baixar_atualizacao"
     if [ -f "/u/sist/controle/versaoIntegral" ] && [ -s "/u/sist/controle/versaoIntegral" ]; then
-        novoPortal=$(<"/u/sist/controle/versaoIntegral")
+        novoPortal=$(cat "/u/sist/controle/versaoIntegral")
     fi
     if [ -f "/u/sist/controle/releaseIntegral" ] && [ -s "/u/sist/controle/releaseIntegral" ]; then
-        letraRelease=$(<"/u/sist/controle/releaseIntegral")
+        letraRelease=$(cat "/u/sist/controle/releaseIntegral")
     else
         letraRelease=""
     fi
@@ -1046,8 +1046,14 @@ definirPacote_por_cobol () {
     buscarV41="release"
     
     cobolBusca=""
-    versaoBusca=$(<"/u/sist/controle/versaoIntegral")
+    versaoBusca=$(cat "/u/sist/controle/versaoIntegral")
     releaseBusca=""
+    data_release=$(cat "/u/sist/controle/dataReleaseIntegral")
+
+
+    local ver="${versaoBusca:0:4}"
+    local rel="${data_release:0:4}"
+    
 
     # Define o diretorio com base na versao do Cobol
     if [ "$versaoCobol" == "4.0" ]; then
@@ -1056,7 +1062,7 @@ definirPacote_por_cobol () {
         arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
         echo "$arquivo_versao_atual"
         releaseBusca=$buscarV40
-        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-*.rar")
+        #arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-*.rar")
         arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
         echo "$arquivo_release_atual"
 	sleep 1
@@ -1088,12 +1094,13 @@ ATUALIZAR() {
 
     cd "$DIRCERTO"
 
-    atualizado_flag=$(<"$controle_flag/controle_flag.txt")
-    if [ $? -eq 1 ]; then
+    atualizado_flag=$(cat "$controle_flag/controle_flag.txt")
+    if [ -z "$atualizado_flag" ]; then
         echo "STATUS NAO ENCONTRADO"
+        exit 1
     fi
 
-    if [ $atualizado_flag = false ]; then
+    if [ "$atualizado_flag" != "true" ]; then
         fzr_bkp
         VERIFICA_BACKUP
     fi

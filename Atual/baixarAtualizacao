@@ -192,7 +192,7 @@ CONVERTER_DATAS() {
 # Funcao para obter o link da versao atual, com base em comparacao de data por trimestre
 BAIXAR_VERSAO() {
     VERIFICA_COBOL
-    versaoBusca=$(<"/u/sist/controle/versaoIntegral")
+    versaoBusca=$(cat "/u/sist/controle/versaoIntegral")
     #echo "$versaoBusca"
     # Verificando a versao do COBOL
     if [ "$versaoCobol" == "4.0" ]; then
@@ -244,12 +244,12 @@ BAIXAR_RELEASE() {
     releaseBusca=""
 
     if [ -f "/u/sist/controle/dataReleaseIntegral" ] && [ -s "/u/sist/controle/dataReleaseIntegral" ]; then
-        release_busca=$(<"/u/sist/controle/dataReleaseIntegral")
+        release_busca=$(cat "/u/sist/controle/dataReleaseIntegral")
     else
         release_busca=""
     fi
     if [ -f "/u/sist/controle/versaoIntegral" ] && [ -s "/u/sist/controle/versaoIntegral" ]; then
-        versao_busca=$(<"/u/sist/controle/versaoIntegral")
+        versao_busca=$(cat "/u/sist/controle/versaoIntegral")
     fi
 
     #echo "arquivo txt release: $release_busca"
@@ -318,8 +318,8 @@ VALIDAR_VERSAO_RELEASE () {
     #echo "2: $calculo_data_limite"
     #echo "3: $data_versao_comparar"
 
-    versao_informada=$(<"/u/sist/controle/inf_versaoLoja.txt") 2> /dev/null
-    letra_informada=$(<"/u/sist/controle/inf_releaseLoja.txt") 2> /dev/null
+    versao_informada=$(cat "/u/sist/controle/inf_versaoLoja.txt") 2> /dev/null
+    letra_informada=$(cat "/u/sist/controle/inf_releaseLoja.txt") 2> /dev/null
 
     #read -p "LER VERSAO: " versao_informada
 
