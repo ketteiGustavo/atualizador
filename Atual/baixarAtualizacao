@@ -370,7 +370,7 @@ VALIDAR_VERSAO_RELEASE () {
         echo "VERSAO INVALIDA!"
     fi
 
-    echo "status flag: $atualizado_flag"
+    echo "status flag: $atualizado_flag" > /dev/null
     echo "$atualizado_flag" > $controle_flag/controle_flag.txt
 }
 
