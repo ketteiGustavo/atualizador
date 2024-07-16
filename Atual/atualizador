@@ -412,8 +412,22 @@ VERIFICA_ATUALIZACAO () {
     if [ -f "$info_loja_txt" ]; then
         ultima_atu=$(grep "DATA: " "$info_loja_txt" | cut -d ' ' -f 2)
         if [ "$ultima_atu" == "$(date +'%d/%m/%Y')" ]; then
-            echo "O Integral ja foi atualizado hoje $(date +'%d/%m/%Y')."
+            
+            clear
+            tput smso
+            echo "                  O INTEGRAL JA FOI ATUALIZADO HOJE $(date +'%d/%m/%Y')         "
+            echo ""
+            echo "                                AVANCO INFORMATICA                              "
+            echo ""
+            echo "                            TELESUPORTE (31) 3025-1188                          "
+            echo ""
+            echo "                                    TELEGRAM                                    "
+            echo ""
+            echo "                            t.me/avancoinformatica_bot                          "
+            tput rmso
+            stty sane
             sleep 2
+
         exit 0
 	else
         echo "Atualizando..." > /dev/null
@@ -424,8 +438,6 @@ VERIFICA_ATUALIZACAO () {
 
 
 VERIFICA_ONLINE () {
-    
-
         if [ $CONTAUSER != 0 ]; then
             ALERTA_MSG "Existem usuarios logados no INTEGRAL! Por favor peca para deslogarem do sistema para a atualizacao!"
             echo "USUARIOS LOGADOS"
@@ -460,6 +472,23 @@ verificar_dia () {
         echo "                                AVANCO INFORMATICA                              "
         echo ""
         echo "                            TELESUPORTE (31) 3025-1188                          "
+        echo ""
+        echo "                                    TELEGRAM                                    "
+        echo ""
+        echo "                            t.me/avancoinformatica_bot                          "
+        tput rmso
+        stty sane
+        exit 0
+    fi
+
+    if [ $hora_lida -gt 18 ]; then
+        clear
+        tput smso
+        echo "               FAVOR EXECUTAR A ATUALIZACAO EM HORARIO COMERCIAL!               "
+        echo ""
+        echo "                               AVANCO INFORMATICA                               "
+        echo ""
+        echo "                           TELESUPORTE (31) 3025-1188                           "
         echo ""
         echo "                                    TELEGRAM                                    "
         echo ""
@@ -819,7 +848,7 @@ MANTER_LOG_ATUAL() {
         fi
     done
 
-    echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/log_$MES_ANO.log"
+    #echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/log_$MES_ANO.log"
     echo "" >> "$LOCAL_LOG/log_$MES_ANO.log"
 }
 
@@ -840,7 +869,7 @@ MANTER_LOG_ERRO_ATUAL() {
         fi
     fi
 
-    echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/erro_$MES_ANO.log"
+    #echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/erro_$MES_ANO.log"
     echo "" >> "$LOCAL_LOG/erro_$MES_ANO.log"
 }
 
@@ -848,7 +877,7 @@ MANTER_LOG_ERRO_ATUAL() {
 LOG_INFO() {
     MANTER_LOG_ATUAL
     local info="$1"
-    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versao \n- RELEASE INTEGRAL ANTES: $inf_release \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $releasePortal $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $HORA_ATUAL no $BKP_DESTINO\n################################################################################"
+    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLoja \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $HORA_ATUAL no $$BKP_DESTINO/BKPTOTAL_$DATE\n################################################################################"
 
     # Escreve no arquivo de log
     echo -e "$log_msg\n" >> "$LOG_FILE"
@@ -1039,20 +1068,16 @@ VERIFICA_BACKUP() {
     else
         # se o backup nao existir, alertar ao usuario e voltar ao menu principal
         ALERTA_MSG "POR FAVOR FACA O BACKUP ANTES DE ATUALIZAR"
-        echo "Arquio de BACKUP nao foi localizado! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        echo "Arquio de BACKUP nao foi localizado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
         sleep 1
         return 1
     fi
 }
 
 definirPacote_por_cobol () {
-
-    buscarV40="release40"
-    buscarV41="release"
     
     cobolBusca=""
     versaoBusca=$(cat "/u/sist/controle/versaoIntegral")
-    releaseBusca=""
     data_release=$(cat "/u/sist/controle/dataReleaseIntegral")
 
 
@@ -1063,19 +1088,13 @@ definirPacote_por_cobol () {
     # Define o diretorio com base na versao do Cobol
     if [ "$versaoCobol" == "4.0" ]; then
         cobolBusca="40"
-        #arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao40-*.rar")
         arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
-        echo "$arquivo_versao_atual"
-        releaseBusca=$buscarV40
-        #arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-*.rar")
-        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
-        echo "$arquivo_release_atual"
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "release$cobolBusca-$ver-a-$rel.rar")
 	sleep 1
     elif [ "$versaoCobol" == "4.1" ]; then
         cobolBusca="41"
         arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
-        releaseBusca=$buscarV41
-        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-*.rar")
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "release$cobolBusca-$ver-a-$rel.rar")
     sleep 1
     else
         ERRO_MSG "Versao do Cobol desconhecida: $versaoCobol"
@@ -1115,7 +1134,7 @@ ATUALIZAR() {
         # Verifica se o arquivo de atualizacao foi encontrado.
         if [ -z "$arquivo_versao_atual" ]; then
             ERRO_MSG "Pacote de atualizacao da versao nao encontrado"
-            echo "Pacote de atualizacao da versao nao encontrado" >> $ERRO_LOG_FILE
+            echo "Pacote de atualizacao da versao nao encontrado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
             return
         else
             ALERTA_MSG "Descompactando a 'versao'... Por favor aguarde!"
@@ -1136,16 +1155,14 @@ ATUALIZAR() {
                 #echo "atualizado para: $versaoLoja"
                 releaseLoja=""
                 rm -rf $arquivo_versao_atual
-                #echo "Atualizacao concluida com sucesso." > >(tee -a "$LOG_FILE")
                 INFO_MSG "Versao atualizada para '$novoPortal'"
                 sleep 1
-                #arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$data_release_baixar.rar")
 
                 if [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" != "$letraRelease" ]; then
                     # Verifica se o arquivo da release foi encontrado.
                     if [ -z "$arquivo_release_atual" ]; then
                         ERRO_MSG "Pacote de atualizacao da release nao encontrado"
-                        echo "Pacote de atualizacao da release nao encontrado! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+                        echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
                         return
                     else
                         # Descompacta somente a release
@@ -1185,13 +1202,11 @@ ATUALIZAR() {
 
     # Verifica se versao esta atualizada e release desatualizada
     if [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" != "$letraRelease" ]; then
-        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$novoPortalPosRelease-a-$data_release_baixar.rar")
-        #echo "Pacote de release encontrado: $arquivo_release_atual"
 
         # Verifica se o arquivo da release foi encontrado.
         if [ -z "$arquivo_release_atual" ]; then
             ERRO_MSG "Pacote de atualizacao da release nao encontrado"
-            echo "Pacote de atualizacao da release nao encontrado! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+            echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
             return
         else
             
@@ -1210,7 +1225,7 @@ ATUALIZAR() {
                 rm $arquivo_release_atual
             else
                 ERRO_MSG "Erro ao atualizar!"
-                echo "Erro ao atualizar INTEGRAL" >> $ERRO_LOG_FILE
+                echo "Erro ao atualizar INTEGRAL! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
                 exit 1
             fi
 
@@ -1230,13 +1245,13 @@ ATUALIZAR() {
     atu-help manual
     if [ $? -ne 0 ]; then
         ERRO_MSG "Erro ao executar 'atu-help manual'."
-        echo "Erro ao executar 'atu-help manual'. $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        echo "Erro ao executar 'atu-help manual'! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
         exit 1
     fi
 
     chmod 777 /u/sist/exec/*.gnt || {
         ERRO_MSG "Erro ao conceder permissoes."
-        echo "Erro ao conceder permissoes! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        echo "Erro ao conceder permissoes! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
         $DATA_ATUAL - $HORA_ATUAL
         exit 1
     }
@@ -1308,7 +1323,7 @@ GRAVANDO_ATUALIZACOES() {
     cronometro_stop_volta=$SECONDS
     tempo_gasto=$(( cronometro_stop_volta - cronometro_start_volta ))
     tempo_gasto_formatado=$(date -u -d @${tempo_gasto} +"%M min  e %S seg")
-    echo "     $DATA_ATUAL       -     $cronometro_start     -     $cronometro_stop    -  $tempo_gasto_formatado" >> "/u/sist/logs/infos_extras.log"
+    echo "     $(date +"%d/%m/%y")       -     $cronometro_start     -     $cronometro_stop    -  $tempo_gasto_formatado" >> "/u/sist/logs/infos_extras.log"
     echo "---------------------------------------------------------------------------------" >> "/u/sist/logs/infos_extras.log"
     echo "$AVANCO"
     sleep 2
@@ -1565,4 +1580,4 @@ SEGURANCA
 ATUALIZAR
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 GRAVANDO_ATUALIZACOES
-
+UPDATE > /dev/null

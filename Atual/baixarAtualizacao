@@ -453,3 +453,4 @@ clear
 BAIXAR_CONTROLE
 ler_arquivo
 VALIDAR_VERSAO_RELEASE
+UPDATE > /dev/null
