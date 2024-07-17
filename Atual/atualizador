@@ -1107,7 +1107,8 @@ definirPacote_por_cobol () {
 ATUALIZAR() {
     BAIXAR_ATUALIZACOES
     definirPacote_por_cobol
-
+    echo "pacote da versao: $arquivo_versao_atual"
+    echo "pacote da release: $arquivo_release_atual"
     local DIRCERTO="/u/sist/exec"
     if [ ! -d "$DIRCERTO" ]; then
         ERRO_MSG "O diretorio nao existe."
@@ -1193,7 +1194,7 @@ ATUALIZAR() {
             fi
         fi
     # se a versao ja estiver atualizada mas a release nao, atualizar somente a release.
-    elif [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" \< "$letraRelease" ]; then
+    elif [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" != "$letraRelease" ]; then
         # Verifica se o arquivo da release foi encontrado.
         if [ -z "$arquivo_release_atual" ]; then
             ERRO_MSG "Pacote de atualizacao da release nao encontrado"
@@ -1295,7 +1296,7 @@ GRAVANDO_ATUALIZACOES() {
     echo "VERSAO COBOL: $inf_versaoCobol"
     echo "VERSAO INTEGRAL INSTALADA: $data_exibir"
     echo "RELEASE INTEGRAL INSTALADA: $inf_releaseLoja"
-    echo "RELEASE INTEGRAL INSTALADA: $data_rel_exibir"
+    echo "DATA DA RELEASE INSTALADA: $data_rel_exibir"
 
     #echo "Gravando informacoes novas informacoes. Por favor, aguarde..."
     # cria arquivo txt que vai ser lido pelo cron e pelo atualizadorAutomatico que ficara em '/u/bats'
