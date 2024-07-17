@@ -1015,8 +1015,8 @@ definirPacote_por_cobol () {
 ATUALIZAR() {
     BAIXAR_ATUALIZACOES
     definirPacote_por_cobol
-    echo "Pacote da versao: $arquivo_versao_atual"
-    echo "Pacote da release: $arquivo_release_atual"
+    #echo "Pacote da versao: $arquivo_versao_atual"
+    #echo "Pacote da release: $arquivo_release_atual"
     local DIRCERTO="/u/sist/exec"
     
     if [ ! -d "$DIRCERTO" ]; then
@@ -1473,8 +1473,8 @@ VERIFICA_ATUALIZACAO
 INICIAR
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 LIMPA_EXEC
-LER_ARQUIVO_TEXTO
 SEGURANCA
+LER_ARQUIVO_TEXTO
 ATUALIZAR
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 GRAVANDO_ATUALIZACOES
