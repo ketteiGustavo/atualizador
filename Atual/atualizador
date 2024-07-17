@@ -374,7 +374,7 @@ CYAN_MSG() {
 
 validar_linux () {
     local distro_name=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
-
+    
     if [[ "$distro_name" == "Slackware" ]]; then
         clear
         echo "O PROCESSO DE ATUALIZACAO DEVERA SER REALIZADO MANUALMENTE"
@@ -1478,6 +1478,7 @@ esac
 
 # Chamandos as funcoes na ordem
 
+validar_linux
 verificar_dia
 checar_internet
 VERIFICA_ATUALIZACAO
