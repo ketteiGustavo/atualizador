@@ -877,7 +877,7 @@ MANTER_LOG_ERRO_ATUAL() {
 LOG_INFO() {
     MANTER_LOG_ATUAL
     local info="$1"
-    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLoja \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $HORA_ATUAL no $$BKP_DESTINO/BKPTOTAL_$DATE\n################################################################################"
+    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLoja \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") no $$BKP_DESTINO/BKPTOTAL_$DATE\n################################################################################"
 
     # Escreve no arquivo de log
     echo -e "$log_msg\n" >> "$LOG_FILE"
@@ -1068,7 +1068,7 @@ VERIFICA_BACKUP() {
     else
         # se o backup nao existir, alertar ao usuario e voltar ao menu principal
         ALERTA_MSG "POR FAVOR FACA O BACKUP ANTES DE ATUALIZAR"
-        echo "Arquio de BACKUP nao foi localizado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        echo "Arquio de BACKUP nao foi localizado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
         sleep 1
         return 1
     fi
@@ -1108,7 +1108,6 @@ ATUALIZAR() {
     BAIXAR_ATUALIZACOES
     definirPacote_por_cobol
 
-
     local DIRCERTO="/u/sist/exec"
     if [ ! -d "$DIRCERTO" ]; then
         ERRO_MSG "O diretorio nao existe."
@@ -1117,7 +1116,6 @@ ATUALIZAR() {
     fi
 
     cd "$DIRCERTO"
-
     atualizado_flag=$(cat "$controle_flag/controle_flag.txt")
     if [ -z "$atualizado_flag" ]; then
         echo "STATUS NAO ENCONTRADO"
@@ -1128,13 +1126,15 @@ ATUALIZAR() {
         FAZER_BKP
         VERIFICA_BACKUP
     fi
-    
+
+    echo "Loja: versao - $inf_versaoLoja - release - $releaseLoja"
+    echo "Portal: versao - $novoPortal - release - $letraRelease"
     # Verifica se a vesao esta desatualizada
     if [ "$inf_versaoLoja" != "$novoPortal" ]; then
         # Verifica se o arquivo de atualizacao foi encontrado.
         if [ -z "$arquivo_versao_atual" ]; then
             ERRO_MSG "Pacote de atualizacao da versao nao encontrado"
-            echo "Pacote de atualizacao da versao nao encontrado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
+            echo "Pacote de atualizacao da versao nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
             return
         else
             ALERTA_MSG "Descompactando a 'versao'... Por favor aguarde!"
@@ -1149,7 +1149,6 @@ ATUALIZAR() {
             done
             then
                 INFO_MSG "Atualizacao de Versao concluida!"
-            
                 # atualizando a versao da loja apos descompactacao
                 versaoLoja="$novoPortal"
                 #echo "atualizado para: $versaoLoja"
@@ -1158,101 +1157,91 @@ ATUALIZAR() {
                 INFO_MSG "Versao atualizada para '$novoPortal'"
                 sleep 1
 
-                if [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" != "$letraRelease" ]; then
-                    # Verifica se o arquivo da release foi encontrado.
-                    if [ -z "$arquivo_release_atual" ]; then
-                        ERRO_MSG "Pacote de atualizacao da release nao encontrado"
-                        echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
-                        return
+                # Verifica se o arquivo da release foi encontrado.
+                if [ -z "$arquivo_release_atual" ]; then
+                    ERRO_MSG "Pacote de atualizacao da release nao encontrado"
+                    echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                    return
+                else
+                    # Conta o numero total de arquivos no arquivo RAR
+                    total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                    current_file_release=0
+                    # Descompacta somente a release
+                    ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
+                    if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                        ((current_file_release++))
+                        porcento=$((current_file_release * 100 / total_files_release))
+                        echo -ne "Atualizando: [$porcento%]\r"
+                    done
+                    then
+                        INFO_MSG "Atualizacao de Release concluida!"
+                        rm $arquivo_release_atual
                     else
-                        # Descompacta somente a release
-                        ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
-                        # Conta o numero total de arquivos no arquivo RAR
-                        total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
-                        current_file_release=0
-                        if rar e -o+ "$arquivo_release_atual" | while read -r line; do
-                            ((current_file_release++))
-                            porcento=$((current_file_release * 100 / total_files_release))
-                            echo -ne "Atualizando: [$porcento %]\r"
-                        done
-                        then
-                            INFO_MSG "Atualizacao de Release Concluida!"
-                        else
-                            ALERTA_MSG "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte!"
-                            echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
-                            exit 1
-                        fi
-
-                        rm -rf $arquivo_release_atual
-                        echo
-                        INFO_MSG "Atualizacao concluida com sucesso."
-                        
-                        # atualizando a release da loja apos descompactacao
-                        releaseLoja="$letraRelease"
+                        ERRO_MSG "Erro ao atualizar!"
+                        echo "Erro ao atualizar INTEGRAL! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                        exit 1
                     fi
+                    echo ""
+                    INFO_MSG "Release atualizada"
+                    # atualizando a release da loja apos descompactacao
+                    releaseLoja="$letraRelease"
                 fi
             else
                 ALERTA_MSG "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte!"
-                echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $DATA_ATUAL - $HORA_ATUAL" >> $ERRO_LOG_FILE
+                echo "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
                 exit 1
             fi
         fi
-    fi
-
-
-    # Verifica se versao esta atualizada e release desatualizada
-    if [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" != "$letraRelease" ]; then
-
+    # se a versao ja estiver atualizada mas a release nao, atualizar somente a release.
+    elif [ "$versaoLoja" == "$novoPortal" ] && [ "$releaseLoja" \< "$letraRelease" ]; then
         # Verifica se o arquivo da release foi encontrado.
         if [ -z "$arquivo_release_atual" ]; then
             ERRO_MSG "Pacote de atualizacao da release nao encontrado"
-            echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
+            echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
             return
         else
-            
+            # Descompacta somente a release
+            ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
             # Conta o numero total de arquivos no arquivo RAR
             total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
             current_file_release=0
-            # Descompacta somente a release
-            ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
             if rar e -o+ "$arquivo_release_atual" | while read -r line; do
                 ((current_file_release++))
                 porcento=$((current_file_release * 100 / total_files_release))
-                echo -ne "Atualizando: [$porcento%]\r"
+                echo -ne "Atualizando: [$porcento %]\r"
             done
             then
-                INFO_MSG "Atualizacao de Release concluida!"
-                rm $arquivo_release_atual
+                INFO_MSG "Atualizacao de Release Concluida!"
             else
-                ERRO_MSG "Erro ao atualizar!"
-                echo "Erro ao atualizar INTEGRAL! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
+                ALERTA_MSG "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte!"
+                echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
                 exit 1
             fi
 
-            # Restaura a linha após a barra de progresso
-            echo ""
-            INFO_MSG "Release atualizada"
+            rm -rf $arquivo_release_atual
+            echo
+            INFO_MSG "Atualizacao concluida com sucesso."
+            
             # atualizando a release da loja apos descompactacao
             releaseLoja="$letraRelease"
         fi
     else
-        INFO_MSG "Sistema atualizado"
+        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES!"
+        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
     fi
-    echo "aguarde..."
     sleep 1
-
+    echo "aguarde..."
     # Executa o comando 'atu-help manual'
     atu-help manual
     if [ $? -ne 0 ]; then
         ERRO_MSG "Erro ao executar 'atu-help manual'."
-        echo "Erro ao executar 'atu-help manual'! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
+        echo "Erro ao executar 'atu-help manual'! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
         exit 1
     fi
 
     chmod 777 /u/sist/exec/*.gnt || {
         ERRO_MSG "Erro ao conceder permissoes."
-        echo "Erro ao conceder permissoes! $(date +"%d/%m/%Y") - $HORA_ATUAL" >> $ERRO_LOG_FILE
-        $DATA_ATUAL - $HORA_ATUAL
+        echo "Erro ao conceder permissoes! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
         exit 1
     }
 
@@ -1265,17 +1254,24 @@ ATUALIZAR() {
 # Funcao para atualizar o script sempre para a versao mais recente
 UPDATE () {
     SCRIPT_PATH="$0"
+    TMP_PATH=$(mktemp /tmp/$(basename "$SCRIPT_PATH").XXXXXX)
     echo "Baixando versao mais recente do atualizador"
-    curl -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL" || wget -o "$SCRIPT_PATH.tmp" "$SCRIPT_URL"
-
-    if [ $? -eq 0 ]; then
-        mv "$SCRIPT_PATH.tmp" "$SCRIPT_PATH"
-        chmod +x "$SCRIPT_PATH"
-        echo "Atualizacao concluida. Execute o script novamente..."
+    if curl --output /dev/null --silent --head --fail "$SCRIPT_URL"; then
+        wget -qcO "$TMP_PATH" "$SCRIPT_URL"
+    
+        if [ $? -eq 0 ]; then
+            mv "$TMP_PATH" "$SCRIPT_PATH"
+            chmod +x "$SCRIPT_PATH"
+            echo "Atualizacao concluida. Execute o script novamente..."
+        else
+            echo "Erro ao baixar a atualizacao."
+            rm -f "$TMP_PATH"
+        fi
     else
-        echo "Erro ao baixar a atualizacao."
-        rm -f "$SCRIPT_PATH.tmp"
+        echo "ERRO: a URL do atualizador nao esta acessivel."
+        rm -f "$TMP_PATH"
     fi
+    
     exit
 }
 
