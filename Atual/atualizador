@@ -878,7 +878,7 @@ MANTER_LOG_ERRO_ATUAL() {
 LOG_INFO() {
     MANTER_LOG_ATUAL
     local info="$1"
-    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLoja \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") no $$BKP_DESTINO/BKPTOTAL_$DATE\n################################################################################"
+    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLoja \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") no $BKP_DESTINO/BKPTOTAL_$DATE\n################################################################################"
 
     # Escreve no arquivo de log
     echo -e "$log_msg\n" >> "$LOG_FILE"
@@ -940,7 +940,7 @@ BAIXAR_ATUALIZACOES () {
 FAZER_BKP() {
     # Caminho completo para o destino do backup
 
-    if [ -e "$BKP_DESTINO/BKPTOTAL_$DATE" ]; then
+    if [ -e "$BKP_DESTINO/BKPTOTAL_$DATE.rar" ]; then
         # se o backup existir com a data atual permite atualizar
         sleep 1
         return 0
@@ -966,103 +966,10 @@ FAZER_BKP() {
 
 }
 
-
-fzr_bkp () {
-    definirPacote_por_cobol
-
-    if [ -e "$arquivo_versao_atual" ]; then
-        rar lb "$arquivo_versao_atual" > "$controle_servidor/programasVersao.txt"
-        total_bkp_versao=$(cat "$controle_servidor/programasVersao.txt" | wc -l )
-        contagem_versao=0
-        flag_versao=true
-    else
-        flag_versao=false
-    fi
-
-    if [ -e "$arquivo_release_atual" ]; then
-        rar lb "$arquivo_release_atual" > "$controle_servidor/programasRelease.txt"
-        total_bkp_release=$(cat "$controle_servidor/programasRelease.txt" | wc -l )
-        contagem_release=0
-        flag_release=true
-    else
-        flag_release=false
-    fi
-
-    echo "atual flag da versao: $flag_versao" > /dev/null
-    echo "atual flag da release: $flag_release" > /dev/null
-
-    if [ $flag_versao = true ]; then
-        arquivos_bkp_versao=()
-        while IFS= read -r arquivo; do
-            caminho_completo="$LOCAL_GNT/$arquivo"
-            if [ -f "$caminho_completo" ]; then
-                arquivos_bkp_versao+=("$caminho_completo")
-            else
-                echo "Programa $caminho_completo nao encontrado."
-            fi
-        done < "$controle_servidor/programasVersao.txt"
-
-        if rar a "$BKP_DESTINO/BKPTOTAL_VERSAO_$DATE" "${arquivos_bkp_versao[@]}" | while read -r line; do
-            ((contagem_versao++))
-            porcentagem_bkp_versao=$((contagem_versao * 100 / total_bkp_versao))
-            echo -ne "CRIANDO BACKUP: [$porcentagem_bkp_versao%]\r"
-        done
-        then
-            sleep 1
-            echo "bkp concluido"
-        else
-            echo "erro ao fazer bkp"
-        fi
-    fi
-
-    if [ $flag_release = true ]; then
-        arquivos_bkp_release=()
-        while IFS= read -r arquivo; do
-            caminho_completo="$LOCAL_GNT/$arquivo"
-            if [ -f "$caminho_completo" ]; then
-                arquivos_bkp_release+=("$caminho_completo")
-            else
-                echo "Programa $caminho_completo nao encontrado."
-            fi
-        done < "$controle_servidor/programasRelease.txt"
-
-        if rar a "$BKP_DESTINO/BKPRELEASE_$DATE" "${arquivos_bkp_release[@]}" | while read -r line; do
-            ((contagem_release++))
-            porcentagem_bkp_release=$((contagem_release * 100 / total_bkp_release))
-            echo -ne "CRIANDO BACKUP: [$porcentagem_bkp_release%]\r"
-        done
-        then
-            sleep 1
-            echo "bkp concluido"
-        else
-            echo "erro ao fazer bkp"
-        fi
-    fi
-
-    if [ -e "$controle_servidor/programasVersao.txt" ]; then
-        rm "$controle_servidor/programasVersao.txt"
-    fi
-    if [ -e "$controle_servidor/programasRelease.txt" ]; then
-        rm "$controle_servidor/programasRelease.txt"
-    fi
-
-}
-
-
-
-
 # Funcao para verificar se o backup foi feito no dia atual
 VERIFICA_BACKUP() {
 
-    BKPRELEASE="$BKP_DESTINO/BKPRELEASE_$DATE.rar"
-    BKPTOTAL_VERSAO="$BKP_DESTINO/BKPTOTAL_VERSAO_$DATE.rar"
-    
-    #if [ -e "$BKPRELEASE" ] || [ -e "$BKPTOTAL_VERSAO" ]; then
-        # se o backup existir com a data atual permite atualizar
-    #    INFO_MSG "Backup verificado!"
-    #    return 0
-
-    if [ -e "$BKP_DESTINO" ]; then
+    if [ -e "$BKP_DESTINO/BKPTOTAL_$DATE.rar" ]; then
         # se o backup existir com a data atual permite atualizar
         INFO_MSG "Backup verificado!"
         return 0
@@ -1137,8 +1044,8 @@ ATUALIZAR() {
     if [ "$inf_versaoLoja" != "$novoPortal" ]; then
         # Verifica se o arquivo de atualização foi encontrado
         if [ -z "$arquivo_versao_atual" ]; then
-            ERRO_MSG "Pacote de atualização da versão não encontrado"
-            echo "Pacote de atualização da versão não encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+            ERRO_MSG "Pacote de atualizacao da versao nao encontrado"
+            echo "Pacote de atualizacao da versao nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
             return
         else
             ALERTA_MSG "Descompactando a 'versão'... Por favor, aguarde!"
@@ -1151,17 +1058,17 @@ ATUALIZAR() {
                 echo -ne "Atualizando: [$percent%]\r"
             done
             then
-                INFO_MSG "Atualização de Versão concluída!"
+                INFO_MSG "Atualizacao de Versao concluida!"
                 versaoLoja="$novoPortal"
                 
                 rm -rf "$arquivo_versao_atual"
-                INFO_MSG "Versão atualizada para '$novoPortal'"
+                INFO_MSG "Versao atualizada para '$novoPortal'"
                 sleep 1
 
                 # Verifica se o arquivo da release foi encontrado
                 if [ -z "$arquivo_release_atual" ]; then
-                    ERRO_MSG "Pacote de atualização da release não encontrado"
-                    echo "Pacote de atualização da release não encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                    ERRO_MSG "Pacote de atualizacao da release nao encontrado"
+                    echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
                     return
                 else
                     total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
@@ -1173,7 +1080,7 @@ ATUALIZAR() {
                         echo -ne "Atualizando: [$porcento%]\r"
                     done
                     then
-                        INFO_MSG "Atualização de Release concluída!"
+                        INFO_MSG "Atualizacao de Release concluida!"
                         rm -rf "$arquivo_release_atual"
                     else
                         ERRO_MSG "Erro ao atualizar!"
@@ -1185,16 +1092,16 @@ ATUALIZAR() {
                     releaseLoja="$letraRelease"
                 fi
             else
-                ALERTA_MSG "Nova Versão Disponível, mas não foi possível atualizar. Entre em contato com o suporte!"
-                echo "Nova Versão Disponível, mas não foi possível atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                ALERTA_MSG "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco!"
+                echo "Nova Versão Disponível, mas não foi possível atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
                 exit 1
             fi
         fi
     elif [ "$inf_versaoLoja" == "$novoPortal" ]; then
         if [ "$releaseLoja" != "$letraRelease" ]; then
             if [ -z "$arquivo_release_atual" ]; then
-                ERRO_MSG "Pacote de atualização da release não encontrado"
-                echo "Pacote de atualização da release não encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                ERRO_MSG "Pacote de atualizacao da release nao encontrado"
+                echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
                 return
             else
                 ALERTA_MSG "Descompactando a 'release'... Por favor, aguarde!"
@@ -1206,24 +1113,24 @@ ATUALIZAR() {
                     echo -ne "Atualizando: [$porcento%]\r"
                 done
                 then
-                    INFO_MSG "Atualização de Release Concluída!"
+                    INFO_MSG "Atualizacao de Release Concluida!"
                     rm -rf "$arquivo_release_atual"
                     releaseLoja="$letraRelease"
                 else
-                    ALERTA_MSG "Nova Release Disponível, mas não foi possível atualizar. Entre em contato com o suporte!"
-                    echo "Nova Release Disponível, mas não foi possível atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                    ALERTA_MSG "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco!"
+                    echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
                     exit 1
                 fi
                 echo
-                INFO_MSG "Atualização concluída com sucesso."
+                INFO_MSG "Atualizacao concluida com sucesso."
             fi
         else
-            echo "INTEGRAL JÁ ESTÁ COM A RELEASE MAIS RECENTE!"
-            echo "INTEGRAL JÁ ESTÁ COM A RELEASE MAIS RECENTE! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE!"
+            echo "INTEGRAL JA ESTÁ COM A RELEASE MAIS RECENTE! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
         fi
     else
-        echo "INTEGRAL JÁ ESTÁ COM VERSÃO E RELEASE MAIS RECENTES!"
-        echo "INTEGRAL JÁ ESTÁ COM VERSÃO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+        echo "INTEGRAL JA ESTÁ COM VERSÃO E RELEASE MAIS RECENTES!"
+        echo "INTEGRAL JA ESTÁ COM VERSÃO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
     fi
 
     sleep 1
