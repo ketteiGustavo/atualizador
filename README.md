@@ -15,9 +15,7 @@
 ![Debian](https://img.shields.io/badge/Debian-D70A53?style=for-the-badge&logo=debian&logoColor=white)
 [![Notion !](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)](https://www.notion.so/Manual-Atualizador-Autom-tico-em-constru-o-44c13ed760b9426aaa7b0752f7e606e7?pvs=4)
 
-<h1 align="center">
-    <img src="./Imagens/em_construcao.gif" />
-</h1>
+
 
 <div align="center">
   Nos ajude com esse projeto
