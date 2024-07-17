@@ -773,8 +773,8 @@ LER_ARQUIVO_TEXTO() {
                 ;;
                 "RELEASE")
                     inf_releaseLoja="$valor"
-                    echo "Release atual no Servidor: $inf_releaseLoja"
                     inf_release="$valor"
+                    echo "Release atual no Servidor: $inf_releaseLoja"
                     echo "$inf_releaseLoja" > "/u/sist/controle/inf_releaseLoja.txt"
                     echo
                 ;;
@@ -1037,7 +1037,7 @@ ATUALIZAR() {
         VERIFICA_BACKUP
     fi
 
-    echo "Loja: versao - $inf_versaoLoja - release - $releaseLoja"
+    echo "Loja: versao - $inf_versaoLoja - release - $inf_releaseLoja"
     echo "Portal: versao - $novoPortal - release - $letraRelease"
 
     # Verifica se a versão está desatualizada
@@ -1089,7 +1089,7 @@ ATUALIZAR() {
                     fi
                     echo ""
                     INFO_MSG "Release atualizada"
-                    releaseLoja="$letraRelease"
+                    inf_releaseLoja="$letraRelease"
                 fi
             else
                 ALERTA_MSG "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco!"
@@ -1098,7 +1098,7 @@ ATUALIZAR() {
             fi
         fi
     elif [ "$inf_versaoLoja" == "$novoPortal" ]; then
-        if [ "$releaseLoja" != "$letraRelease" ]; then
+        if [ "$inf_releaseLoja" != "$letraRelease" ]; then
             if [ -z "$arquivo_release_atual" ]; then
                 ERRO_MSG "Pacote de atualizacao da release nao encontrado"
                 echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
@@ -1115,7 +1115,7 @@ ATUALIZAR() {
                 then
                     INFO_MSG "Atualizacao de Release Concluida!"
                     rm -rf "$arquivo_release_atual"
-                    releaseLoja="$letraRelease"
+                    inf_releaseLoja="$letraRelease"
                 else
                     ALERTA_MSG "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco!"
                     echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
@@ -1182,7 +1182,6 @@ UPDATE () {
 GRAVANDO_ATUALIZACOES() {
     cobrun status-online.gnt "A" > /dev/null
     inf_versaoLoja="$novoPortal"
-    inf_releaseLoja="$releaseLoja"
     data_configuracao=$(date +'%d/%m/%Y')
     data_exibir=$(TRATAR_DATAS "$inf_versaoLoja")
     data_rel_exibir=$(TRATAR_DATAS "$data_release")
