@@ -1048,7 +1048,7 @@ ATUALIZAR() {
             echo "Pacote de atualizacao da versao nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
             return
         else
-            ALERTA_MSG "Descompactando a 'versão'... Por favor, aguarde!"
+            ALERTA_MSG "Descompactando a 'versao'... Por favor, aguarde!"
             total_files=$(rar lb "$arquivo_versao_atual" | wc -l)
             current_file=0
 
@@ -1093,7 +1093,7 @@ ATUALIZAR() {
                 fi
             else
                 ALERTA_MSG "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco!"
-                echo "Nova Versão Disponível, mas não foi possível atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                echo "Nova Versao Disponivel, mas nao foi possível atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
                 exit 1
             fi
         fi
@@ -1126,11 +1126,11 @@ ATUALIZAR() {
             fi
         else
             echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE!"
-            echo "INTEGRAL JA ESTÁ COM A RELEASE MAIS RECENTE! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
         fi
     else
-        echo "INTEGRAL JA ESTÁ COM VERSÃO E RELEASE MAIS RECENTES!"
-        echo "INTEGRAL JA ESTÁ COM VERSÃO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES!"
+        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
     fi
 
     sleep 1
@@ -1148,8 +1148,8 @@ ATUALIZAR() {
         exit 1
     }
 
-    INFO_MSG "Atualização realizada com sucesso!"
-    LOG_INFO "Atualização realizada com sucesso pela rotina AUTOMÁTICA!"
+    INFO_MSG "Atualizacao realizada com sucesso!"
+    LOG_INFO "Atualizacao realizada com sucesso pela rotina AUTOMATICA!"
 
     rm "$controle_flag/controle_flag.txt"
 }
@@ -1473,6 +1473,7 @@ VERIFICA_ATUALIZACAO
 INICIAR
 chmod 777 /u/sist/exec/*.gnt 2>> "$VALIDADOS_GNT"
 LIMPA_EXEC
+LER_ARQUIVO_TEXTO
 SEGURANCA
 LER_ARQUIVO_TEXTO
 ATUALIZAR
