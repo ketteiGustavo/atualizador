@@ -331,6 +331,7 @@ atualizado_flag=""
 controle_flag="/u/sist/controle"
 flag_versao=false
 flag_release=false
+flag_esta_atualizado=false
 
 
 
@@ -424,9 +425,10 @@ iniciar () {
 
 # funcao para verificar se o sistema foi atualizado no dia
 verifica_atualizacao () {
+    ler_arquivo_texto
     if [ -f "$info_loja_txt" ]; then
         ultima_atu=$(grep "DATA: " "$info_loja_txt" | cut -d ' ' -f 2)
-        if [ "$ultima_atu" == "$(date +'%d/%m/%Y')" ]; then
+        if [ "$ultima_atu" == "$(date +'%d/%m/%Y')" ] && [ "$flag_esta_atualizado" = true ] ; then
             
             clear
             tput smso
@@ -929,6 +931,7 @@ validar_ver_rel () {
             echo "INTEGRAL ESTA COM A RELEASE ATUAL!"
             atualizado_flag=true
             echo "$atualizado_flag" > $controle_flag/controle_flag.txt
+            flag_esta_atualizado=true
         else
             echo "RELEASE INVALIDA!"
         fi
@@ -1256,7 +1259,6 @@ baixar_controle () {
         echo "ERROR: NAO FOI POSSIVEL OBTER AS INFORMACOES DE VERSAO E RELEASE."
         rm -f "$controle_ver_rel.tmp"
     fi
-    exit 1
 }
 
 
