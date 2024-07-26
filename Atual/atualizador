@@ -769,6 +769,7 @@ ler_arquivo_texto () {
         data_release_servidor=$(grep -oP '(?<=DATA RELEASE: )\d+' "$info_loja_txt")
         echo "Data da release no Servidor: $data_release_servidor"
     fi
+    validar_ver_rel
 }
 
 
@@ -1488,7 +1489,6 @@ verifica_atualizacao
 iniciar
 chmod 777 /u/sist/exec/*.gnt 2>> "$validados_gnt"
 limpa_exec
-ler_arquivo_texto
 seguranca
 ler_arquivo_texto
 atualizar
