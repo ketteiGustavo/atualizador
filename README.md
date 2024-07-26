@@ -13,7 +13,7 @@
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![Shell Script](https://img.shields.io/badge/shell_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white)
 ![Debian](https://img.shields.io/badge/Debian-D70A53?style=for-the-badge&logo=debian&logoColor=white)
-[![Notion !](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)](https://www.notion.so/Manual-Atualizador-Autom-tico-em-constru-o-44c13ed760b9426aaa7b0752f7e606e7?pvs=4)
+[![Notion !](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)](https://field-piper-42a.notion.site/MANUAL-ATUALIZADOR-ea647d3aa93c43e2848ada073f7894b3)
 
 
 
@@ -120,7 +120,7 @@ Caso queria ler o manual completo acesse:
 ```bash
 avanco@servidor$ man atualizador
 ```
-Caso ainda prefira ler através de um arquivo PDF, basta [acessar aqui]()
+Caso ainda prefira ler através de um arquivo PDF, basta [acessar aqui](https://field-piper-42a.notion.site/MANUAL-ATUALIZADOR-ea647d3aa93c43e2848ada073f7894b3)
 
 ## 🔨 FERRAMENTAS
 o Atualizador foi construído em Shell Script, caso queria conhecer mais sobre a linguagem, acesse o link abaixo.
