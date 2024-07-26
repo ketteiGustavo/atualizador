@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.1.0
+# DATA: 13/04/2024 11:27 - Versao 0.1.1
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -22,6 +22,8 @@
 # Versao 0.0.10: Novos recursos e opcoes para linha de comando.
 # Versao 0.1.0:  Diversas correcoes e melhorias.
 #                Dentre elas melhor logica para obter os links atuais.
+# Versao 0.1.1: Leitura apenas de versao e release atuais, garantindo velocidade
+#               de execucao.
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -240,6 +242,7 @@ readonly no_color='\e[0m'
 
 # Variaveis globais
 info_loja_txt="/u/sist/controle/info_loja.txt"
+controle_ver_rel="/u/sist/controle/versao_release.txt"
 
 
 
@@ -622,7 +625,7 @@ seguranca (){
     if [ "$all_valide" = true ]; then
         info_msg "Iniciando a atualizacao automatica!"
         rm -f "$teste_gnt_log"
-	    rm -f "$validados_gnt"
+        rm -f "$validados_gnt"
     else
         alerta_msg "E necessario acionar o suporte Avanco para executar as permissoes"
         sleep 1
@@ -1252,7 +1255,7 @@ baixar_controle () {
         echo "ERROR: NAO FOI POSSIVEL OBTER AS INFORMACOES DE VERSAO E RELEASE."
         rm -f "$controle_ver_rel.tmp"
     fi
-    exit
+    exit 1
 }
 
 
