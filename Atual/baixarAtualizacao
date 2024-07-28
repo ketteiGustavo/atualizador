@@ -91,12 +91,8 @@ controle_ver_rel="/u/sist/controle/versao_release.txt"
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
     RESULTADO=$(cobrun 2>&1)
-    if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
-        versaoCobol="${BASH_REMATCH[1]}"
-        echo "Versao do Cobol: $versaoCobol"
-        inf_versaoCobol="$versaoCobol"
-    fi
-    #versaoCobol="4.0"
+    versaoCobol=$(echo "$RESULTADO" | sed -n 's/V\([0-9]\+\.[0-9]\+\).*/\1/p')
+    inf_versaoCobol="$versaoCobol"
 }
 
 # Funcao para tratar datas e inserir barras entre os digitos deixando DD/MM/AA
@@ -115,15 +111,10 @@ ler_arquivo() {
     local versao
     local arquivo="$controle_ver_rel"
     versao=$(grep -oP '(?<=Versao atual: )\d+' "$arquivo")
-    versao_Portal="$versao"
-    echo "Versao: $versao_Portal"
-    echo "$versao" > "/u/sist/controle/versaoIntegral"
+    versao_Portal=$(grep -oP '(?<=Versao atual: )\d+' "$arquivo")
     release_busca=$(grep -oP '(?<=Release atual: [A-Z] )\d{6}' "$arquivo")
     data_release="$release_busca"
-    echo "Data da release: $data_release"
-    echo "$data_release" > "/u/sist/controle/dataReleaseIntegral"
     release=$(grep -oP '(?<=Release atual: )[A-Z]' "$arquivo")
-    echo "$release" > "/u/sist/controle/releaseIntegral"
 }
 
 # Funcao para converter datas no formato YYYYMMDD, para ser usado em equacoes de comparacao, maior, menor e igual
@@ -145,8 +136,7 @@ CONVERTER_DATAS() {
 # Funcao para obter o link da versao atual, com base em comparacao de data por trimestre
 BAIXAR_VERSAO() {
     VERIFICA_COBOL
-    versaoBusca=$(cat "/u/sist/controle/versaoIntegral")
-    #echo "$versaoBusca"
+    versaoBusca="$versao_Portal"
     # Verificando a versao do COBOL
     if [ "$versaoCobol" == "4.0" ]; then
         URL_BUSCAR_VERSAO="$URL_BASE_VERSAO40"
@@ -195,14 +185,9 @@ BAIXAR_RELEASE() {
     buscarV40="release40"
     buscarV41="release"
 
-    echo "arquivo txt release: $release_busca"
-    echo "arquivo txt versao : $versao_busca"
+
     local rel="${release_busca:0:4}"
     local ver="${versao_Portal:0:4}"
-    
-    echo "tratada versao: $ver"
-    echo "tratada release: $rel"
-    
 
     # Verificando a versao do COBOL
     if [ "$versaoCobol" == "4.0" ]; then
@@ -219,7 +204,6 @@ BAIXAR_RELEASE() {
     fi
 
     URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
-    echo "URL: $URL_ATUALIZADO_RELEASE"
     if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
         wget -c --progress=dot "$URL_ATUALIZADO_RELEASE" -P "$PASTA_DESTINO" 2>&1 | \
         grep --line-buffered "%" | \
