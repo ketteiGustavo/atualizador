@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.1.3
+# DATA: 13/04/2024 11:27 - Versao 0.1.5
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -26,6 +26,9 @@
 #               de execucao.
 # Versao 0.1.2: Criado opcoes de leitura de logs pela linha de comando
 # Versao 0.1.3: Opcao de restauracao implementada
+# Versao 0.1.4: Criado log de auditoria
+# Versao 0.1.5: Funcao de parametrizacao, para executar o atualizador de acordo
+#               com o que for predefinido pelo usuario.
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -285,6 +288,7 @@ erro_log_file="/u/sist/logs/erro_$mes_ano.log"
 
 # arquivo de pre leitura
 controle_servidor="/u/sist/controle"
+arquivo_parametros="$controle_servidor/parametros.txt"
 
 script_baixar_atualizacao="/u/bats/baixarAtualizacao"
 
@@ -310,6 +314,7 @@ inf_release="" # usada para obter a release digitada
 inf_versaoCobol=""
 inf_versaoLoja=""
 inf_releaseLoja=""
+inf_releaseLojaAntes=""
 dia=""
 mes=""
 ano=""
@@ -481,6 +486,11 @@ verifica_atualizacao() {
             echo "DATA: $(date +'%d/%m/%Y') - $(date +'%H:%M:%S')" >>$log_file
             echo "USUARIO: $USER" >>$log_file
             echo "" >>$log_file
+
+            echo "" >>$auditoria
+            echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+            echo "INTEGRAL ESTAVA ATUALIZADO NA TENTATIVA DE ATUALIZACAO" >>$auditoria
+            echo "USUARIO: $USER" >>$auditoria
             sleep 2
             exit 0
         else
@@ -551,6 +561,10 @@ verificar_dia() {
         echo "                           t.me/avancoinformatica_bot                           "
         tput rmso
         stty sane
+        echo "" >>$auditoria
+        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL NO FIM DE SEMANA" >>$auditoria
+        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
         exit 0
     fi
 
@@ -568,6 +582,10 @@ verificar_dia() {
         echo "                           t.me/avancoinformatica_bot                           "
         tput rmso
         stty sane
+        echo "" >>$auditoria
+        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL" >>$auditoria
+        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
         exit 0
     fi
 
@@ -585,6 +603,10 @@ verificar_dia() {
         echo "                           t.me/avancoinformatica_bot                           "
         tput rmso
         stty sane
+        echo "" >>$auditoria
+        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
+        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
         exit 0
     fi
 
@@ -604,6 +626,10 @@ verificar_dia() {
         echo "                           t.me/avancoinformatica_bot                           "
         tput rmso
         stty sane
+        echo "" >>$auditoria
+        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
+        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
         exit 0
     fi
     sleep 3
@@ -841,6 +867,7 @@ criar_info_loja() {
     echo "VERSAO COBOL: $inf_versaoCobol" >>"$info_loja_txt"
     echo "VERSAO INTEGRAL: $inf_versaoLoja" >>"$info_loja_txt"
     echo "RELEASE: $inf_releaseLoja" >>"$info_loja_txt"
+    inf_releaseLojaAntes="$inf_releaseLoja"
     echo "DATA RELEASE: " >>"$info_loja_txt"
 }
 
@@ -858,6 +885,7 @@ ler_arquivo_texto() {
         inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
         inf_versaoLoja=$(grep -oP '(?<=VERSAO INTEGRAL: )\d+' "$info_loja_txt")
         inf_releaseLoja=$(grep -oP '(?<=RELEASE: )[[:alpha:]]' "$info_loja_txt")
+        inf_releaseLojaAntes="$inf_releaseLoja"
         data_release_servidor=$(grep -oP '(?<=DATA RELEASE: )\d+' "$info_loja_txt")
     fi
     validar_ver_rel
@@ -953,7 +981,7 @@ manter_log_erro_atual() {
 log_info() {
     manter_log_atual
     local info="$1"
-    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y - %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLoja \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") \n- LOCAL DO BACKUP: $bkp_destino/BKPTOTAL_$date.rar \n- USUARIO UTILIZADO: $USER\n################################################################################"
+    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y - %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLojaAntes \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") \n- LOCAL DO BACKUP: $bkp_destino/BKPTOTAL_$date.rar \n- USUARIO UTILIZADO: $USER\n################################################################################"
 
     # Escreve no arquivo de log
     echo -e "$log_msg\n" >>"$log_file"
@@ -1381,8 +1409,73 @@ baixar_controle() {
 #Nº | VERSAO | RELEASE | BACKUP
 
 parametros() {
-    while getopts ":Lade" opt; do
-        case ${opt} in
+    if [[ -z "$1" ]]; then
+        tput cup 7 30
+        echo "SELECIONE UMA OPCAO: "
+        tput cup 10 30
+        echo "1  -  LISTAR PARAMETROS"
+        tput cup 11 30
+        echo "2  -  ALTERAR PARAMETROS"
+        tput cup 12 30
+        echo "3  -  EXCLUIR PARAMETROS"
+        tput cup 13 30
+        echo "4  -  RESTAURAR PARA PADRAO"
+        tput cup 14 30
+        echo "9  -  VOLTAR AO MENU"
+        tput cup 15 30
+        echo "99 -  SAIR"
+        tput cup 16 30
+        echo -n "OPCAO: "
+        read opt
+        case $opt in
+        1)
+            clear
+            listar_parametros
+            ;;
+        2)
+            clear
+            alterar_parametros
+            ;;
+        3)
+            clear
+            excluir_parametros
+            ;;
+        4)
+            clear
+            default_parametros
+            ;;
+        9)
+            clear
+            menu_secreto
+            ;;
+        99)
+            clear
+            tput smso
+            echo ""
+            echo "                                AVANCO INFORMATICA                              "
+            echo ""
+            echo "                            TELESUPORTE (31) 3025-1188                          "
+            echo ""
+            echo "                                    TELEGRAM                                    "
+            echo ""
+            echo "                            t.me/avancoinformatica_bot                          "
+            tput rmso
+            stty sane
+            sleep 2
+            exit 0
+            ;;
+        *)
+            clear
+            echo "OPCAO INVALIDA."
+            echo "USE '1' PARA LISTAR OS PARAMETROS."
+            echo "USE '2' PARA ALTERAR OS PARAMETROS."
+            echo "USE '3' PARA EXCLUIR OS PARAMETROS."
+            echo "OU USE '4' PARA RESTAURAR OS PARAMETROS."
+            ;;
+        esac
+    else
+        while getopts ":Lade" opt; do
+            case ${opt} in
 
             L)
                 clear
@@ -1391,6 +1484,8 @@ parametros() {
 
             a)
                 clear
+                echo "INFORME APENAS UMA LETRA POR PARAMETRO"
+                echo
                 alterar_parametros
                 ;;
 
@@ -1398,7 +1493,7 @@ parametros() {
                 clear
                 excluir_parametros
                 ;;
-            
+
             d)
                 clear
                 default_parametros
@@ -1412,81 +1507,133 @@ parametros() {
                 echo "USE '-e' PARA EXCLUIR OS PARAMETROS."
                 echo "OU USE '-d' PARA RESTAURAR OS PARAMETROS."
                 ;;
-        esac
-    done
+            esac
+        done
+    fi
 }
 
-
-listar_parametros(){
-
-    echo "DESLOGAR USUARIOS - N"
-    echo "LOGAR ATUALIZANDO - N"
-    echo "AVISAR ATUALIZACAO - N"
-    echo "AVISAR EXTRAS - N"
-    echo "BAIXAR AUTOMATICAMENTE - S"
-    echo "INSTALAR AUTOMATICAMENTE - N"
-    echo "TODOS AUTORIZADOS - S"
-    echo "AUTORIZADOS - NONE"
+listar_parametros() {
+    if [[ -f $arquivo_parametros ]]; then
+        more $arquivo_parametros
+    else
+        echo "OS PARAMETROS NAO FORAM ENCONTRADOS"
+        echo "DESEJA DEFINIR PARA OS VALORES PADROES? (S/N)"
+        read definir_novos
+        while true; do
+            case $definir_novos in
+            "s" | "S")
+                default_parametros
+                echo "DESLOGAR USUARIOS - N"
+                echo "LOGAR ATUALIZANDO - N"
+                echo "AVISAR ATUALIZACAO - N"
+                echo "AVISAR EXTRAS - N"
+                echo "BAIXAR AUTOMATICAMENTE - S"
+                echo "INSTALAR AUTOMATICAMENTE - N"
+                echo "TODOS AUTORIZADOS - S"
+                echo "AUTORIZADOS - ALL"
+                break
+                ;;
+            "n" | "N")
+                echo "Nenhum parametro armazenado"
+                exit 1
+                ;;
+            *)
+                echo "OPCAO INVALIDA! TENTE NOVAMENTE."
+                ;;
+            esac
+        done
+    fi
 }
 
 alterar_parametros() {
     listar_parametros
-    echo "Deseja alterar os parâmetros? (S/N)"
+    echo "DESEJA ALTERAR OS PARAMETROS? (S/N)"
     read resposta
+    resposta=$(echo "$resposta" | tr '[:lower:]' '[:upper:]')
     if [[ "$resposta" == "S" ]]; then
         echo "Digite o novo valor para DESLOGAR USUARIOS (S/N):"
         read deslogar_usuarios
+        deslogar_usuarios=$(echo "$deslogar_usuarios" | tr '[:lower:]' '[:upper:]')
         echo "Digite o novo valor para LOGAR ATUALIZANDO (S/N):"
         read logar_atualizando
+        logar_atualizando=$(echo "$logar_atualizando" | tr '[:lower:]' '[:upper:]')
         echo "Digite o novo valor para AVISAR ATUALIZACAO (S/N):"
         read avisar_atualizacao
+        avisar_atualizacao=$(echo "$avisar_atualizacao" | tr '[:lower:]' '[:upper:]')
         echo "Digite o novo valor para AVISAR EXTRAS (S/N):"
         read avisar_extras
+        avisar_extras=$(echo "$avisar_extras" | tr '[:lower:]' '[:upper:]')
         echo "Digite o novo valor para BAIXAR AUTOMATICAMENTE (S/N):"
         read baixar_automaticamente
+        baixar_automaticamente=$(echo "$baixar_automaticamente" | tr '[:lower:]' '[:upper:]')
         echo "Digite o novo valor para INSTALAR AUTOMATICAMENTE (S/N):"
         read instalar_automaticamente
+        instalar_automaticamente=$(echo "$instalar_automaticamente" | tr '[:lower:]' '[:upper:]')
         echo "Digite o novo valor para TODOS AUTORIZADOS (S/N):"
         read todos_autorizados
+        todos_autorizados=$(echo "$todos_autorizados" | tr '[:lower:]' '[:upper:]')
         echo "Digite o novo valor para AUTORIZADOS:"
         read autorizados
+        autorizados=$(echo "$autorizados" | tr '[:upper:]' '[:lower:]')
 
-        echo "DESLOGAR USUARIOS - $deslogar_usuarios"
-        echo "LOGAR ATUALIZANDO - $logar_atualizando"
-        echo "AVISAR ATUALIZACAO - $avisar_atualizacao"
-        echo "AVISAR EXTRAS - $avisar_extras"
-        echo "BAIXAR AUTOMATICAMENTE - $baixar_automaticamente"
-        echo "INSTALAR AUTOMATICAMENTE - $instalar_automaticamente"
-        echo "TODOS AUTORIZADOS - $todos_autorizados"
-        echo "AUTORIZADOS - $autorizados"
+        echo "DESLOGAR USUARIOS - $deslogar_usuarios" >$arquivo_parametros
+        echo "LOGAR ATUALIZANDO - $logar_atualizando" >>$arquivo_parametros
+        echo "AVISAR ATUALIZACAO - $avisar_atualizacao" >>$arquivo_parametros
+        echo "AVISAR EXTRAS - $avisar_extras" >>$arquivo_parametros
+        echo "BAIXAR AUTOMATICAMENTE - $baixar_automaticamente" >>$arquivo_parametros
+        echo "INSTALAR AUTOMATICAMENTE - $instalar_automaticamente" >>$arquivo_parametros
+        echo "TODOS AUTORIZADOS - $todos_autorizados" >>$arquivo_parametros
+        echo "AUTORIZADOS - $autorizados" >>$arquivo_parametros
+    elif [[ "$resposta" == "N" ]]; then
+        echo "Alteracao de parametros cancelada."
     else
-        echo "Alteração de parâmetros cancelada."
+        echo "Opcao invalida. Use S ou N"
     fi
 }
 
 excluir_parametros() {
-    echo "Parâmetros excluídos."
-
+    rm -rf $arquivo_parametros
+    echo "Parametros excluidos."
+    echo "DESLOGAR USUARIOS - " >$arquivo_parametros
+    echo "LOGAR ATUALIZANDO - " >>$arquivo_parametros
+    echo "AVISAR ATUALIZACAO - " >>$arquivo_parametros
+    echo "AVISAR EXTRAS - " >>$arquivo_parametros
+    echo "BAIXAR AUTOMATICAMENTE - " >>$arquivo_parametros
+    echo "INSTALAR AUTOMATICAMENTE - " >>$arquivo_parametros
+    echo "TODOS AUTORIZADOS - " >>$arquivo_parametros
+    echo "AUTORIZADOS - " >>$arquivo_parametros
 }
 
 default_parametros() {
-    listar_parametros
-    echo "Parâmetros redefinidos para os valores padrão."
+    echo "DESLOGAR USUARIOS - N" >$arquivo_parametros
+    echo "LOGAR ATUALIZANDO - N" >>$arquivo_parametros
+    echo "AVISAR ATUALIZACAO - N" >>$arquivo_parametros
+    echo "AVISAR EXTRAS - N" >>$arquivo_parametros
+    echo "BAIXAR AUTOMATICAMENTE - S" >>$arquivo_parametros
+    echo "INSTALAR AUTOMATICAMENTE - N" >>$arquivo_parametros
+    echo "TODOS AUTORIZADOS - S" >>$arquivo_parametros
+    echo "AUTORIZADOS - ALL" >>$arquivo_parametros
+    echo "Parametros definidos para os valores padrao."
 }
 
 menu_secreto() {
     clear
     while true; do
-        echo " ___________________________________________________________________________"
-        echo "|                                                                           |"
-        echo "|  1) OBTER INFORMACOES DO SISTEMA         7) CONFIGURAR ROTINA NO CRON     |"
-        echo "|  2) ATUALIZAR                            8) OBTER UPDATE DO ATUALIZADOR   |"
-        echo "|  3) REVERTER ATUALIZACAO                 9) PARAMETRIZACAO                |"
-        echo "|  4) BACKUP EXECUTAVEIS                   10) MANUAL                       |"
-        echo "|  5) CORRIGIR FALHAS DE ATUALIZACAO       99) SAIR                         |"
-        echo "|  6) VISUALIZAR LOGS                                                       |"
-        echo "|___________________________________________________________________________|"
-        read -p "ESCOLHA UMA OPCAO: " opcao
+        tput cup 7 31
+        echo "OPCOES DISPONIVEIS:"
+        tput cup 9 4
+        echo "1  - OBTER INFORMACOES DO SISTEMA         6  - CONFIGURAR ROTINA NO CRON"
+        tput cup 10 4
+        echo "2  - ATUALIZAR                            7  - PARAMETRIZACAO"
+        tput cup 11 4
+        echo "3  - BACKUP EXECUTAVEIS                   8  - MANUAL"
+        tput cup 12 4
+        echo "4  - VISUALIZAR LOGS                      99 - SAIR"
+        tput cup 13 4
+        echo "5  - OBTER UPDATE DO ATUALIZADOR"
+        tput cup 15 4
+        echo -n "OPCAO: "
+        read opcao
         case $opcao in
         1)
             clear
@@ -1508,24 +1655,19 @@ menu_secreto() {
             ;;
         3)
             clear
-            echo "REVERTER ATUALIZACAO"
-            menu_restaura
-            ;;
-        4)
-            clear
             echo "BACKUP"
             fazer_bkp
             ;;
+        4)
+            clear
+            ler_logs
+            ;;
         5)
             clear
-            echo "CORRIGIR FALHAS DE ATUALIZACAO"
-            echo "$guia_erros"
+            echo "OBTER UPDATE DO ATUALIZADOR"
+            update
             ;;
         6)
-            clear
-            echo
-            ;;
-        7)
             clear
             echo "CONFIGURAR ROTINA NO CRON"
             if [ $USER = avanco ]; then
@@ -1535,16 +1677,17 @@ menu_secreto() {
                 exit
             fi
             ;;
+        7)
+            clear
+            echo "PARAMETRIZAR ATUALIZADOR"
+            if [ $USER = avanco ]; then
+                parametros
+            else
+                echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                exit
+            fi
+            ;;
         8)
-            clear
-            echo "OBTER UPDATE DO ATUALIZADOR"
-            update
-            ;;
-        9)
-            clear
-            echo "PARAMETRIZACAO"
-            ;;
-        10)
             clear
             echo "$manual_uso"
             ;;
@@ -1569,6 +1712,16 @@ menu_secreto() {
             fi
             echo "menu"
             ;;
+        "r" | "R")
+            clear
+            echo "REVERTER ATUALIZACAO"
+            menu_restaura
+            ;;
+        "p" | "P")
+            clear
+            echo "PARAMETRIZACAO"
+            parametros
+            ;;
         99)
             clear
             tput smso
@@ -1582,7 +1735,7 @@ menu_secreto() {
             echo "                            t.me/avancoinformatica_bot                          "
             tput rmso
             stty sane
-            sleep 5
+            sleep 3
             exit 0
             ;;
         *)
@@ -1593,10 +1746,6 @@ menu_secreto() {
         clear
     done
 }
-#echo "criar menu com opcoes"
-#echo "local onde estao os backups: $bkp_destino"
-#echo "local onde estao os logs: $local_log"
-#echo "local de informacoes da loja: $info_loja_txt"
 
 # Função para verificar a senha do usuário atual
 verificar_senha() {
@@ -1609,6 +1758,7 @@ verificar_senha() {
         # Verifica a senha usando 'sudo' com o comando ':'
         echo "$senha" | su -c true $USER >/dev/null 2>&1
         if [ $? -eq 0 ]; then
+            clear
             return 0
         else
             clear
@@ -1629,11 +1779,14 @@ menu_restaura() {
         exit 1
     fi
 
-    echo "BACKUPS DISPONIVEIS:                                           ou (99) para sair"
+    echo "BACKUPS DISPONIVEIS:                             (9) para menu ou (99) para sair"
+    echo ""
     backups=$(ls ${bkp_destino}/BKPTOTAL_* | sort)
     select backup in ${backups}; do
         if [ "$REPLY" = "99" ]; then
             exit 1
+        elif [ "$REPLY" = "9" ]; then
+            menu_secreto
         fi
         if [[ -n $backup ]]; then
             echo "SERA RESTAURADO O BACKUP: $backup"
@@ -1699,11 +1852,12 @@ ler_logs() {
     while true; do
         echo "LOGS DISPONIVEIS PARA CONSULTA"
         echo
-        echo "1)  LOG DE ATUALIZACAO"
-        echo "2)  LOG DE ERRO"
-        echo "3)  LOG DE DESEMPENHO"
-        echo "4)  LOG DE ARQUIVOS REMOVIDOS"
-        echo "99) SAIR"
+        echo "1  -  LOG DE ATUALIZACAO"
+        echo "2  -  LOG DE ERRO"
+        echo "3  -  LOG DE DESEMPENHO"
+        echo "4  -  LOG DE ARQUIVOS REMOVIDOS"
+        echo "9  -  VOLTAR AO MENU"
+        echo "99 -  SAIR"
         echo
         read -p "ESCOLHA UMA OPCAO: " opcao_log
         case $opcao_log in
@@ -1713,7 +1867,6 @@ ler_logs() {
             ;;
         2)
             clear
-            visualizar_logs
             (echo "ULTIMOS ERROS GRAVADOS" && echo "" && tail -n 10 "$erro_log_file")
             ;;
         3)
@@ -1723,6 +1876,10 @@ ler_logs() {
         4)
             clear
             visualizar_logs
+            ;;
+        9)
+            clear
+            menu_secreto
             ;;
         99)
             clear
@@ -1835,7 +1992,8 @@ case "$1" in
     exit 0
     ;;
 -r | --restore)
-    echo "criar opcao de restaurar"
+    echo "OPCAO DE RESTAURACAO"
+    menu_restaura
     exit 0
     ;;
 -l | --log)
