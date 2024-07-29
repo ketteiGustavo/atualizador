@@ -1378,6 +1378,102 @@ baixar_controle() {
     fi
 }
 
+#Nº | VERSAO | RELEASE | BACKUP
+
+parametros() {
+    while getopts ":Lade" opt; do
+        case ${opt} in
+
+            L)
+                clear
+                listar_parametros
+                ;;
+
+            a)
+                clear
+                alterar_parametros
+                ;;
+
+            e)
+                clear
+                excluir_parametros
+                ;;
+            
+            d)
+                clear
+                default_parametros
+                ;;
+
+            *)
+                clear
+                echo "OPCAOO INVALIDA."
+                echo "USE '-L' PARA LISTAR OS PARAMETROS."
+                echo "USE '-a' PARA ALTERAR OS PARAMETROS."
+                echo "USE '-e' PARA EXCLUIR OS PARAMETROS."
+                echo "OU USE '-d' PARA RESTAURAR OS PARAMETROS."
+                ;;
+        esac
+    done
+}
+
+
+listar_parametros(){
+
+    echo "DESLOGAR USUARIOS - N"
+    echo "LOGAR ATUALIZANDO - N"
+    echo "AVISAR ATUALIZACAO - N"
+    echo "AVISAR EXTRAS - N"
+    echo "BAIXAR AUTOMATICAMENTE - S"
+    echo "INSTALAR AUTOMATICAMENTE - N"
+    echo "TODOS AUTORIZADOS - S"
+    echo "AUTORIZADOS - NONE"
+}
+
+alterar_parametros() {
+    listar_parametros
+    echo "Deseja alterar os parâmetros? (S/N)"
+    read resposta
+    if [[ "$resposta" == "S" ]]; then
+        echo "Digite o novo valor para DESLOGAR USUARIOS (S/N):"
+        read deslogar_usuarios
+        echo "Digite o novo valor para LOGAR ATUALIZANDO (S/N):"
+        read logar_atualizando
+        echo "Digite o novo valor para AVISAR ATUALIZACAO (S/N):"
+        read avisar_atualizacao
+        echo "Digite o novo valor para AVISAR EXTRAS (S/N):"
+        read avisar_extras
+        echo "Digite o novo valor para BAIXAR AUTOMATICAMENTE (S/N):"
+        read baixar_automaticamente
+        echo "Digite o novo valor para INSTALAR AUTOMATICAMENTE (S/N):"
+        read instalar_automaticamente
+        echo "Digite o novo valor para TODOS AUTORIZADOS (S/N):"
+        read todos_autorizados
+        echo "Digite o novo valor para AUTORIZADOS:"
+        read autorizados
+
+        echo "DESLOGAR USUARIOS - $deslogar_usuarios"
+        echo "LOGAR ATUALIZANDO - $logar_atualizando"
+        echo "AVISAR ATUALIZACAO - $avisar_atualizacao"
+        echo "AVISAR EXTRAS - $avisar_extras"
+        echo "BAIXAR AUTOMATICAMENTE - $baixar_automaticamente"
+        echo "INSTALAR AUTOMATICAMENTE - $instalar_automaticamente"
+        echo "TODOS AUTORIZADOS - $todos_autorizados"
+        echo "AUTORIZADOS - $autorizados"
+    else
+        echo "Alteração de parâmetros cancelada."
+    fi
+}
+
+excluir_parametros() {
+    echo "Parâmetros excluídos."
+
+}
+
+default_parametros() {
+    listar_parametros
+    echo "Parâmetros redefinidos para os valores padrão."
+}
+
 menu_secreto() {
     clear
     while true; do
@@ -1502,7 +1598,6 @@ menu_secreto() {
 #echo "local onde estao os logs: $local_log"
 #echo "local de informacoes da loja: $info_loja_txt"
 
-
 # Função para verificar a senha do usuário atual
 verificar_senha() {
     tentativas=3
@@ -1510,9 +1605,9 @@ verificar_senha() {
         echo -n "Digite sua senha: "
         read -s senha
         echo
-        
+
         # Verifica a senha usando 'sudo' com o comando ':'
-        echo "$senha" | su -c true $USER > /dev/null 2>&1
+        echo "$senha" | su -c true $USER >/dev/null 2>&1
         if [ $? -eq 0 ]; then
             return 0
         else
@@ -1747,16 +1842,11 @@ case "$1" in
     ler_logs
     exit 0
     ;;
---config)
-    echo "criar opcao de configurar parametros"
-    exit 0
-    ;;
---alterar)
-    echo "criar opcao para alterar os parametros configurados"
-    exit 0
-    ;;
---list)
-    echo "criar opcao de listar configuracao"
+-P)
+    shift
+    clear
+    echo "PARAMETRIZACAO"
+    parametros "$@"
     exit 0
     ;;
 --cron)
