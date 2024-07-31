@@ -331,6 +331,9 @@ controle_flag="/u/sist/controle"
 flag_versao=false
 flag_release=false
 flag_esta_atualizado=false
+flag_renomea=false
+flag_load_parametros=false
+flag_pacote_descompactado=false
 local_abortado=""
 abortado_controle=""
 
@@ -390,7 +393,9 @@ interromper() {
         echo "USUARIO: $USER" >>$auditoria
         echo "ABORTADO EM: $local_abortado" >>$auditoria
         echo "" >>$auditoria
-        mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+        if [ "$flag_renomea" = true ]; then
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+        fi
         echo
         if [[ "$abortado_controle" == "seguranca" ]]; then
             rm -f "$teste_gnt_log"
@@ -413,16 +418,14 @@ interromper() {
 
 }
 
-trap 'interromper' SIGINT
+trap 'interromper' SIGINT SIGTERM SIGHUP
 
 validar_linux() {
     local_abortado="Validacao LINUX"
-    local distro_name=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
-
-    if [[ "$distro_name" == "Slackware" ]]; then
+    if [ ! -e /etc/debian_version ]; then
         clear
-        echo "O PROCESSO DE ATUALIZACAO DEVERA SER REALIZADO MANUALMENTE"
-        sleep 3
+        echo "ATUALIZADOR CONFIGURADO PARA SERVIDORES DEBIAN"
+        sleep 2
         exit
     fi
 }
@@ -435,7 +438,10 @@ iniciar() {
         case $confirma_inicio in
         "S" | "s")
             echo "Atualizador Integral"
-            mv /u/sist/exec/integral.gnt /u/sist/exec/cogumeloAzul.gnt
+            if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
+                mv /u/sist/exec/integral.gnt /u/sist/exec/cogumeloAzul.gnt
+                flag_renomea=true
+            fi
             clear
             break
             ;;
@@ -458,6 +464,40 @@ iniciar() {
             ;;
         esac
     done
+}
+
+usuario_permitido() {
+    local usuario_atual="$USER"
+    local permitido_att=false
+    if [[ "$todos_autorizados" == "S" ]]; then
+        echo "TODOS USUARIOS PODEM ATUALIZAR" > /dev/null
+        return 0
+    elif [[ "$todos_autorizados" == "N" ]]; then
+        for user in "${usuarios_permitidos[@]}"; do
+            if [[ "$user" == "$usuario_atual" ]]; then
+                permitido_att=true
+                break
+            fi
+        done
+
+        IFS=' '
+        read -r -a lista_autorizados <<< "$autorizados"
+        
+        for user in "${lista_autorizados[@]}"; do
+            if [[ "$user" == "$usuario_atual" ]]; then
+                permitido_att=true
+                break
+            fi
+        done
+
+        if [[ "$permitido_att" = false ]]; then
+            echo "ESTE USUARIO NAO TEM PERMISSAO DE EXECUTAR ESSA ACAO"
+            echo "" >>$auditoria
+            echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+            echo "O USUARIO $USER TENTOU ATUALIZAR O INTEGRAL" >>$auditoria
+            exit 1
+        fi
+    fi
 }
 
 # funcao para verificar se o sistema foi atualizado no dia
@@ -523,25 +563,26 @@ contar_usuarios_usando_programa() {
 
 verifica_logados() {
     local_abortado="Verificando usuarios logados"
+    if [[ "$flag_load_parametros" == "true" ]] && [[ "$deslogar_usuarios" == "S" ]]; then
+        notificar_usuarios &
+        NOTIFICAR_PID=$!
 
-    notificar_usuarios &
-    NOTIFICAR_PID=$!
-
-    # Esperar até que todos os usuários saiam
-    while true; do
-        if [ $(contar_usuarios_usando_programa) -eq 0 ]; then
+        # Esperar até que todos os usuários saiam
+        while true; do
+            if [ $(contar_usuarios_usando_programa) -eq 0 ]; then
+                clear
+                kill $NOTIFICAR_PID
+                wait $NOTIFICAR_PID 2>/dev/null
+                echo "NENHUM USUARIO LOGADO. INICIANDO A ATUALIZACAO DO SERVIDOR..."
+                break
+            fi
             clear
-            kill $NOTIFICAR_PID
-            wait $NOTIFICAR_PID 2>/dev/null
-            echo "NENHUM USUARIO LOGADO. INICIANDO A ATUALIZACAO DO SERVIDOR..."
-            break
-        fi
-        clear
-        echo "USUARIOS COM O INTEGRAL ABERTO: "
-        usuarios_usando_programa
-        echo "AGUARDANDO OS USUARIOS ENCERRAREM SUAS SESSOES..."
-        sleep 5
-    done
+            echo "USUARIOS COM O INTEGRAL ABERTO: "
+            usuarios_usando_programa
+            echo "AGUARDANDO OS USUARIOS ENCERRAREM SUAS SESSOES..."
+            sleep 5
+        done
+    fi
 }
 
 # Funcao para verificar o dia da semana e hora
@@ -1183,6 +1224,7 @@ atualizar() {
         # Verifica se o arquivo de atualização foi encontrado
         if [ -z "$arquivo_versao_atual" ]; then
             erro_msg "PACOTE DE ATUALIZACAO DA VERSAO NAO ENCONTRADO"
+            flag_pacote_descompactado=false
             echo "PACOTE DE ATUALIZACAO DA VERSAO NAO ENCONTRADO! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
             return
         else
@@ -1198,6 +1240,7 @@ atualizar() {
                 echo -ne "ATUALIZANDO: [$percent%]\r"
             done; then
                 info_msg "ATUALIZACAO DE VERSAO CONCLUIDA!"
+                flag_pacote_descompactado=true
                 versaoLoja="$novoPortal"
 
                 rm -rf "$arquivo_versao_atual"
@@ -1207,6 +1250,7 @@ atualizar() {
                 # Verifica se o arquivo da release foi encontrado
                 if [ -z "$arquivo_release_atual" ]; then
                     erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
+                    flag_pacote_descompactado=false
                     echo "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
                     return
                 else
@@ -1221,18 +1265,22 @@ atualizar() {
                         echo -ne "ATUALIZANDO: [$porcento%]\r"
                     done; then
                         info_msg "ATUALIZACAO DE RELEASE CONCLUIDA!"
+                        flag_pacote_descompactado=true
                         rm -rf "$arquivo_release_atual"
                     else
                         erro_msg "ERRO AO ATUALIZAR!"
+                        flag_pacote_descompactado=false
                         echo "ERRO AO ATUALIZAR INTEGRAL! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
                         exit 1
                     fi
                     echo ""
                     info_msg "RELEASE ATUALIZADA PARA: $letraRelease"
+                    flag_pacote_descompactado=true
                     inf_releaseLoja="$letraRelease"
                 fi
             else
                 local_abortado="Func. Atualizar: Tentativa de descompactar"
+
                 alerta_msg "NOVA VERSAO DISPONIVEL, MAS NAO FOI POSSIVEL ATUALIZAR. ENTRE EM CONTATO COM O SUPORTE AVANCO!"
                 echo "Nova Versao Disponivel, mas nao foi possível atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
                 exit 1
@@ -1242,6 +1290,7 @@ atualizar() {
         if [ "$inf_releaseLoja" != "$letraRelease" ]; then
             if [ -z "$arquivo_release_atual" ]; then
                 erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
+                flag_pacote_descompactado=false
                 echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
                 return
             else
@@ -1256,6 +1305,7 @@ atualizar() {
                     echo -ne "ATUALIZANDO: [$porcento%]\r"
                 done; then
                     info_msg "ATUALIZACAO DE RELEASE CONCLUIDA!"
+                    flag_pacote_descompactado=true
                     rm -rf "$arquivo_release_atual"
                     inf_releaseLoja="$letraRelease"
                 else
@@ -1331,37 +1381,39 @@ update() {
 gravando_atualizacoes() {
     local_abortado="Gravando informacoes pos atualizado"
     cobrun status-online.gnt "A" >/dev/null
-    inf_versaoLoja="$novoPortal"
-    data_configuracao=$(date +'%d/%m/%Y')
-    data_exibir=$(tratar_datas "$inf_versaoLoja")
-    data_rel_exibir=$(tratar_datas "$data_release")
-    #clear
-    echo
-    echo "GRAVANDO INFORMACOES..."
-    echo
-    echo "VERSAO COBOL: $inf_versaoCobol"
-    echo "VERSAO INTEGRAL INSTALADA: $data_exibir"
-    echo "RELEASE INTEGRAL INSTALADA: $inf_releaseLoja"
-    echo "DATA DA RELEASE INSTALADA: $data_rel_exibir"
+    if [[ "$flag_pacote_descompactado" = true ]]; then
+    
+        inf_versaoLoja="$novoPortal"
+        data_configuracao=$(date +'%d/%m/%Y')
+        data_exibir=$(tratar_datas "$inf_versaoLoja")
+        data_rel_exibir=$(tratar_datas "$data_release")
+        #clear
+        echo
+        echo "GRAVANDO INFORMACOES..."
+        echo
+        echo "VERSAO COBOL: $inf_versaoCobol"
+        echo "VERSAO INTEGRAL INSTALADA: $data_exibir"
+        echo "RELEASE INTEGRAL INSTALADA: $inf_releaseLoja"
+        echo "DATA DA RELEASE INSTALADA: $data_rel_exibir"
 
-    #echo "Gravando informacoes novas informacoes. Por favor, aguarde..."
-    # cria arquivo txt que vai ser lido pelo cron e pelo atualizadorAutomatico que ficara em '/u/bats'
-    if [ ! -e "$info_loja_txt" ]; then
-        touch "$info_loja_txt"
+        echo "DATA: $data_configuracao" >"$info_loja_txt"
+        echo "VERSAO COBOL: $inf_versaoCobol" >>"$info_loja_txt"
+        echo "VERSAO INTEGRAL: $inf_versaoLoja" >>"$info_loja_txt"
+        echo "RELEASE: $inf_releaseLoja" >>"$info_loja_txt"
+        echo "DATA RELEASE: $data_release" >>"$info_loja_txt"
+
+        if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+        fi
+
+        echo
+        echo "INFORMACOES GRAVADAS COM SUCESSO!"
+        echo
+        echo "SISTEMA ATUALIZADO EM $data_configuracao"
+    else
+        echo "NAO FOI POSSIVEL GRAVAR AS INFORMACOES." >> $erro_log_file
     fi
 
-    echo "DATA: $data_configuracao" >"$info_loja_txt"
-    echo "VERSAO COBOL: $inf_versaoCobol" >>"$info_loja_txt"
-    echo "VERSAO INTEGRAL: $inf_versaoLoja" >>"$info_loja_txt"
-    echo "RELEASE: $inf_releaseLoja" >>"$info_loja_txt"
-    echo "DATA RELEASE: $data_release" >>"$info_loja_txt"
-
-    mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
-
-    echo
-    echo "INFORMACOES GRAVADAS COM SUCESSO!"
-    echo
-    echo "SISTEMA ATUALIZADO EM $data_configuracao"
     cronometro_start=$cronometro_start
     cronometro_stop="$(date +'%H:%M:%S')"
     cronometro_stop_volta=$SECONDS
@@ -1484,7 +1536,7 @@ parametros() {
 
             a)
                 clear
-                echo "INFORME APENAS UMA LETRA POR PARAMETRO"
+                echo "PARAMETROS ATUAIS: "
                 echo
                 alterar_parametros
                 ;;
@@ -1545,36 +1597,71 @@ listar_parametros() {
     fi
 }
 
+carregar_parametros() {
+    if [[ -f $arquivo_parametros ]]; then
+        flag_load_parametros=true
+        deslogar_usuarios=$(grep -oP '^DESLOGAR USUARIOS - \K\S+' "$arquivo_parametros")
+        logar_atualizando=$(grep -oP '^LOGAR ATUALIZANDO - \K\S+' "$arquivo_parametros")
+        avisar_atualizacao=$(grep -oP '^AVISAR ATUALIZACAO - \K\S+' "$arquivo_parametros")
+        avisar_extras=$(grep -oP '^AVISAR EXTRAS - \K\S+' "$arquivo_parametros")
+        baixar_automaticamente=$(grep -oP '^BAIXAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
+        instalar_automaticamente=$(grep -oP '^INSTALAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
+        todos_autorizados=$(grep -oP '^TODOS AUTORIZADOS - \K\S+' "$arquivo_parametros")
+        autorizados=$(grep -oP '^AUTORIZADOS - \K.*' "$arquivo_parametros")
+    else
+        flag_load_parametros=false
+    fi
+}
+
+validar_entrada() {
+    local valor
+    while true; do
+        read -p "INFORMAR S, N, ou deixar em branco: " valor
+        valor=$(echo "$valor" | tr '[:lower:]' '[:upper:]')
+        if [[ "$valor" =~ ^[SN]$ ]] || [[ -z "$valor" ]]; then
+            break
+        fi
+    done
+    echo "$valor"
+}
+
 alterar_parametros() {
     listar_parametros
+    echo
     echo "DESEJA ALTERAR OS PARAMETROS? (S/N)"
     read resposta
     resposta=$(echo "$resposta" | tr '[:lower:]' '[:upper:]')
     if [[ "$resposta" == "S" ]]; then
-        echo "Digite o novo valor para DESLOGAR USUARIOS (S/N):"
-        read deslogar_usuarios
-        deslogar_usuarios=$(echo "$deslogar_usuarios" | tr '[:lower:]' '[:upper:]')
-        echo "Digite o novo valor para LOGAR ATUALIZANDO (S/N):"
-        read logar_atualizando
-        logar_atualizando=$(echo "$logar_atualizando" | tr '[:lower:]' '[:upper:]')
-        echo "Digite o novo valor para AVISAR ATUALIZACAO (S/N):"
-        read avisar_atualizacao
-        avisar_atualizacao=$(echo "$avisar_atualizacao" | tr '[:lower:]' '[:upper:]')
-        echo "Digite o novo valor para AVISAR EXTRAS (S/N):"
-        read avisar_extras
-        avisar_extras=$(echo "$avisar_extras" | tr '[:lower:]' '[:upper:]')
-        echo "Digite o novo valor para BAIXAR AUTOMATICAMENTE (S/N):"
-        read baixar_automaticamente
-        baixar_automaticamente=$(echo "$baixar_automaticamente" | tr '[:lower:]' '[:upper:]')
-        echo "Digite o novo valor para INSTALAR AUTOMATICAMENTE (S/N):"
-        read instalar_automaticamente
-        instalar_automaticamente=$(echo "$instalar_automaticamente" | tr '[:lower:]' '[:upper:]')
-        echo "Digite o novo valor para TODOS AUTORIZADOS (S/N):"
-        read todos_autorizados
-        todos_autorizados=$(echo "$todos_autorizados" | tr '[:lower:]' '[:upper:]')
-        echo "Digite o novo valor para AUTORIZADOS:"
-        read autorizados
-        autorizados=$(echo "$autorizados" | tr '[:upper:]' '[:lower:]')
+        clear
+        echo "DESLOGAR USUARIOS"
+        deslogar_usuarios=$(validar_entrada)
+
+        echo "LOGAR ATUALIZANDO"
+        logar_atualizando=$(validar_entrada)
+
+        echo "AVISAR ATUALIZACAO"
+        avisar_atualizacao=$(validar_entrada)
+
+        echo "AVISAR EXTRAS"
+        avisar_extras=$(validar_entrada)
+
+        echo "BAIXAR AUTOMATICAMENTE"
+        baixar_automaticamente=$(validar_entrada)
+
+        echo "INSTALAR AUTOMATICAMENTE"
+        instalar_automaticamente=$(validar_entrada)
+
+        echo "TODOS AUTORIZADOS"
+        todos_autorizados=$(validar_entrada)
+        if [ "$todos_autorizados" == "N" ]; then
+            echo "INFORME OS USUARIOS AUTORIZADOS(usar nome separados por espaco)"
+            read autorizados
+            autorizados=$(echo "$autorizados" | tr '[:upper:]' '[:lower:]')
+        elif [ "$todos_autorizados" == "S" ]; then
+            autorizados="TODOS"
+        elif [[ -z $todos_autorizados ]]; then
+            autorizados="vazio"
+        fi
 
         echo "DESLOGAR USUARIOS - $deslogar_usuarios" >$arquivo_parametros
         echo "LOGAR ATUALIZANDO - $logar_atualizando" >>$arquivo_parametros
@@ -1584,6 +1671,10 @@ alterar_parametros() {
         echo "INSTALAR AUTOMATICAMENTE - $instalar_automaticamente" >>$arquivo_parametros
         echo "TODOS AUTORIZADOS - $todos_autorizados" >>$arquivo_parametros
         echo "AUTORIZADOS - $autorizados" >>$arquivo_parametros
+
+        clear
+        echo "Parametros atualizados!"
+        listar_parametros
     elif [[ "$resposta" == "N" ]]; then
         echo "Alteracao de parametros cancelada."
     else
@@ -1612,7 +1703,7 @@ default_parametros() {
     echo "BAIXAR AUTOMATICAMENTE - S" >>$arquivo_parametros
     echo "INSTALAR AUTOMATICAMENTE - N" >>$arquivo_parametros
     echo "TODOS AUTORIZADOS - S" >>$arquivo_parametros
-    echo "AUTORIZADOS - ALL" >>$arquivo_parametros
+    echo "AUTORIZADOS - TODOS" >>$arquivo_parametros
     echo "Parametros definidos para os valores padrao."
 }
 
@@ -1773,6 +1864,7 @@ verificar_senha() {
 # funcao para controlar a restauracao.
 menu_restaura() {
     local_abortado="Restaurando backup"
+    usuario_permitido
 
     if ! verificar_senha; then
         echo "Falha na autenticacao. Encerrando o script."
@@ -1863,7 +1955,7 @@ ler_logs() {
         case $opcao_log in
         1)
             clear
-            (head -n 3 "$log_file" && tail -n 15 "$log_file")
+            (head -n 3 "$log_file" && tail -n 30 "$log_file")
             ;;
         2)
             clear
@@ -1900,9 +1992,8 @@ ler_logs() {
         1188)
             clear
             if [ $USER = avanco ]; then
-                (head -n 3 "$auditoria" && tail -n 10 "$auditoria")
+                (head -n 3 "$auditoria" && tail -n 25 "$auditoria")
             fi
-
             ;;
         *)
             echo "OPCAO INVALIDA! TENTE NOVAMENTE."
@@ -2001,6 +2092,14 @@ case "$1" in
     exit 0
     ;;
 -P)
+    if [ $USER != avanco ]; then
+        echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+        echo "" >>$auditoria
+        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO PARAMETROS" >>$auditoria
+        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>$auditoria
+        echo "USUARIO: $USER" >>$auditoria
+        exit 0
+    fi
     shift
     clear
     echo "PARAMETRIZACAO"
@@ -2008,6 +2107,14 @@ case "$1" in
     exit 0
     ;;
 --cron)
+    if [ $USER != avanco ]; then
+        echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+        echo "" >>$auditoria
+        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRON" >>$auditoria
+        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>$auditoria
+        echo "USUARIO: $USER" >>$auditoria
+        exit 0
+    fi
     echo "criar opcao de adicionar no cron"
     exit 0
     ;;
@@ -2022,8 +2129,10 @@ esac
 ###############################
 
 # Chamandos as funcoes na ordem
-validar_linux
-#verificar_dia
+#validar_linux
+verificar_dia
+carregar_parametros
+usuario_permitido
 checar_internet
 verifica_atualizacao
 iniciar
