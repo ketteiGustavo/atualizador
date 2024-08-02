@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+################################################################################
+# atuNCM - Programa para atualizar os Programas do NCM do Integral
+#
+# DATA: 02/08/2024 11:00 - Versao 0.0.1
+# -------------------------------------------------------------------------------
+# Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
+# -------------------------------------------------------------------------------
+# Versao 0: Programa de atualizacao automatica.
+################################################################################
+#
+
+url_pacoteCobol40="https://github.com/ketteiGustavo/atualizador/raw/main/extras/atualizacaoNCM40.rar"
+url_pacoteCobol41="https://github.com/ketteiGustavo/atualizador/raw/main/extras/atualizacaoNCM41.rar"
+versaoCobol=""
+resultado=""
+pacote_extrair=""
+local_download="/u/rede/avanco/atualizacoes"
+dirCerto="/u/sist/exec"
+limpar_diretorio="/u/rede/integral/trb/ncm"
+
+clear
+
+definir_cobol() {
+    resultado=$(cobrun 2>&1)
+    versaoCobol=$(echo "$resultado" | sed -n 's/V\([0-9]\+\.[0-9]\+\).*/\1/p')
+}
+
+baixar_pacote() {
+    if [ "$versaoCobol" == "4.0" ]; then
+        sleep 1
+        if curl --output /dev/null --silent --head --fail "$url_pacoteCobol40"; then
+            wget -c "$url_pacoteCobol40" -P "$local_download"
+            pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM40.rar")
+            echo "Pacote baixado: '$pacote_extrair'"
+        fi
+    elif [ "$versaoCobol" == "4.1" ]; then
+        sleep 1
+        if curl --output /dev/null --silent --head --fail "$url_pacoteCobol41"; then
+            wget -c "$url_pacoteCobol41" -P "$local_download"
+            pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM41.rar")
+            echo "Pacote baixado: '$pacote_extrair'"
+        fi
+    else
+        echo "Versao do Cobol desconhecida: $versaoCobol"
+    fi
+}
+
+fazer_backup() {
+    cd "$dirCerto"
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM ve-ncm.gnt
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM ve-ncm-m.gnt
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM gsp01o03.gnt
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM brw535.gnt
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM menu.gnt
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM menupe.gnt
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM spd393.gnt
+    rar a /u/rede/avanco/atualizacoes/BKP_NCM integ019.gnt
+}
+
+extrair_pacote() {
+    cd "$dirCerto"
+    rar e -o+ "$pacote_extrair" /u/sist/exec
+}
+
+atu_help() {
+    atu-help manual
+    if [ $? -ne 0 ]; then
+        echo "ERRO AO EXECUTAR 'ATU-HELP MANUAL'."
+    fi
+}
+
+limpar_pasta() {
+    if [ -d "$limpar_diretorio" ]; then
+        echo "A PASTA EXISTE"
+        if [ -z "$(ls -A "$limpar_diretorio")" ]; then
+            echo "A PASTA ESTA VAZIA"
+        else
+            echo "A PASTA COM OS ARQUIVOS: "
+            ls -lth "$limpar_diretorio"
+            echo
+            echo -e "\nDESEJA REALMENTE LIMPAR A PASTA? (S/N)"
+            read -n 1 answer
+            answer=$(echo "$answer" | tr '[:lower:]' '[:upper:]')
+            if [[ $answer == "S" ]]; then
+                rar a /u/rede/integral/trb/Bkp_Pasta_NCM /u/rede/integral/trb/ncm/ve-ncm-itens*
+                rm -rf "/u/rede/integral/trb/ncm/*"
+                echo "PASTA LIMPA"
+            else
+                echo "PASTA MANTIDA"
+            fi
+        fi
+    else
+        echo "A PASTA NAO EXISTE"
+    fi
+
+    
+}
+
+main(){
+    atu_help
+    definir_cobol
+    baixar_pacote
+    fazer_backup
+    extrair_pacote
+    limpar_pasta
+}
+
+main
+
