@@ -54,6 +54,7 @@ url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/mai
 url_manual_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Manuais/atualizador.1.gz"
 url_base_status_online_gnt="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/gnt/"
 buscaStatusOnline=""
+pacoteConfiguracao="https://github.com/ketteiGustavo/atualizador/raw/main/Atual/PacoteAtualizador.rar"
 
 # Funcao para verificar qual o cobol usado
 VERIFICA_COBOL() {
@@ -66,7 +67,7 @@ VERIFICA_COBOL() {
 }
 
 # Testa se o usuario e root.
-if [ "$USER" != "root" ]; then
+if [ "$(id -u)" -ne 0 ]; then
     #clear
     tput smso
     echo 'NECESSARIO ESTAR COM O USUARIO ROOT, ACESSO NEGADO !!!'
@@ -77,8 +78,16 @@ else
 fi
 
 configurar_offline () {
-
     arquivos=$(find "$PASTA_AVANCO" -type f -name "PacoteAtualizador.rar")
+    if [ -z "$arquivos" ]; then
+        echo "baixando pacote..."
+        if curl --output /dev/null --silent --head --fail "$pacoteConfiguracao"; then
+            wget -c "$pacoteConfiguracao" -P "$PASTA_AVANCO"
+            arquivos=$(find "$PASTA_AVANCO" -type f -name "PacoteAtualizador.rar")
+        fi
+    else
+        echo "Pacote de configuracao encontrado"
+    fi
     if [[ -f $arquivos ]]; then
         VERIFICA_COBOL
         cd /u/sist/exec
@@ -112,7 +121,7 @@ configurar_offline () {
         if [ $? -eq 0 ]; then
             echo "'$script extraido com sucesso"
             chown avanco:sist /u/bats/$script_atualizador
-            chmod 755 /u/bats/$script_atualizador
+            chmod 777 /u/bats/$script_atualizador
         else
             echo "Falha ao extrair"
         fi
@@ -121,7 +130,7 @@ configurar_offline () {
         if [ $? -eq 0 ]; then
             echo "'$script_baixar_atualizacao extraido com sucesso"
             chown avanco:sist /u/bats/$script_baixar_atualizacao
-            chmod 766 /u/bats/$script_baixar_atualizacao
+            chmod 777 /u/bats/$script_baixar_atualizacao
         else
             echo "Falha ao extrair"
         fi
@@ -139,8 +148,6 @@ configurar_offline () {
         chmod 700 /u/rede/avanco/configurarAtualizador.sh
         chown root:root /u/rede/avanco/configurarAtualizador.sh
         mv /u/rede/avanco/configurarAtualizador.sh /u/bats/
-
-
     else
         while true; do
             read -p "Deseja buscar o pacote do atualizador online? (S/n)" buscar_online
@@ -216,10 +223,10 @@ configurar_online () {
     chown avanco:sist $PASTA_AVANCO/atualizador
     chown avanco:sist $PASTA_AVANCO/baixarAtualizacao
     chown root:root $PASTA_AVANCO/atualizador.1.gz
-    chown avanco:sist $PASTA_AVANCO/controle_ver_rel.txt
+    chown avanco:sist $PASTA_AVANCO/versao_release.txt
 
-    chmod 755 $PASTA_AVANCO/atualizador
-    chmod 755 $PASTA_AVANCO/baixarAtualizacao
+    chmod 777 $PASTA_AVANCO/atualizador
+    chmod 777 $PASTA_AVANCO/baixarAtualizacao
 
     mv $PASTA_AVANCO/atualizador /u/bats/
     mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
