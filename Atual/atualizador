@@ -101,7 +101,7 @@ Digite o nome do programa e a opcao desejada.
       VERSAO COBOL: 4.0
       VERSAO INTEGRAL: 090424
       RELEASE INTEGRAL: E
-      Confirma as informacoes fornecidas? (S/N)
+      Confirma as informacoes fornecidas? [S/n]
 
     Caso as informacoes estiverem corretas basta apertar 'S' para prosseguir,
     caso contrario pressione 'N'. Sera necessario reiniciar o processo.
@@ -250,7 +250,6 @@ hora_lida=$(date +%H)
 contauser=$(ps ax | grep rts32 | grep -v 'grep' | wc -l)
 programa_validar="rts32"
 usuarios_permitidos=("root" "super" "avanco")
-status_ON=$(cobrun status-online.gnt "L") >/dev/null 2>&1
 
 # datas
 mes_ano=$(date +"%m%y")
@@ -286,9 +285,13 @@ log_file="/u/sist/logs/log_$mes_ano.log"
 # Arquivo de log de erro
 erro_log_file="/u/sist/logs/erro_$mes_ano.log"
 
+log_cron_file="/u/sist/logs/.cron-log.log"
+log_cron_erro="/u/sist/logs/.cron-erro.log"
+
 # arquivo de pre leitura
 controle_servidor="/u/sist/controle"
 arquivo_parametros="$controle_servidor/parametros.txt"
+config_cron="$controle_servidor/.config_cron.txt"
 
 script_baixar_atualizacao="/u/bats/baixarAtualizacao"
 
@@ -334,6 +337,8 @@ flag_esta_atualizado=false
 flag_renomea=false
 flag_load_parametros=false
 flag_pacote_descompactado=false
+olhar_online=false
+fim_atualizacao=false
 local_abortado=""
 abortado_controle=""
 
@@ -375,19 +380,41 @@ cyan_mgs() {
     echo -e "${cyan} $1${no_color}"
 }
 
+mensagem_saida() {
+    tput smso
+    echo ""
+    echo "                               AVANCO INFORMATICA                               "
+    echo ""
+    echo "                           TELESUPORTE (31) 3025-1188                           "
+    echo ""
+    echo "                                   TELEGRAM                                     "
+    echo ""
+    echo "                           t.me/avancoinformatica_bot                           "
+    tput rmso
+    stty sane
+}
+
 # ------------------------------------------------------------------------------
 
 interromper() {
     echo -e "\nPROCESSO INTERROMPIDO!"
-    echo -e "\nDESEJA REALMENTE ABORTAR? (S/N)"
+<<<<<<< Updated upstream
+    echo -e "\nDESEJA REALMENTE ABORTAR? [S/n]"
     read -n 1 answer
     answer=$(echo "$answer" | tr '[:lower:]' '[:upper:]')
     if [[ $answer == "S" ]]; then
-        echo -e "\nABORTANDO ATUALIZACAO!!!"
+        echo -e "\nABORTANDO PROGRAMA!!!"
+=======
+    echo -e "\nDESEJA REALMENTE SAIR? (S/N)"
+    read -n 1 answer
+    answer=$(echo "$answer" | tr '[:lower:]' '[:upper:]')
+    if [[ $answer == "S" ]]; then
+        echo -e "\nSAINDO!!!"
+>>>>>>> Stashed changes
         echo "" >>$auditoria
         echo "################################################################################" >>$auditoria
         echo "" >>$auditoria
-        echo "ATUALIZACAO INTERROMPIDA" >>$auditoria
+        echo "ROTINA ABORTADA" >>$auditoria
         echo "DIA: $(date +'%d/%m/%Y')" >>$auditoria
         echo "HORA: $(date +'%H:%M:%S')" >>$auditoria
         echo "USUARIO: $USER" >>$auditoria
@@ -424,16 +451,31 @@ validar_linux() {
     local_abortado="Validacao LINUX"
     if [ ! -e /etc/debian_version ]; then
         clear
-        echo "ATUALIZADOR CONFIGURADO PARA SERVIDORES DEBIAN"
+        echo -e "FAVOR ACIONAR O SETOR DE TECNOLOGIA E O ADMINISTRATIVO PARA AGENDAR \nA ATUALIZACAO DO SISTEMA OPERACIONAL DO SEU SERVIDOR."
+        #echo "ATUALIZADOR CONFIGURADO PARA SERVIDORES DEBIAN"
         sleep 2
-        exit
+        #exit
+    fi
+}
+
+ativar_desativar_online() {
+    if [[ "$olhar_online" = "true" ]]; then
+        status_ON=$(cobrun status-online.gnt "L") >/dev/null 2>&1
+
+        if [ "$status_ON" = "ATIVADO" ]; then
+            cobrun status-online.gnt "D" >/dev/null
+        fi
+    fi
+
+    if [[ "$fim_atualizacao" = "true" ]] && [[ "$olhar_online" = "true" ]]; then
+        cobrun status-online.gnt "A" >/dev/null
     fi
 }
 
 iniciar() {
     local_abortado="Inicio da atualizacao"
     while true; do
-        read -p "DESEJA INICIAR A ATUALIZACAO? (S/N) " confirma_inicio
+        read -p "DESEJA INICIAR A ATUALIZACAO? [S/n] " confirma_inicio
 
         case $confirma_inicio in
         "S" | "s")
@@ -441,26 +483,21 @@ iniciar() {
             if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
                 mv /u/sist/exec/integral.gnt /u/sist/exec/cogumeloAzul.gnt
                 flag_renomea=true
+                olhar_online=true
+                ativar_desativar_online
             fi
             clear
             break
             ;;
         "N" | "n")
             clear
-            tput smso
-            echo "                               AVANCO INFORMATICA                               "
-            echo ""
-            echo "                           TELESUPORTE (31) 3025-1188                           "
-            echo ""
-            echo "                                    TELEGRAM                                    "
-            echo ""
-            echo "                           t.me/avancoinformatica_bot                           "
-            tput rmso
-            stty sane
+            mensagem_saida
             exit 0
             ;;
         *)
+            clear
             echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+            validar_ver_rel
             ;;
         esac
     done
@@ -470,7 +507,7 @@ usuario_permitido() {
     local usuario_atual="$USER"
     local permitido_att=false
     if [[ "$todos_autorizados" == "S" ]]; then
-        echo "TODOS USUARIOS PODEM ATUALIZAR" > /dev/null
+        echo "TODOS USUARIOS PODEM ATUALIZAR" >/dev/null
         return 0
     elif [[ "$todos_autorizados" == "N" ]]; then
         for user in "${usuarios_permitidos[@]}"; do
@@ -481,8 +518,8 @@ usuario_permitido() {
         done
 
         IFS=' '
-        read -r -a lista_autorizados <<< "$autorizados"
-        
+        read -r -a lista_autorizados <<<"$autorizados"
+
         for user in "${lista_autorizados[@]}"; do
             if [[ "$user" == "$usuario_atual" ]]; then
                 permitido_att=true
@@ -491,10 +528,10 @@ usuario_permitido() {
         done
 
         if [[ "$permitido_att" = false ]]; then
-            echo "ESTE USUARIO NAO TEM PERMISSAO DE EXECUTAR ESSA ACAO"
+            echo "ESTE USUARIO NAO TEM PERMISSAO DE EXECUTAR ESSA ROTINA"
             echo "" >>$auditoria
             echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-            echo "O USUARIO $USER TENTOU ATUALIZAR O INTEGRAL" >>$auditoria
+            echo "O USUARIO $USER TENTOU EXECUTAR UMA ACAO NAO LIBERADA" >>$auditoria
             exit 1
         fi
     fi
@@ -511,21 +548,9 @@ verifica_atualizacao() {
             clear
             tput smso
             echo "                           O INTEGRAL ESTA ATUALIZADO                           "
-            echo ""
-            echo "                               AVANCO INFORMATICA                               "
-            echo ""
-            echo "                           TELESUPORTE (31) 3025-1188                           "
-            echo ""
-            echo "                                    TELEGRAM                                    "
-            echo ""
-            echo "                           t.me/avancoinformatica_bot                           "
             tput rmso
             stty sane
-            echo "" >>$log_file
-            echo "INTEGRAL ESTAVA ATUALIZADO NA TENTATIVA DE ATUALIZACAO" >>$log_file
-            echo "DATA: $(date +'%d/%m/%Y') - $(date +'%H:%M:%S')" >>$log_file
-            echo "USUARIO: $USER" >>$log_file
-            echo "" >>$log_file
+            mensagem_saida
 
             echo "" >>$auditoria
             echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
@@ -582,6 +607,14 @@ verifica_logados() {
             echo "AGUARDANDO OS USUARIOS ENCERRAREM SUAS SESSOES..."
             sleep 5
         done
+    elif [[ "$flag_load_parametros" == "true" ]] && [[ "$deslogar_usuarios" == "N" ]]; then
+        echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
+        echo "" >/dev/null
+    elif [[ "$flag_load_parametros" == "false" ]]; then
+        echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
+        echo "" >/dev/null
+    else
+        echo "" >/dev/null
     fi
 }
 
@@ -591,17 +624,12 @@ verificar_dia() {
     if [ $dia_semana_lido -eq 5 ] || [ $dia_semana_lido -eq 6 ] || [ $dia_semana_lido -eq 7 ]; then
         clear
         tput smso
-        echo "   O SISTEMA NAO PODE SER ATUALIZADO HOJE!  TENTE NOVAMENTE NA SEGUNDA-FEIRA!   "
+        echo "                     O SISTEMA NAO PODE SER ATUALIZADO HOJE!                     "
         echo ""
-        echo "                               AVANCO INFORMATICA                               "
-        echo ""
-        echo "                           TELESUPORTE (31) 3025-1188                           "
-        echo ""
-        echo "                                    TELEGRAM                                    "
-        echo ""
-        echo "                           t.me/avancoinformatica_bot                           "
+        echo "                        TENTE NOVAMENTE NA SEGUNDA-FEIRA!                        "
         tput rmso
         stty sane
+        mensagem_saida
         echo "" >>$auditoria
         echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
         echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL NO FIM DE SEMANA" >>$auditoria
@@ -609,41 +637,29 @@ verificar_dia() {
         exit 0
     fi
 
-    if [ $dia_semana_lido -eq 2 ] && [ $hora_lida -ge 6 ] && [ $hora_lida -lt 15 ]; then
-        clear
-        tput smso
-        echo "                           TENTE NOVAMENTE MAIS TARDE                           "
-        echo ""
-        echo "                               AVANCO INFORMATICA                               "
-        echo ""
-        echo "                           TELESUPORTE (31) 3025-1188                           "
-        echo ""
-        echo "                                    TELEGRAM                                    "
-        echo ""
-        echo "                           t.me/avancoinformatica_bot                           "
-        tput rmso
-        stty sane
-        echo "" >>$auditoria
-        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL" >>$auditoria
-        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
-        exit 0
-    fi
+    #if [ $dia_semana_lido -eq 2 ] && [ $hora_lida -ge 6 ] && [ $hora_lida -lt 15 ]; then
+    #    clear
+    #    tput smso
+    #    echo "                           TENTE NOVAMENTE MAIS TARDE                           "
+    #    echo ""
+    #    tput rmso
+    #    stty sane
+    #    mensagem_saida
+    #    echo "" >>$auditoria
+    #    echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+    #    echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL" >>$auditoria
+    #    echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
+    #    exit 0
+    #fi
 
     if [ $hora_lida -gt 18 ]; then
         clear
         tput smso
         echo "               FAVOR EXECUTAR A ATUALIZACAO EM HORARIO COMERCIAL!               "
         echo ""
-        echo "                               AVANCO INFORMATICA                               "
-        echo ""
-        echo "                           TELESUPORTE (31) 3025-1188                           "
-        echo ""
-        echo "                                    TELEGRAM                                    "
-        echo ""
-        echo "                           t.me/avancoinformatica_bot                           "
         tput rmso
         stty sane
+        mensagem_saida
         echo "" >>$auditoria
         echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
         echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
@@ -651,22 +667,15 @@ verificar_dia() {
         exit 0
     fi
 
-    if [ $dia_semana_lido -eq 4 ] && [ $hora_lida -ge 17 ]; then
+    if [ $dia_semana_lido -eq 4 ] && [ $hora_lida -ge 18 ]; then
         clear
         tput smso
         echo "         RECOMENDAMOS ATUALIZAR NA 'SEGUNDA-FEIRA',  DEVIDO AO HORARIO!         "
         echo ""
         echo "                         BOM TARDE E BOM FIM DE SEMANA                          "
-        echo ""
-        echo "                               AVANCO INFORMATICA                               "
-        echo ""
-        echo "                           TELESUPORTE (31) 3025-1188                           "
-        echo ""
-        echo "                                    TELEGRAM                                    "
-        echo ""
-        echo "                           t.me/avancoinformatica_bot                           "
         tput rmso
         stty sane
+        mensagem_saida
         echo "" >>$auditoria
         echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
         echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
@@ -676,9 +685,6 @@ verificar_dia() {
     sleep 3
 }
 
-if [ "$status_ON" = "ATIVADO" ]; then
-    status_ON=$(cobrun status-online.gnt "D") >/dev/null
-fi
 
 # Criando diretorio de logs e atualizacoes
 if [ ! -d "/u/rede/avanco/atualizacoes" ]; then
@@ -733,18 +739,23 @@ seguranca() {
     abortado_controle="seguranca"
 
     sleep 1
-    if [ ! -s "$teste_gnt_log" ]; then
-        rm "$teste_gnt_log"
-    fi
+    gnt_files=($(find "$local_gnt" -name "*.gnt"))
 
-    if [ -f "$teste_gnt_log" ] && [ "$(date -r "$teste_gnt_log" +%Y%m%d)" = "$dia_hoje" ]; then
-        mapfile -t gnt_files <"$teste_gnt_log"
-    else
-        gnt_files=($(find "$local_gnt" -name "*.gnt"))
-    fi
+    #if [ ! -s "$teste_gnt_log" ]; then
+    #    rm "$teste_gnt_log"
+    #fi
+
+    #if [ -f "$teste_gnt_log" ] && [ "$(date -r "$teste_gnt_log" +%Y%m%d)" = "$dia_hoje" ]; then
+    #    mapfile -t gnt_files <"$teste_gnt_log"
+    #else
+    #    gnt_files=($(find "$local_gnt" -name "*.gnt"))
+    #fi
 
     if [ ${#gnt_files[@]} -eq 0 ]; then
-        echo "Nenhum arquivo '.gnt' encontrado no diretorio '$local_gnt'."
+        echo "Nenhum arquivo '.gnt' encontrado no diretorio '$local_gnt'." >/dev/null
+        if [ "$flag_renomea" = true ]; then
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+        fi
         exit 1
     fi
 
@@ -763,8 +774,8 @@ seguranca() {
         if [ "$permissions" -ne 777 ]; then
             alerta_msg "O programa $file nao tem permissao total!"
             echo "O programa $file nao tem permissao total!" >>$validados_gnt
-            echo "Favor acionar o suporte Avanco!"
-            all_valide=false
+            alerta_msg "SERA NECESSARIO CONCEDER PERMISSAO TOTAL!!!"
+            #all_valide=false
             echo "$file" >>"$teste_gnt_log"
         fi
 
@@ -774,7 +785,7 @@ seguranca() {
             alerta_msg "O programa $file nao esta com o usuario: avanco e o grupo: sist."
             echo "O programa $file nao esta com o usuario: avanco e o grupo: sist." >>$validados_gnt
             alerta_msg "Favor acionar o suporte Avanco!"
-            all_valide=false
+            #all_valide=false
             echo "$file" >>"$teste_gnt_log"
         fi
     done
@@ -785,6 +796,9 @@ seguranca() {
         rm -f "$validados_gnt"
     else
         alerta_msg "E necessario acionar o suporte Avanco para executar as permissoes"
+        if [ "$flag_renomea" = true ]; then
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+        fi
         sleep 1
         exit 1
     fi
@@ -882,7 +896,7 @@ criar_info_loja() {
             echo "VERSAO INTEGRAL: $inf_versaoLoja"
             echo "RELEASE INTEGRAL: $inf_releaseLoja"
             echo
-            read -p "CONFIRMA AS INFORMACOES FORNECIDAS? (S/N) " confirmar_infos
+            read -p "CONFIRMA AS INFORMACOES FORNECIDAS? [S/n]) " confirmar_infos
 
             case $confirmar_infos in
             "S" | "s")
@@ -915,7 +929,6 @@ criar_info_loja() {
 # Funcao para ler o arquivo 'info_loja_txt'
 ler_arquivo_texto() {
     local_abortado="Lendo arquivo de versao e release"
-    verifica_cobol
     # verifica se o arquivo existe
     if [ ! -f "$info_loja_txt" ]; then
         echo "FAVOR INFORMAR A VERSAO E RELEASE QUE ESTAO NESSE SERVIDOR!" 2> >(tee -a "$erro_log_file")
@@ -924,6 +937,7 @@ ler_arquivo_texto() {
     else
         inf_data=$(grep -oP '(?<=DATA: )\d+/\d+/\d+' "$info_loja_txt")
         inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
+        versaoCobol="$inf_versaoCobol"
         inf_versaoLoja=$(grep -oP '(?<=VERSAO INTEGRAL: )\d+' "$info_loja_txt")
         inf_releaseLoja=$(grep -oP '(?<=RELEASE: )[[:alpha:]]' "$info_loja_txt")
         inf_releaseLojaAntes="$inf_releaseLoja"
@@ -1118,12 +1132,15 @@ baixar_atualizacoes() {
     if [ "$flag_versao" = false ]; then
         echo "$atualizado_flag" >$controle_flag/controle_flag.txt
         bash "$script_baixar_atualizacao" "--baixarVersao"
+        sleep 1
         bash "$script_baixar_atualizacao" "--baixarRelease"
+        sleep 1
     fi
 
     if [ "$flag_release" = false ]; then
         echo "$atualizado_flag" >$controle_flag/controle_flag.txt
         bash "$script_baixar_atualizacao" "--baixarRelease"
+        sleep 1
     fi
 }
 
@@ -1196,6 +1213,15 @@ definirPacote_por_cobol() {
 
 # Funcao para atualizar o sistema
 atualizar() {
+    local temp_dir_atu="$pasta_destino/update_temp"
+    
+    mkdir -p "$temp_dir_atu" || {
+        echo "FALHA AO CRIAR O TEMPORARIO! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+        exit 1
+    }
+
+    chmod 777 -R "$temp_dir_atu"
+
     local_abortado="Inicio Atualizacao"
     baixar_atualizacoes
     definirPacote_por_cobol
@@ -1219,13 +1245,12 @@ atualizar() {
         verifica_backup
     fi
     local_abortado="Func. Atualizar: Pre descompactacao"
-    # Verifica se a versão está desatualizada
+
     if [ "$inf_versaoLoja" != "$novoPortal" ]; then
-        # Verifica se o arquivo de atualização foi encontrado
         if [ -z "$arquivo_versao_atual" ]; then
             erro_msg "PACOTE DE ATUALIZACAO DA VERSAO NAO ENCONTRADO"
             flag_pacote_descompactado=false
-            echo "PACOTE DE ATUALIZACAO DA VERSAO NAO ENCONTRADO! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
+            echo "PACOTE DE ATUALIZACAO DA VERSAO NAO ENCONTRADO! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
             return
         else
             local_abortado="Func. Atualizar: Descompactando Versao"
@@ -1233,7 +1258,7 @@ atualizar() {
             total_files=$(rar lb "$arquivo_versao_atual" | wc -l)
             current_file=0
 
-            if rar e -o+ "$arquivo_versao_atual" | while read -r line; do
+            if rar e -o+ "$arquivo_versao_atual" "$temp_dir_atu" | while read -r line; do
                 ((current_file++))
                 abortado_controle="descompactar"
                 percent=$((current_file * 100 / total_files))
@@ -1247,18 +1272,17 @@ atualizar() {
                 info_msg "VERSAO ATUALIZADA PARA: '$novoPortal'"
                 sleep 1
 
-                # Verifica se o arquivo da release foi encontrado
                 if [ -z "$arquivo_release_atual" ]; then
                     erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
                     flag_pacote_descompactado=false
-                    echo "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
+                    echo "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
                     return
                 else
                     local_abortado="Func. Atualizar: Descompactando Release"
                     total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
                     current_file_release=0
                     alerta_msg "DESCOMPACTANDO A 'RELEASE'... AGUARDE!!!"
-                    if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                    if rar e -o+ "$arquivo_release_atual" "$temp_dir_atu" | while read -r line; do
                         ((current_file_release++))
                         abortado_controle="descompactar"
                         porcento=$((current_file_release * 100 / total_files_release))
@@ -1270,7 +1294,7 @@ atualizar() {
                     else
                         erro_msg "ERRO AO ATUALIZAR!"
                         flag_pacote_descompactado=false
-                        echo "ERRO AO ATUALIZAR INTEGRAL! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
+                        echo "ERRO AO ATUALIZAR INTEGRAL! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
                         exit 1
                     fi
                     echo ""
@@ -1280,9 +1304,8 @@ atualizar() {
                 fi
             else
                 local_abortado="Func. Atualizar: Tentativa de descompactar"
-
                 alerta_msg "NOVA VERSAO DISPONIVEL, MAS NAO FOI POSSIVEL ATUALIZAR. ENTRE EM CONTATO COM O SUPORTE AVANCO!"
-                echo "Nova Versao Disponivel, mas nao foi possível atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
+                echo "Nova Versao Disponivel, mas nao foi possível atualizar. Entre em contato com o suporte Avanco! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
                 exit 1
             fi
         fi
@@ -1291,14 +1314,14 @@ atualizar() {
             if [ -z "$arquivo_release_atual" ]; then
                 erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
                 flag_pacote_descompactado=false
-                echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
+                echo "Pacote de atualizacao da release nao encontrado! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
                 return
             else
                 local_abortado="Func. Atualizar: Descompactando Release"
                 alerta_msg "DESCOMPACTANDO A 'RELEASE'... AGUARDE!!!"
                 total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
                 current_file_release=0
-                if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                if rar e -o+ "$arquivo_release_atual" "$temp_dir_atu" | while read -r line; do
                     ((current_file_release++))
                     abortado_controle="descompactar"
                     porcento=$((current_file_release * 100 / total_files_release))
@@ -1311,7 +1334,7 @@ atualizar() {
                 else
                     local_abortado="Func. Atualizar: Tentativa descompactar Release"
                     alerta_msg "NOVA RELEASE DISPONIVEL, MAS NAO FOI POSSIVEL ATUALIZAR. ENTRE EM CONTATO COM O SUPORTE AVANCO!"
-                    echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
+                    echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
                     exit 1
                 fi
                 echo
@@ -1320,13 +1343,23 @@ atualizar() {
         else
             local_abortado="Func. Atualizar: Validado que esta atualziado"
             echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE!"
-            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$log_file
+            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$log_file
         fi
     else
         local_abortado="Func. Atualizar: Validado que esta atualizado"
         echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES!"
-        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$log_file
+        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$log_file
     fi
+
+    chmod 777 /u/rede/avanco/atualizacoes/update_temp/*
+    sleep 1
+    #cp "$temp_dir_atu/*" "$DIRCERTO"
+    cp /u/rede/avanco/atualizacoes/update_temp/* /u/sist/exec/ || {
+        erro_msg "ERRO AO COPIAR ARQUIVOS PARA O DIRETORIO FINAL."
+        echo "Erro ao copiar arquivos para o diretorio final! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+        exit 1
+    }
+    rm -rf "$temp_dir_atu"
 
     local_abortado="Func. Atualizar: Atu-help iniciando"
     sleep 1
@@ -1334,15 +1367,13 @@ atualizar() {
     atu-help manual
     if [ $? -ne 0 ]; then
         erro_msg "ERRO AO EXECUTAR 'ATU-HELP MANUAL'."
-        echo "Erro ao executar 'atu-help manual'! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
-        exit 1
+        echo "Erro ao executar 'atu-help manual'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
     fi
 
     local_abortado="Func. Atualizar: Concedendo permissoes"
-    chmod 777 /u/sist/exec/*.gnt || {
-        erro_msg "ERRO AO CONCEDER PERMISSOES."
-        echo "Erro ao conceder permissoes! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >>$erro_log_file
-        exit 1
+    chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt" || {
+        erro_msg "ERRO AO CONCEDER PERMISSAO TOTAL."
+        echo "Erro ao conceder permissoes! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
     }
 
     info_msg "ATUALIZACAO REALIZADA COM SUCESSO!"
@@ -1350,7 +1381,10 @@ atualizar() {
 
     rm "$controle_flag/controle_flag.txt"
     local_abortado="Func. Atualizar: Fim"
+    fim_atualizacao=true
 }
+
+
 
 # Funcao para atualizar o script sempre para a versao mais recente
 update() {
@@ -1380,9 +1414,8 @@ update() {
 # Funcao que gravara a versao e release apos a atualizacao
 gravando_atualizacoes() {
     local_abortado="Gravando informacoes pos atualizado"
-    cobrun status-online.gnt "A" >/dev/null
     if [[ "$flag_pacote_descompactado" = true ]]; then
-    
+
         inf_versaoLoja="$novoPortal"
         data_configuracao=$(date +'%d/%m/%Y')
         data_exibir=$(tratar_datas "$inf_versaoLoja")
@@ -1401,6 +1434,8 @@ gravando_atualizacoes() {
         echo "VERSAO INTEGRAL: $inf_versaoLoja" >>"$info_loja_txt"
         echo "RELEASE: $inf_releaseLoja" >>"$info_loja_txt"
         echo "DATA RELEASE: $data_release" >>"$info_loja_txt"
+        fim_atualizacao=true
+        ativar_desativar_online
 
         if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
             mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
@@ -1410,8 +1445,9 @@ gravando_atualizacoes() {
         echo "INFORMACOES GRAVADAS COM SUCESSO!"
         echo
         echo "SISTEMA ATUALIZADO EM $data_configuracao"
+        cobrun status-online.gnt "A" >/dev/null
     else
-        echo "NAO FOI POSSIVEL GRAVAR AS INFORMACOES." >> $erro_log_file
+        echo "NAO FOI POSSIVEL GRAVAR AS INFORMACOES." >>$erro_log_file
     fi
 
     cronometro_start=$cronometro_start
@@ -1423,6 +1459,7 @@ gravando_atualizacoes() {
     echo "--------------------------------------------------------------------------------" >>"/u/sist/logs/infos_extras.log"
     echo "$avanco"
     sleep 2
+    
     exit 0
 }
 
@@ -1462,7 +1499,7 @@ baixar_controle() {
 
 parametros() {
     if [[ -z "$1" ]]; then
-        tput cup 7 30
+        tput cup 8 30
         echo "SELECIONE UMA OPCAO: "
         tput cup 10 30
         echo "1  -  LISTAR PARAMETROS"
@@ -1476,7 +1513,7 @@ parametros() {
         echo "9  -  VOLTAR AO MENU"
         tput cup 15 30
         echo "99 -  SAIR"
-        tput cup 16 30
+        tput cup 17 30
         echo -n "OPCAO: "
         read opt
         case $opt in
@@ -1502,18 +1539,8 @@ parametros() {
             ;;
         99)
             clear
-            tput smso
-            echo ""
-            echo "                                AVANCO INFORMATICA                              "
-            echo ""
-            echo "                            TELESUPORTE (31) 3025-1188                          "
-            echo ""
-            echo "                                    TELEGRAM                                    "
-            echo ""
-            echo "                            t.me/avancoinformatica_bot                          "
-            tput rmso
-            stty sane
-            sleep 2
+            mensagem_saida
+            sleep 1
             exit 0
             ;;
         *)
@@ -1528,29 +1555,24 @@ parametros() {
     else
         while getopts ":Lade" opt; do
             case ${opt} in
-
             L)
                 clear
                 listar_parametros
                 ;;
-
             a)
                 clear
                 echo "PARAMETROS ATUAIS: "
                 echo
                 alterar_parametros
                 ;;
-
             e)
                 clear
                 excluir_parametros
                 ;;
-
             d)
                 clear
                 default_parametros
                 ;;
-
             *)
                 clear
                 echo "OPCAOO INVALIDA."
@@ -1567,22 +1589,18 @@ parametros() {
 listar_parametros() {
     if [[ -f $arquivo_parametros ]]; then
         more $arquivo_parametros
+        sleep 3
+        clear
     else
         echo "OS PARAMETROS NAO FORAM ENCONTRADOS"
-        echo "DESEJA DEFINIR PARA OS VALORES PADROES? (S/N)"
+        echo "DESEJA DEFINIR PARA OS VALORES PADROES? [S/n]"
         read definir_novos
         while true; do
             case $definir_novos in
             "s" | "S")
                 default_parametros
-                echo "DESLOGAR USUARIOS - N"
-                echo "LOGAR ATUALIZANDO - N"
-                echo "AVISAR ATUALIZACAO - N"
-                echo "AVISAR EXTRAS - N"
-                echo "BAIXAR AUTOMATICAMENTE - S"
-                echo "INSTALAR AUTOMATICAMENTE - N"
-                echo "TODOS AUTORIZADOS - S"
-                echo "AUTORIZADOS - ALL"
+                echo
+                more $arquivo_parametros
                 break
                 ;;
             "n" | "N")
@@ -1590,15 +1608,30 @@ listar_parametros() {
                 exit 1
                 ;;
             *)
-                echo "OPCAO INVALIDA! TENTE NOVAMENTE."
+                echo "OPCAO INVALIDA!"
+                parametros
                 ;;
             esac
+            read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
+            clear
         done
     fi
 }
 
 carregar_parametros() {
-    if [[ -f $arquivo_parametros ]]; then
+    if [[ ! -f $arquivo_parametros ]]; then
+        default_parametros
+
+        flag_load_parametros=true
+        deslogar_usuarios=$(grep -oP '^DESLOGAR USUARIOS - \K\S+' "$arquivo_parametros")
+        logar_atualizando=$(grep -oP '^LOGAR ATUALIZANDO - \K\S+' "$arquivo_parametros")
+        avisar_atualizacao=$(grep -oP '^AVISAR ATUALIZACAO - \K\S+' "$arquivo_parametros")
+        avisar_extras=$(grep -oP '^AVISAR EXTRAS - \K\S+' "$arquivo_parametros")
+        baixar_automaticamente=$(grep -oP '^BAIXAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
+        instalar_automaticamente=$(grep -oP '^INSTALAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
+        todos_autorizados=$(grep -oP '^TODOS AUTORIZADOS - \K\S+' "$arquivo_parametros")
+        autorizados=$(grep -oP '^AUTORIZADOS - \K.*' "$arquivo_parametros")
+    elif [[ -f $arquivo_parametros ]]; then
         flag_load_parametros=true
         deslogar_usuarios=$(grep -oP '^DESLOGAR USUARIOS - \K\S+' "$arquivo_parametros")
         logar_atualizando=$(grep -oP '^LOGAR ATUALIZANDO - \K\S+' "$arquivo_parametros")
@@ -1626,9 +1659,9 @@ validar_entrada() {
 }
 
 alterar_parametros() {
-    listar_parametros
+    more $arquivo_parametros
     echo
-    echo "DESEJA ALTERAR OS PARAMETROS? (S/N)"
+    echo "DESEJA ALTERAR OS PARAMETROS? [S/n]"
     read resposta
     resposta=$(echo "$resposta" | tr '[:lower:]' '[:upper:]')
     if [[ "$resposta" == "S" ]]; then
@@ -1685,14 +1718,6 @@ alterar_parametros() {
 excluir_parametros() {
     rm -rf $arquivo_parametros
     echo "Parametros excluidos."
-    echo "DESLOGAR USUARIOS - " >$arquivo_parametros
-    echo "LOGAR ATUALIZANDO - " >>$arquivo_parametros
-    echo "AVISAR ATUALIZACAO - " >>$arquivo_parametros
-    echo "AVISAR EXTRAS - " >>$arquivo_parametros
-    echo "BAIXAR AUTOMATICAMENTE - " >>$arquivo_parametros
-    echo "INSTALAR AUTOMATICAMENTE - " >>$arquivo_parametros
-    echo "TODOS AUTORIZADOS - " >>$arquivo_parametros
-    echo "AUTORIZADOS - " >>$arquivo_parametros
 }
 
 default_parametros() {
@@ -1700,7 +1725,7 @@ default_parametros() {
     echo "LOGAR ATUALIZANDO - N" >>$arquivo_parametros
     echo "AVISAR ATUALIZACAO - N" >>$arquivo_parametros
     echo "AVISAR EXTRAS - N" >>$arquivo_parametros
-    echo "BAIXAR AUTOMATICAMENTE - S" >>$arquivo_parametros
+    echo "BAIXAR AUTOMATICAMENTE - N" >>$arquivo_parametros
     echo "INSTALAR AUTOMATICAMENTE - N" >>$arquivo_parametros
     echo "TODOS AUTORIZADOS - S" >>$arquivo_parametros
     echo "AUTORIZADOS - TODOS" >>$arquivo_parametros
@@ -1713,25 +1738,31 @@ menu_secreto() {
         tput cup 7 31
         echo "OPCOES DISPONIVEIS:"
         tput cup 9 4
-        echo "1  - OBTER INFORMACOES DO SISTEMA         6  - CONFIGURAR ROTINA NO CRON"
+        echo "1  - OBTER INFORMACOES DO SISTEMA         6  - OBTER UPDATE DO ATUALIZADOR"
         tput cup 10 4
-        echo "2  - ATUALIZAR                            7  - PARAMETRIZACAO"
+        echo "2  - OBTER VERSAO E RELEASES ATUAIS       7  - CONFIGURAR ROTINA NO CRON"
         tput cup 11 4
-        echo "3  - BACKUP EXECUTAVEIS                   8  - MANUAL"
+        echo "3  - ATUALIZAR                            8  - PARAMETRIZACAO"
         tput cup 12 4
-        echo "4  - VISUALIZAR LOGS                      99 - SAIR"
+        echo "4  - BACKUP EXECUTAVEIS                   9  - MANUAL"
         tput cup 13 4
-        echo "5  - OBTER UPDATE DO ATUALIZADOR"
+        echo "5  - VISUALIZAR LOGS                      99 - SAIR"
         tput cup 15 4
         echo -n "OPCAO: "
         read opcao
         case $opcao in
         1)
             clear
-            echo "OBTER INFORMACOES ATUAIS DO INTEGRAL"
+            echo "DETALHES DA VERSAO E RELEASE NESSE SERVIDOR"
+            echo
             more "/u/sist/controle/info_loja.txt"
             ;;
         2)
+            clear
+            baixar_controle
+            ;;
+
+        3)
             clear
             echo "ATUALIZAR"
             verifica_atualizacao
@@ -1744,35 +1775,27 @@ menu_secreto() {
             chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
             gravando_atualizacoes
             ;;
-        3)
+        4)
             clear
             echo "BACKUP"
             fazer_bkp
             ;;
-        4)
+        5)
             clear
             ler_logs
             ;;
-        5)
+        6)
             clear
             echo "OBTER UPDATE DO ATUALIZADOR"
             update
             ;;
-        6)
-            clear
-            echo "CONFIGURAR ROTINA NO CRON"
-            if [ $USER = avanco ]; then
-                echo "LIBERADO PARA CONFIGURAR"
-            else
-                echo "Favor acionar o Suporte Avanco para realizar a configuracao"
-                exit
-            fi
-            ;;
         7)
             clear
-            echo "PARAMETRIZAR ATUALIZADOR"
-            if [ $USER = avanco ]; then
-                parametros
+            if [ $USER = root ]; then
+                echo "CONFIGURACOES NO CRON"
+                sleep 1
+                clear
+                configurar_cron
             else
                 echo "Favor acionar o Suporte Avanco para realizar a configuracao"
                 exit
@@ -1780,11 +1803,21 @@ menu_secreto() {
             ;;
         8)
             clear
+            echo "PARAMETRIZAR ATUALIZADOR"
+            if [ $USER = avanco ] || [ $USER = root ]; then
+                parametros
+            else
+                echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                exit
+            fi
+            ;;
+        9)
+            clear
             echo "$manual_uso"
             ;;
         1188)
             clear
-            if [ $USER = avanco ]; then
+            if [ $USER = avanco ] || [ $USER = root ]; then
                 echo "LIBERADO PARA CONFIGURAR"
             else
                 echo "Favor acionar o Suporte Avanco para realizar a configuracao"
@@ -1795,7 +1828,7 @@ menu_secreto() {
             ;;
         "avanco" | "AVANCO")
             clear
-            if [ $USER = avanco ]; then
+            if [ $USER = avanco ] || [ $USER = root ]; then
                 echo "LIBERADO PARA CONFIGURAR"
             else
                 echo "Favor acionar o Suporte Avanco para realizar a configuracao"
@@ -1815,27 +1848,266 @@ menu_secreto() {
             ;;
         99)
             clear
-            tput smso
-            echo ""
-            echo "                                AVANCO INFORMATICA                              "
-            echo ""
-            echo "                            TELESUPORTE (31) 3025-1188                          "
-            echo ""
-            echo "                                    TELEGRAM                                    "
-            echo ""
-            echo "                            t.me/avancoinformatica_bot                          "
-            tput rmso
-            stty sane
+            mensagem_saida
             sleep 3
             exit 0
             ;;
         *)
-            echo "OPCAO INVALIDA! TENTE NOVAMENTE."
+            echo "OPCAO INVALIDA!"
             ;;
         esac
+        echo
         read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
+}
+
+# Função para ativar, editar, mostrar, desativar ou remover configuração do crontab
+configurar_cron() {
+    local cron_command="/u/bats/atualizador --atu-cron"
+
+    while true; do
+        echo "MENU DE CONFIGURACAO DO CRON"
+        echo
+        echo "1.  Ativar Atualizador no cron"
+        echo "2.  Editar Atualizador cron"
+        echo "3.  Mostrar Atualizador cron"
+        echo "4.  Desativar Atualizador cron"
+        echo "5.  Remover configuracao do Atualizador cron"
+        echo "9.  Voltar ao menu"
+        echo "99. Sair"
+        echo
+        read -p "Escolha uma opcao: " opcao
+        echo
+
+        case $opcao in
+            1)
+                # Ativar atualizador no cron
+                if crontab -l | grep -q "$cron_command"; then
+                    if crontab -l | grep -q "#.*$cron_command"; then
+                        echo "ATIVANDO ATUALIZADOR...AGUARDE"
+                        crontab -l | sed "s|# \(.*$cron_command.*\)|\1|" | crontab -
+                        echo "ATUALIZADOR ATIVO NO CRON!"
+                    else
+                        echo "ATUALIZADOR JA ESTA ATIVO NO CRON!"
+                    fi
+                else
+                    echo "ATUALIZADOR NAO ESTA ATIVO NO CRON..."
+                    configuracoes_cron
+                fi
+                ;;
+            2)
+                # Editar atualizador no cron
+                configuracoes_cron
+                sleep 3
+                ;;
+            3)
+                # Mostrar atualizador no cron
+                if crontab -l | grep -q "$cron_command"; then
+                    echo "# ATUALIZADOR AUTOMATICO"
+                    crontab -l | grep "$cron_command"
+                    if [ -f "$config_cron" ]; then
+                        more "$config_cron"
+                        echo
+                    else
+                        echo "NAO FOI ENCONTRADO O ARQUIVO DA CONFIGURACAO QUE ESTA NO CRON!"
+                    fi
+                else
+                    echo "NAO FOI ENCONTRADO NO CRON A CONFIGURACAO!"
+                    rm -rf "$config_cron" 2>> /dev/nul
+                fi
+                ;;
+            4)
+                # Desativar atualizador no cron
+                if crontab -l | grep -q "$cron_command"; then
+                    if ! crontab -l | grep -q "^#.*$cron_command"; then
+                        echo "DESATIVANDO ATUALIZADOR...AGUARDE"
+                        crontab -l | sed "s|\(.*$cron_command\)|# \1|" | crontab -
+                        echo "ATUALIZADOR DESATIVADO NO CRON!"
+                    else
+                        echo "ATUALIZADOR JA ESTA DESATIVADO NO CRON"
+                    fi
+                else
+                    echo "NAO EXISTE CONFIGURACAO DO ATUALIZADOR NO CRON"
+                fi
+                ;;
+            5)
+                # Remover o atualizador da configuração do cron
+                if crontab -l | grep -q "$cron_command"; then
+                    echo "REMOVENDO ATUALIZADOR DO MODO AUTOMATICO...AGUARDE"
+                    crontab -l | sed "/$cron_command/d; /^# ATUALIZADOR AUTOMATICO/d" | crontab -
+                    echo "ATUALIZADOR REMOVIDO DO CRON!"
+                    echo
+                else
+                    echo "NAO EXISTIA CONFIGURACAO DO ATUALIZADOR!!!"
+                fi
+
+                if [ -f "$config_cron" ]; then
+                    rm "$config_cron"
+                    echo "CONFIGURACAO EXCLUIDA COM SUCESSO"
+                else
+                    echo "ARQUIVO DE CONFIGURACAO DO CRON NAO ENCONTRADO."
+                fi
+                ;;
+            9)
+                menu_secreto
+                ;;
+            99)
+                # Sair
+                clear
+                exit
+                ;;
+            *)
+                echo "OPCAO INVALIDA! TENTE NOVAMENTE!!!"
+                ;;
+        esac
+        echo
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
+        clear
+    done
+}
+
+# Funcao para configurar no cron
+configuracoes_cron() {
+    local_abortado="configuracao do cron"
+    local cron_command="/u/bats/atualizador --atu-cron"
+    carregar_parametros
+    if ! crontab -l | grep -q "$cron_command"; then
+        if [[ "$flag_load_parametros" == "false" ]]; then
+            echo "NECESSARIO ATIVAR OS PARAMETROS"
+        elif [[ "$flag_load_parametros" == "true" ]] && [[ "$instalar_automaticamente" == "S" ]]; then
+            while true; do
+                while true; do
+                    echo "INFORME ABAIXO O DIA QUE DESEJA QUE O INTEGRAL SEJA ATUALIZADO"
+                    read -p "DIAS PERMITIDOS: (segunda a quinta) " dia_informado
+                    dia_informado=$(echo "$dia_informado" | tr '[:upper:]' '[:lower:]')
+                    case "$dia_informado" in
+                        "segunda" | "seg")
+                            dia_definido=1
+                            ;;
+                        "terca" | "ter" | "terça")
+                            dia_definido=2
+                            ;;
+                        "quarta" | "qua")
+                            dia_definido=3
+                            ;;
+                        "quinta" | "qui")
+                            dia_definido=4
+                            ;;
+                        *)
+                            echo "DIA INVALIDO"
+                            continue
+                            ;;
+                    esac
+                    echo
+                    read -p "CONFIRMA O DIA INFORMADO $dia_informado ? [S/n] " confirmar_dia_informado
+                    confirmar_dia_informado=$(echo "$confirmar_dia_informado" | tr '[:lower:]' '[:upper:]')
+                    case "$confirmar_dia_informado" in
+                        "S")
+                            echo "DIA INFORMADO: $dia_informado"
+                            break
+                            ;;
+                        "N")
+                            clear
+                            echo "INFORME NOVAMENTE O DIA"
+                            #break
+                            ;;
+                        *)
+                            clear
+                            echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                            ;;
+                    esac
+                done
+
+                while true; do
+                    read -p "EM QUAL HORA (0-5) DESEJA QUE SEJA ATUALIZADO? " hora_informada
+                    if ! [[ $hora_informada =~ ^[0-5]+$ ]]; then
+                        echo "Favor insirir uma hora entre 00 a 05h, para atualizar."
+                    else
+                        read -p "CONFIRMA A HORA? [S/N] " confirmar_hora
+                        case "$(echo "$confirmar_hora" | tr '[:lower:]' '[:upper:]')" in
+                            "S")
+                                echo "HORA SELECIONADA $hora_informada"
+                                break
+                                ;;
+                            "N")
+                                clear
+                                echo "INFORME NOVAMENTE A HORA"
+                                ;;
+                            *)
+                                clear
+                                echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                                ;;
+                        esac
+                    fi
+                done
+                echo
+                clear
+                echo "DIA INFORMADO: $dia_informado-feira"
+                echo "HORA INFORMADA: 0$hora_informada horas"
+                echo
+                while true; do
+                    read -p "DESEJA REALMENTE ATUALIZAR NESSE DIA E HORA? [S/n] " confirmar_cron
+                    case "$(echo "$confirmar_cron" | tr '[:lower:]' '[:upper:]')" in
+                        "S" | "")
+                            echo "O INTEGRAL SERA ATUALIZADO ATRAVES DO CRON TODA SEMANA NA '$dia_informado' AS '0$hora_informada HORAS'"
+                            echo "PARAMETROS ATUALIZADOR NO CRON" > $config_cron
+                            echo >> $config_cron
+                            echo "DIA SEMANA: '$dia_definido' - '$dia_informado'" >> $config_cron
+                            echo "HORA: 0$hora_informada" >> $config_cron
+                            (crontab -l ; echo "" ; echo "# ATUALIZADOR AUTOMATICO" ; echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cronb 2>> /u/sist/logs/.erro-cron.log" ; echo "") | crontab -
+                            break 2
+                            ;;
+                        "N")
+                            clear
+                            echo "FAVOR INFORMAR NOVAMENTE!!!"
+                            break
+                            ;;
+                        *)
+                            echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                            ;;
+                    esac
+                done
+            done
+        elif [[ "$flag_load_parametros" == "true" ]] && [[ "$instalar_automaticamente" == "N" ]]; then
+            echo "NECESSARIO ATIVAR PARAMETRO: 'INSTALAR AUTOMATICAMENTE'"
+            exit
+        fi
+    fi
+}
+
+
+# Funcao exclusiva para o cron
+atualizar_pelo_cron() {
+    if [ "$(id -u)" -ne 0 ]; then
+        clear
+        tput smso
+        echo "ACESSO NEGADO!!!"
+        sleep 2
+        tput rmso
+        echo "" >>$auditoria
+        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRON" >>$auditoria
+        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>$auditoria
+        echo "$(whoami)" >>"$auditoria"
+        echo "USUARIO: $USER" >>$auditoria
+        exit
+    else
+        inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
+        versaoCobol="$inf_versaoCobol"
+        carregar_parametros
+        checar_internet
+        verifica_atualizacao
+        chmod 777 /u/sist/exec/*.gnt 2>>"$log_cron_erro"
+        chown avanco:sist /u/sist/exec/*.gnt 2>>"$log_cron_erro"
+        limpa_exec
+        ler_arquivo_texto >/dev/null 2>&1
+        atualizar
+        chmod 777 /u/sist/exec/*.gnt 2>>"$log_cron_erro"
+        gravando_atualizacoes
+        chmod 666 /u/sist/logs/.cron-erro.log
+        chmod 666 /u/sist/logs/.cron-log.log
+        exit 0
+    fi
 }
 
 # Função para verificar a senha do usuário atual
@@ -1955,15 +2227,15 @@ ler_logs() {
         case $opcao_log in
         1)
             clear
-            (head -n 3 "$log_file" && tail -n 30 "$log_file")
+            (head -n 3 "$log_file" && tail -n 50 "$log_file")
             ;;
         2)
             clear
-            (echo "ULTIMOS ERROS GRAVADOS" && echo "" && tail -n 10 "$erro_log_file")
+            (echo "ULTIMOS ERROS GRAVADOS" && echo "" && tail -n 25 "$erro_log_file")
             ;;
         3)
             clear
-            (head -n 2 "$infos_extras" && tail -n 10 "$infos_extras")
+            (head -n 2 "$infos_extras" && tail -n 25 "$infos_extras")
             ;;
         4)
             clear
@@ -1975,17 +2247,7 @@ ler_logs() {
             ;;
         99)
             clear
-            tput smso
-            echo ""
-            echo "                                AVANCO INFORMATICA                               "
-            echo ""
-            echo "                            TELESUPORTE (31) 3025-1188                           "
-            echo ""
-            echo "                                    TELEGRAM                                     "
-            echo ""
-            echo "                            t.me/avancoinformatica_bot                           "
-            tput rmso
-            stty sane
+            mensagem_saida
             sleep 2
             exit 0
             ;;
@@ -1996,7 +2258,7 @@ ler_logs() {
             fi
             ;;
         *)
-            echo "OPCAO INVALIDA! TENTE NOVAMENTE."
+            echo "OPCAO INVALIDA!"
             ;;
         esac
         echo
@@ -2020,9 +2282,16 @@ visualizar_logs() {
     done
 
     echo
-    echo "DIGITE O NUMERO DO LOG QUE DESEJA VISUALIZAR: "
+    echo "DIGITE O NUMERO DO LOG QUE DESEJA VISUALIZAR:    (9) para menu ou (99) para sair"
     read numero_log
 
+    if [ "$numero_log" = "99" ]; then
+        clear
+        mensagem_saida
+        exit 0
+    elif [ "$numero_log" = "9" ]; then
+        menu_secreto
+    fi
     if [[ $numero_log -gt 0 && $numero_log -le ${#logs_removidos[@]} ]]; then
         log_selecionado="${logs_removidos[$((numero_log - 1))]}"
         echo "EXIBINDO O LOG $log_selecionado: "
@@ -2107,7 +2376,7 @@ case "$1" in
     exit 0
     ;;
 --cron)
-    if [ $USER != avanco ]; then
+    if [ $USER != root ] ; then
         echo "Favor acionar o Suporte Avanco para realizar a configuracao"
         echo "" >>$auditoria
         echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRON" >>$auditoria
@@ -2115,7 +2384,12 @@ case "$1" in
         echo "USUARIO: $USER" >>$auditoria
         exit 0
     fi
-    echo "criar opcao de adicionar no cron"
+    echo "CONFIGURACAO DO CRON"
+    configurar_cron
+    exit 0
+    ;;
+--atu-cron)
+    atualizar_pelo_cron
     exit 0
     ;;
 *)
@@ -2129,8 +2403,9 @@ esac
 ###############################
 
 # Chamandos as funcoes na ordem
+chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
 #validar_linux
-verificar_dia
+#verificar_dia
 carregar_parametros
 usuario_permitido
 checar_internet
@@ -2144,5 +2419,6 @@ ler_arquivo_texto >/dev/null 2>&1
 atualizar
 chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
 gravando_atualizacoes
+cobrun status-online.gnt "A" >/dev/null
 #update > /dev/null
 exit 0
