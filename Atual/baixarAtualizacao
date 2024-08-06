@@ -15,7 +15,6 @@
 # Objetivo: facilitar a execucao do atualizador.
 ###############################
 
-
 MENSAGEM_USO="
 Programa: $(basename "$0")
 
@@ -59,22 +58,15 @@ letraRelease=""
 
 PASTA_DESTINO="/u/rede/avanco/atualizacoes"
 
-
-
 SCRIPT_PATH="$0"
 SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao"
 url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"
 
 data_atual=$(date +%Y%m%d)
 
-
 atualizado_flag=""
 controle_flag="/u/sist/controle"
 info_loja_txt="/u/sist/controle/info_loja.txt"
-
-
-
-
 
 sleep 1
 clear
@@ -86,17 +78,16 @@ mostrar_versao() {
     echo "-Versao: $versao"
 }
 
-
 controle_ver_rel="/u/sist/controle/versao_release.txt"
 
 # Funcao para verificar qual o cobol usado
-VERIFICA_COBOL() {
+verifica_cobol() {
     inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
     versaoCobol="$inf_versaoCobol"
 }
 
 # Funcao para tratar datas e inserir barras entre os digitos deixando DD/MM/AA
-TRATAR_DATAS () {
+tratar_datas() {
     entrada_data=$1
     dia_td=${entrada_data:0:2}
     mes_td=${entrada_data:2:2}
@@ -104,7 +95,6 @@ TRATAR_DATAS () {
     data_tratada="${dia_td}/${mes_td}/${ano_td}"
     echo "$data_tratada"
 }
-
 
 # Função para ler o arquivo e armazenar as informações em variáveis
 ler_arquivo() {
@@ -118,24 +108,24 @@ ler_arquivo() {
 }
 
 # Funcao para converter datas no formato YYYYMMDD, para ser usado em equacoes de comparacao, maior, menor e igual
-CONVERTER_DATAS() {
+converter_datas() {
     local dia="${1:0:2}"
     local mes="${1:2:2}"
     local ano="${1:4:2}"
-    
+
     #echo "Dia: $dia"
     #echo "Mes: $mes"
     #echo "Ano: $ano"
-    
+
     # Convertendo para o formato 'YYYYMMDD' para facilitar a adição de dias
     local data_formatada="20${ano}${mes}${dia}"
     echo "$data_formatada"
-    
+
 }
 
 # Funcao para obter o link da versao atual, com base em comparacao de data por trimestre
-BAIXAR_VERSAO() {
-    VERIFICA_COBOL
+baixar_versao() {
+    verifica_cobol
     ler_arquivo
     versaoBusca="$versao_Portal"
     # Verificando a versao do COBOL
@@ -151,11 +141,11 @@ BAIXAR_VERSAO() {
     fi
 
     URL_ATUALIZADO="$URL_BUSCAR_VERSAO$versaoBusca.rar"
-    if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO"; then
-        wget -c --progress=dot "$URL_ATUALIZADO" -P "$PASTA_DESTINO" 2>&1 | \
-        grep --line-buffered "%" | \
-        sed -u -e "s,\.,,g" | \
-        awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
+    if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO"; then
+        wget -c --progress=dot "$URL_ATUALIZADO" -P "$PASTA_DESTINO" 2>&1 |
+            grep --line-buffered "%" |
+            sed -u -e "s,\.,,g" |
+            awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
         echo ""
         sleep 1
         arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
@@ -165,9 +155,8 @@ BAIXAR_VERSAO() {
             ((arquivo_atual_testando++))
             porcentagem=$((arquivo_atual_testando * 100 / testar_arquivos_versao))
             echo -ne "TESTANDO INTEGRIDADE DOS .gnt: [$porcentagem%]\r"
-        done
-        then
-            versao_exibir=$(TRATAR_DATAS "$versaoBusca")
+        done; then
+            versao_exibir=$(tratar_datas "$versaoBusca")
             echo "DOWNLOAD DA VERSAO '$versao_exibir' CONCLUIDO E PROGRAMAS 'TESTADOS'!"
         else
             echo "ARQUIVO CORROMPIDO!"
@@ -179,13 +168,12 @@ BAIXAR_VERSAO() {
 }
 
 # Funcao para verificar se a release e valida e mais recente
-BAIXAR_RELEASE() {
-    VERIFICA_COBOL
+baixar_release() {
+    verifica_cobol
     ler_arquivo
     arquivo_release_atual=""
     buscarV40="release40"
     buscarV41="release"
-
 
     local rel="${release_busca:0:4}"
     local ver="${versao_Portal:0:4}"
@@ -205,11 +193,11 @@ BAIXAR_RELEASE() {
     fi
 
     URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
-    if curl --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
-        wget -c --progress=dot "$URL_ATUALIZADO_RELEASE" -P "$PASTA_DESTINO" 2>&1 | \
-        grep --line-buffered "%" | \
-        sed -u -e "s,\.,,g" | \
-        awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
+    if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
+        wget -c --progress=dot "$URL_ATUALIZADO_RELEASE" -P "$PASTA_DESTINO" 2>&1 |
+            grep --line-buffered "%" |
+            sed -u -e "s,\.,,g" |
+            awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
         echo ""
 
         arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
@@ -221,9 +209,8 @@ BAIXAR_RELEASE() {
             ((release_atual_testando++))
             porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
             echo -ne "TESTANDO INTEGRIDADE DOS .gnt: [$porcentagem%]\r"
-        done
-        then
-            release_download=$(TRATAR_DATAS "$release_busca")
+        done; then
+            release_download=$(tratar_datas "$release_busca")
             echo "DOWNLOAD DA RELEASE '$release, DO DIA $release_download' CONCLUIDO E PROGRAMAS 'TESTADOS'!!"
         else
             echo "Arquivo corrompido!"
@@ -236,15 +223,14 @@ BAIXAR_RELEASE() {
     sleep 1
 }
 
-
 # Funcao para atualizar o script sempre para a versao mais recente
-UPDATE () {
+update() {
     SCRIPT_PATH="$0"
     TMP_PATH=$(mktemp /tmp/$(basename "$SCRIPT_PATH").XXXXXX)
     echo "Baixando versao mais recente do atualizador"
-    if curl --output /dev/null --silent --head --fail "$SCRIPT_URL"; then
+    if curl -k --output /dev/null --silent --head --fail "$SCRIPT_URL"; then
         wget -qcO "$TMP_PATH" "$SCRIPT_URL"
-    
+
         if [ $? -eq 0 ]; then
             mv "$TMP_PATH" "$SCRIPT_PATH"
             chmod +x "$SCRIPT_PATH"
@@ -259,11 +245,10 @@ UPDATE () {
     fi
 }
 
-
 # Funcao para baixar arquivo atualizado
-BAIXAR_CONTROLE () {
+baixar_controle() {
     #echo "OBTENDO VERSAO E RELEASE"
-    if curl --output /dev/null --silent --head --fail "$url_versao_release"; then
+    if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
         wget -qcO "$controle_ver_rel.tmp" "$url_versao_release"
 
         if [ $? -eq 0 ]; then
@@ -286,8 +271,6 @@ BAIXAR_CONTROLE () {
     fi
 }
 
-
-
 ###############################
 # Tratamento das opcoes que serao responsaveis por controlar na linha de comando
 # ------------------------------------------------------------------------------
@@ -306,25 +289,25 @@ case "$1" in
     ;;
 -up | --update)
     clear
-    UPDATE
+    update
     exit 0
     ;;
 -o | --obter)
     clear
-    BAIXAR_CONTROLE
+    baixar_controle
     ler_arquivo
     exit 0
     ;;
 --baixarVersao)
-    BAIXAR_CONTROLE
+    baixar_controle
     ler_arquivo
-    BAIXAR_VERSAO
+    baixar_versao
     exit 0
     ;;
 --baixarRelease)
-    BAIXAR_CONTROLE
+    baixar_controle
     ler_arquivo
-    BAIXAR_RELEASE
+    baixar_release
     exit 0
     ;;
 *)
@@ -337,9 +320,8 @@ esac
 
 ###############################
 
-
 # Chamar a função com o caminho do arquivo
 clear
-BAIXAR_CONTROLE
+baixar_controle
 ler_arquivo
-#UPDATE > /dev/null
+#update > /dev/null

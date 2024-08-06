@@ -398,19 +398,11 @@ mensagem_saida() {
 
 interromper() {
     echo -e "\nPROCESSO INTERROMPIDO!"
-<<<<<<< Updated upstream
     echo -e "\nDESEJA REALMENTE ABORTAR? [S/n]"
     read -n 1 answer
     answer=$(echo "$answer" | tr '[:lower:]' '[:upper:]')
     if [[ $answer == "S" ]]; then
-        echo -e "\nABORTANDO PROGRAMA!!!"
-=======
-    echo -e "\nDESEJA REALMENTE SAIR? (S/N)"
-    read -n 1 answer
-    answer=$(echo "$answer" | tr '[:lower:]' '[:upper:]')
-    if [[ $answer == "S" ]]; then
         echo -e "\nSAINDO!!!"
->>>>>>> Stashed changes
         echo "" >>$auditoria
         echo "################################################################################" >>$auditoria
         echo "" >>$auditoria
@@ -684,7 +676,6 @@ verificar_dia() {
     fi
     sleep 3
 }
-
 
 # Criando diretorio de logs e atualizacoes
 if [ ! -d "/u/rede/avanco/atualizacoes" ]; then
@@ -1214,7 +1205,7 @@ definirPacote_por_cobol() {
 # Funcao para atualizar o sistema
 atualizar() {
     local temp_dir_atu="$pasta_destino/update_temp"
-    
+
     mkdir -p "$temp_dir_atu" || {
         echo "FALHA AO CRIAR O TEMPORARIO! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
         exit 1
@@ -1379,12 +1370,10 @@ atualizar() {
     info_msg "ATUALIZACAO REALIZADA COM SUCESSO!"
     log_info "ATUALIZACAO REALIZADA PELO ATUALIZADOR"
 
-    rm "$controle_flag/controle_flag.txt"
+    rm -rf "$controle_flag/controle_flag.txt"
     local_abortado="Func. Atualizar: Fim"
     fim_atualizacao=true
 }
-
-
 
 # Funcao para atualizar o script sempre para a versao mais recente
 update() {
@@ -1392,7 +1381,7 @@ update() {
     TMP_PATH=$(mktemp /tmp/$(basename "$script_path").XXXXXX)
     clear
     echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
-    if curl --output /dev/null --silent --head --fail "$script_url"; then
+    if curl -k --output /dev/null --silent --head --fail "$script_url"; then
         wget -qcO "$TMP_PATH" "$script_url"
 
         if [ $? -eq 0 ]; then
@@ -1459,7 +1448,7 @@ gravando_atualizacoes() {
     echo "--------------------------------------------------------------------------------" >>"/u/sist/logs/infos_extras.log"
     echo "$avanco"
     sleep 2
-    
+
     exit 0
 }
 
@@ -1467,7 +1456,7 @@ gravando_atualizacoes() {
 baixar_controle() {
     local_abortado="Baixando controle de versao/release"
     echo "OBTENDO DETALHES DA VERSAO E RELEASE"
-    if curl --output /dev/null --silent --head --fail "$url_versao_release"; then
+    if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
         wget -qcO "$controle_ver_rel.tmp" "$url_versao_release"
 
         if [ $? -eq 0 ]; then
@@ -1841,11 +1830,6 @@ menu_secreto() {
             echo "REVERTER ATUALIZACAO"
             menu_restaura
             ;;
-        "p" | "P")
-            clear
-            echo "PARAMETRIZACAO"
-            parametros
-            ;;
         99)
             clear
             mensagem_saida
@@ -1873,7 +1857,6 @@ configurar_cron() {
         echo "2.  Editar Atualizador cron"
         echo "3.  Mostrar Atualizador cron"
         echo "4.  Desativar Atualizador cron"
-        echo "5.  Remover configuracao do Atualizador cron"
         echo "9.  Voltar ao menu"
         echo "99. Sair"
         echo
@@ -1881,85 +1864,67 @@ configurar_cron() {
         echo
 
         case $opcao in
-            1)
-                # Ativar atualizador no cron
-                if crontab -l | grep -q "$cron_command"; then
-                    if crontab -l | grep -q "#.*$cron_command"; then
-                        echo "ATIVANDO ATUALIZADOR...AGUARDE"
-                        crontab -l | sed "s|# \(.*$cron_command.*\)|\1|" | crontab -
-                        echo "ATUALIZADOR ATIVO NO CRON!"
-                    else
-                        echo "ATUALIZADOR JA ESTA ATIVO NO CRON!"
-                    fi
+        1)
+            # Ativar atualizador no cron
+            if crontab -l | grep -q "$cron_command"; then
+                if crontab -l | grep -q "#.*$cron_command"; then
+                    echo "ATIVANDO ATUALIZADOR...AGUARDE"
+                    crontab -l | sed "s|# \(.*$cron_command.*\)|\1|" | crontab -
+                    echo "ATUALIZADOR ATIVO NO CRON!"
                 else
-                    echo "ATUALIZADOR NAO ESTA ATIVO NO CRON..."
-                    configuracoes_cron
+                    echo "ATUALIZADOR JA ESTA ATIVO NO CRON!"
                 fi
-                ;;
-            2)
-                # Editar atualizador no cron
+            else
+                echo "ATUALIZADOR NAO ESTA ATIVO NO CRON..."
                 configuracoes_cron
-                sleep 3
-                ;;
-            3)
-                # Mostrar atualizador no cron
-                if crontab -l | grep -q "$cron_command"; then
-                    echo "# ATUALIZADOR AUTOMATICO"
-                    crontab -l | grep "$cron_command"
-                    if [ -f "$config_cron" ]; then
-                        more "$config_cron"
-                        echo
-                    else
-                        echo "NAO FOI ENCONTRADO O ARQUIVO DA CONFIGURACAO QUE ESTA NO CRON!"
-                    fi
-                else
-                    echo "NAO FOI ENCONTRADO NO CRON A CONFIGURACAO!"
-                    rm -rf "$config_cron" 2>> /dev/nul
-                fi
-                ;;
-            4)
-                # Desativar atualizador no cron
-                if crontab -l | grep -q "$cron_command"; then
-                    if ! crontab -l | grep -q "^#.*$cron_command"; then
-                        echo "DESATIVANDO ATUALIZADOR...AGUARDE"
-                        crontab -l | sed "s|\(.*$cron_command\)|# \1|" | crontab -
-                        echo "ATUALIZADOR DESATIVADO NO CRON!"
-                    else
-                        echo "ATUALIZADOR JA ESTA DESATIVADO NO CRON"
-                    fi
-                else
-                    echo "NAO EXISTE CONFIGURACAO DO ATUALIZADOR NO CRON"
-                fi
-                ;;
-            5)
-                # Remover o atualizador da configuração do cron
-                if crontab -l | grep -q "$cron_command"; then
-                    echo "REMOVENDO ATUALIZADOR DO MODO AUTOMATICO...AGUARDE"
-                    crontab -l | sed "/$cron_command/d; /^# ATUALIZADOR AUTOMATICO/d" | crontab -
-                    echo "ATUALIZADOR REMOVIDO DO CRON!"
+            fi
+            ;;
+        2)
+            # Editar atualizador no cron
+            alterar_cron
+            sleep 1
+            ;;
+        3)
+            # Mostrar atualizador no cron
+            if crontab -l | grep -q "$cron_command"; then
+                echo "# ATUALIZADOR AUTOMATICO"
+                crontab -l | grep "$cron_command"
+                if [ -f "$config_cron" ]; then
+                    more "$config_cron"
                     echo
                 else
-                    echo "NAO EXISTIA CONFIGURACAO DO ATUALIZADOR!!!"
+                    echo "NAO FOI ENCONTRADO O ARQUIVO DA CONFIGURACAO QUE ESTA NO CRON!"
                 fi
-
-                if [ -f "$config_cron" ]; then
-                    rm "$config_cron"
-                    echo "CONFIGURACAO EXCLUIDA COM SUCESSO"
+            else
+                echo "NAO FOI ENCONTRADO NO CRON A CONFIGURACAO!"
+                rm -rf "$config_cron" 2>>/dev/nul
+            fi
+            ;;
+        4)
+            # Desativar atualizador no cron
+            if crontab -l | grep -q "$cron_command"; then
+                if ! crontab -l | grep -q "^#.*$cron_command"; then
+                    echo "DESATIVANDO ATUALIZADOR...AGUARDE"
+                    crontab -l | sed "s|\(.*$cron_command\)|# \1|" | crontab -
+                    echo "ATUALIZADOR DESATIVADO NO CRON!"
                 else
-                    echo "ARQUIVO DE CONFIGURACAO DO CRON NAO ENCONTRADO."
+                    echo "ATUALIZADOR JA ESTA DESATIVADO NO CRON"
                 fi
-                ;;
-            9)
-                menu_secreto
-                ;;
-            99)
-                # Sair
-                clear
-                exit
-                ;;
-            *)
-                echo "OPCAO INVALIDA! TENTE NOVAMENTE!!!"
-                ;;
+            else
+                echo "NAO EXISTE CONFIGURACAO DO ATUALIZADOR NO CRON"
+            fi
+            ;;
+        9)
+            menu_secreto
+            ;;
+        99)
+            # Sair
+            clear
+            exit
+            ;;
+        *)
+            echo "OPCAO INVALIDA! TENTE NOVAMENTE!!!"
+            ;;
         esac
         echo
         read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
@@ -1977,97 +1942,25 @@ configuracoes_cron() {
             echo "NECESSARIO ATIVAR OS PARAMETROS"
         elif [[ "$flag_load_parametros" == "true" ]] && [[ "$instalar_automaticamente" == "S" ]]; then
             while true; do
-                while true; do
-                    echo "INFORME ABAIXO O DIA QUE DESEJA QUE O INTEGRAL SEJA ATUALIZADO"
-                    read -p "DIAS PERMITIDOS: (segunda a quinta) " dia_informado
-                    dia_informado=$(echo "$dia_informado" | tr '[:upper:]' '[:lower:]')
-                    case "$dia_informado" in
-                        "segunda" | "seg")
-                            dia_definido=1
-                            ;;
-                        "terca" | "ter" | "terça")
-                            dia_definido=2
-                            ;;
-                        "quarta" | "qua")
-                            dia_definido=3
-                            ;;
-                        "quinta" | "qui")
-                            dia_definido=4
-                            ;;
-                        *)
-                            echo "DIA INVALIDO"
-                            continue
-                            ;;
-                    esac
-                    echo
-                    read -p "CONFIRMA O DIA INFORMADO $dia_informado ? [S/n] " confirmar_dia_informado
-                    confirmar_dia_informado=$(echo "$confirmar_dia_informado" | tr '[:lower:]' '[:upper:]')
-                    case "$confirmar_dia_informado" in
-                        "S")
-                            echo "DIA INFORMADO: $dia_informado"
-                            break
-                            ;;
-                        "N")
-                            clear
-                            echo "INFORME NOVAMENTE O DIA"
-                            #break
-                            ;;
-                        *)
-                            clear
-                            echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
-                            ;;
-                    esac
-                done
-
-                while true; do
-                    read -p "EM QUAL HORA (0-5) DESEJA QUE SEJA ATUALIZADO? " hora_informada
-                    if ! [[ $hora_informada =~ ^[0-5]+$ ]]; then
-                        echo "Favor insirir uma hora entre 00 a 05h, para atualizar."
-                    else
-                        read -p "CONFIRMA A HORA? [S/N] " confirmar_hora
-                        case "$(echo "$confirmar_hora" | tr '[:lower:]' '[:upper:]')" in
-                            "S")
-                                echo "HORA SELECIONADA $hora_informada"
-                                break
-                                ;;
-                            "N")
-                                clear
-                                echo "INFORME NOVAMENTE A HORA"
-                                ;;
-                            *)
-                                clear
-                                echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
-                                ;;
-                        esac
-                    fi
-                done
-                echo
+                read -p "DESEJA ALTERAR A CONFIGURACAO NO CRON? [S/n] " alterar_no_cron
+                alterar_no_cron=$(echo "$alterar_no_cron" | tr '[:lower:]' '[:upper:]')
+                case "$alterar_no_cron" in
+                "S")
+                    alterar_cron
+                    break
+                    ;;
+                "N")
+                    clear
+                    echo "O INTEGRAL SERA ATUALIZADO ATRAVES DO CRON TODA SEMANA NA '$dia_informado' AS '0$hora_informada HORAS'"
+                    break
+                    ;;
+                *)
+                    clear
+                    echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                    ;;
+                esac
+                read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
                 clear
-                echo "DIA INFORMADO: $dia_informado-feira"
-                echo "HORA INFORMADA: 0$hora_informada horas"
-                echo
-                while true; do
-                    read -p "DESEJA REALMENTE ATUALIZAR NESSE DIA E HORA? [S/n] " confirmar_cron
-                    case "$(echo "$confirmar_cron" | tr '[:lower:]' '[:upper:]')" in
-                        "S" | "")
-                            echo "O INTEGRAL SERA ATUALIZADO ATRAVES DO CRON TODA SEMANA NA '$dia_informado' AS '0$hora_informada HORAS'"
-                            echo "PARAMETROS ATUALIZADOR NO CRON" > $config_cron
-                            echo >> $config_cron
-                            echo "DIA SEMANA: '$dia_definido' - '$dia_informado'" >> $config_cron
-                            echo "HORA: 0$hora_informada" >> $config_cron
-                            (crontab -l ; echo "" ; echo "# ATUALIZADOR AUTOMATICO" ; echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cronb 2>> /u/sist/logs/.erro-cron.log" ; echo "") | crontab -
-                            break 2
-                            ;;
-                        "N")
-                            clear
-                            echo "FAVOR INFORMAR NOVAMENTE!!!"
-                            break
-                            ;;
-                        *)
-                            echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
-                            ;;
-                    esac
-                done
             done
         elif [[ "$flag_load_parametros" == "true" ]] && [[ "$instalar_automaticamente" == "N" ]]; then
             echo "NECESSARIO ATIVAR PARAMETRO: 'INSTALAR AUTOMATICAMENTE'"
@@ -2076,6 +1969,107 @@ configuracoes_cron() {
     fi
 }
 
+alterar_cron() {
+    while true; do
+        while true; do
+            echo "INFORME ABAIXO O DIA QUE DESEJA QUE O INTEGRAL SEJA ATUALIZADO"
+            read -p "DIAS PERMITIDOS: (segunda a quinta) " dia_informado
+            dia_informado=$(echo "$dia_informado" | tr '[:upper:]' '[:lower:]')
+            case "$dia_informado" in
+            "segunda" | "seg")
+                dia_definido=1
+                ;;
+            "terca" | "ter" | "terça")
+                dia_definido=2
+                ;;
+            "quarta" | "qua")
+                dia_definido=3
+                ;;
+            "quinta" | "qui")
+                dia_definido=4
+                ;;
+            *)
+                echo "DIA INVALIDO"
+                continue
+                ;;
+            esac
+            echo
+            read -p "CONFIRMA O DIA INFORMADO $dia_informado ? [S/n] " confirmar_dia_informado
+            confirmar_dia_informado=$(echo "$confirmar_dia_informado" | tr '[:lower:]' '[:upper:]')
+            case "$confirmar_dia_informado" in
+            "S")
+                echo "DIA INFORMADO: $dia_informado"
+                break
+                ;;
+            "N")
+                clear
+                echo "INFORME NOVAMENTE O DIA"
+                #break
+                ;;
+            *)
+                clear
+                echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                ;;
+            esac
+        done
+
+        while true; do
+            read -p "EM QUAL HORA (0-5) DESEJA QUE SEJA ATUALIZADO? " hora_informada
+            if ! [[ $hora_informada =~ ^[0-5]+$ ]]; then
+                echo "Favor insirir uma hora entre 00 a 05h, para atualizar."
+            else
+                read -p "CONFIRMA A HORA? [S/N] " confirmar_hora
+                case "$(echo "$confirmar_hora" | tr '[:lower:]' '[:upper:]')" in
+                "S")
+                    echo "HORA SELECIONADA $hora_informada"
+                    break
+                    ;;
+                "N")
+                    clear
+                    echo "INFORME NOVAMENTE A HORA"
+                    ;;
+                *)
+                    clear
+                    echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                    ;;
+                esac
+            fi
+        done
+        echo
+        clear
+        echo "DIA INFORMADO: $dia_informado-feira"
+        echo "HORA INFORMADA: 0$hora_informada horas"
+        echo
+        while true; do
+            read -p "DESEJA REALMENTE ATUALIZAR NESSE DIA E HORA? [S/n] " confirmar_cron
+            case "$(echo "$confirmar_cron" | tr '[:lower:]' '[:upper:]')" in
+            "S" | "")
+                echo "O INTEGRAL SERA ATUALIZADO ATRAVES DO CRON TODA SEMANA NA '$dia_informado' AS '0$hora_informada HORAS'"
+                echo "PARAMETROS ATUALIZADOR NO CRON" >$config_cron
+                echo >>$config_cron
+                echo "DIA SEMANA: '$dia_definido' - '$dia_informado'" >>$config_cron
+                echo "HORA: 0$hora_informada" >>$config_cron
+                (
+                    crontab -l
+                    echo ""
+                    echo "# ATUALIZADOR AUTOMATICO"
+                    echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cronb 2>> /u/sist/logs/.erro-cron.log"
+                    echo ""
+                ) | crontab -
+                break 2
+                ;;
+            "N")
+                clear
+                echo "FAVOR INFORMAR NOVAMENTE!!!"
+                break
+                ;;
+            *)
+                echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
+                ;;
+            esac
+        done
+    done
+}
 
 # Funcao exclusiva para o cron
 atualizar_pelo_cron() {
@@ -2106,6 +2100,7 @@ atualizar_pelo_cron() {
         gravando_atualizacoes
         chmod 666 /u/sist/logs/.cron-erro.log
         chmod 666 /u/sist/logs/.cron-log.log
+        chown avanco:sist /u/sist/exec/*.gnt 2>>"$log_cron_erro"
         exit 0
     fi
 }
@@ -2282,7 +2277,7 @@ visualizar_logs() {
     done
 
     echo
-    echo "DIGITE O NUMERO DO LOG QUE DESEJA VISUALIZAR:    (9) para menu ou (99) para sair"
+    echo "DIGITE O Num LOG QUE DESEJA VISUALIZAR:      (9) menu anterior ou (99) para sair"
     read numero_log
 
     if [ "$numero_log" = "99" ]; then
@@ -2290,7 +2285,7 @@ visualizar_logs() {
         mensagem_saida
         exit 0
     elif [ "$numero_log" = "9" ]; then
-        menu_secreto
+        ler_logs
     fi
     if [[ $numero_log -gt 0 && $numero_log -le ${#logs_removidos[@]} ]]; then
         log_selecionado="${logs_removidos[$((numero_log - 1))]}"
@@ -2361,7 +2356,7 @@ case "$1" in
     exit 0
     ;;
 -P)
-    if [ $USER != avanco ]; then
+    if [ $USER != avanco ] || [ $USER != root ]; then
         echo "Favor acionar o Suporte Avanco para realizar a configuracao"
         echo "" >>$auditoria
         echo "TENTATIVA DE ACESSAR CONFIGURACAO DO PARAMETROS" >>$auditoria
@@ -2376,7 +2371,7 @@ case "$1" in
     exit 0
     ;;
 --cron)
-    if [ $USER != root ] ; then
+    if [ $USER != root ]; then
         echo "Favor acionar o Suporte Avanco para realizar a configuracao"
         echo "" >>$auditoria
         echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRON" >>$auditoria
@@ -2405,7 +2400,7 @@ esac
 # Chamandos as funcoes na ordem
 chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
 #validar_linux
-#verificar_dia
+verificar_dia
 carregar_parametros
 usuario_permitido
 checar_internet
