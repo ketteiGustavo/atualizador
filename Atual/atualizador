@@ -887,7 +887,7 @@ criar_info_loja() {
             echo "VERSAO INTEGRAL: $inf_versaoLoja"
             echo "RELEASE INTEGRAL: $inf_releaseLoja"
             echo
-            read -p "CONFIRMA AS INFORMACOES FORNECIDAS? [S/n]) " confirmar_infos
+            read -p "CONFIRMA AS INFORMACOES FORNECIDAS? [S/n] " confirmar_infos
 
             case $confirmar_infos in
             "S" | "s")
@@ -1726,17 +1726,19 @@ menu_secreto() {
     while true; do
         tput cup 7 31
         echo "OPCOES DISPONIVEIS:"
-        tput cup 9 4
-        echo "1  - OBTER INFORMACOES DO SISTEMA         6  - OBTER UPDATE DO ATUALIZADOR"
-        tput cup 10 4
-        echo "2  - OBTER VERSAO E RELEASES ATUAIS       7  - CONFIGURAR ROTINA NO CRON"
-        tput cup 11 4
-        echo "3  - ATUALIZAR                            8  - PARAMETRIZACAO"
-        tput cup 12 4
-        echo "4  - BACKUP EXECUTAVEIS                   9  - MANUAL"
-        tput cup 13 4
-        echo "5  - VISUALIZAR LOGS                      99 - SAIR"
-        tput cup 15 4
+        tput cup 9 2
+        echo "1 - OBTER INFORMACOES DO SISTEMA            7 - OBTER UPDATE DO ATUALIZADOR"
+        tput cup 10 2
+        echo "2 - DETALHES DE VERSAO E RELEASES ATUAIS    8 - CONFIGURAR ROTINA NO CRON"
+        tput cup 11 2
+        echo "3 - ATUALIZAR                               9 - PARAMETRIZACAO"
+        tput cup 12 2
+        echo "4 - BACKUP EXECUTAVEIS                     10 - MANUAL"
+        tput cup 13 2
+        echo "5 - VISUALIZAR LOGS                        99 - SAIR"
+        tput cup 14 2
+        echo "6 - CORRECOES"
+        tput cup 16 2
         echo -n "OPCAO: "
         read opcao
         case $opcao in
@@ -1754,15 +1756,24 @@ menu_secreto() {
         3)
             clear
             echo "ATUALIZAR"
+            #validar_linux
+            verificar_dia
+            carregar_parametros
+            usuario_permitido
+            checar_internet
             verifica_atualizacao
             iniciar
+            verifica_logados
             chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
             ler_arquivo_texto
             limpa_exec
             seguranca
             atualizar
+            ler_arquivo_texto >/dev/null 2>&1
             chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
             gravando_atualizacoes
+            cobrun status-online.gnt "A" >/dev/null
+            #
             ;;
         4)
             clear
@@ -1773,12 +1784,15 @@ menu_secreto() {
             clear
             ler_logs
             ;;
-        6)
+        666)
+            menu_correcoes
+            ;;
+        7)
             clear
             echo "OBTER UPDATE DO ATUALIZADOR"
             update
             ;;
-        7)
+        8)
             clear
             if [ $USER = root ]; then
                 echo "CONFIGURACOES NO CRON"
@@ -1790,7 +1804,7 @@ menu_secreto() {
                 exit
             fi
             ;;
-        8)
+        9)
             clear
             echo "PARAMETRIZAR ATUALIZADOR"
             if [ $USER = avanco ] || [ $USER = root ]; then
@@ -1800,7 +1814,7 @@ menu_secreto() {
                 exit
             fi
             ;;
-        9)
+        10)
             clear
             echo "$manual_uso"
             ;;
@@ -1833,7 +1847,7 @@ menu_secreto() {
         99)
             clear
             mensagem_saida
-            sleep 3
+            sleep 1
             exit 0
             ;;
         *)
@@ -1844,6 +1858,17 @@ menu_secreto() {
         read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
+}
+
+
+# Funcao para corrigir erros ao tentar atualizar
+menu_correcoes() {
+    echo "CENTRAL DE CORRECOES DO ATUALIZADOR"
+    echo
+    echo "1. Corrigir Detalhes da Versao e Release Nesse Servidor"
+    echo "2. Dar permissao total no 'sist/exec'"
+    echo "3. Limpar Exec"
+    echo "4. Liberar acesso ao Integral"
 }
 
 # Função para ativar, editar, mostrar, desativar ou remover configuração do crontab
