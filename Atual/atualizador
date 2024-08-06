@@ -479,6 +479,8 @@ iniciar() {
                 ativar_desativar_online
             fi
             clear
+            sleep 1
+            ler_arquivo_texto
             break
             ;;
         "N" | "n")
@@ -600,10 +602,10 @@ verifica_logados() {
             sleep 5
         done
     elif [[ "$flag_load_parametros" == "true" ]] && [[ "$deslogar_usuarios" == "N" ]]; then
-        echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
+        #echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
         echo "" >/dev/null
     elif [[ "$flag_load_parametros" == "false" ]]; then
-        echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
+        #echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
         echo "" >/dev/null
     else
         echo "" >/dev/null
