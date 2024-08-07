@@ -3,7 +3,7 @@
 ################################################################################
 # configurarAtualizador.sh - realizar a configuracao basica do atualizador
 #
-# DATA: 03/07/2024 09:53 - Versao 1
+# DATA: 03/07/2024 09:53 - Versao 2
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
@@ -11,6 +11,7 @@
 # site: https://github.com/ketteiGustavo
 # ------------------------------------------------------------------------------
 # Versao 1: realizar a configuracao de forma correta
+# Versao 2: Mudanças para baixar o configurador pelo help e rodar
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar o uso do atualizador.
 ###############################
@@ -41,7 +42,6 @@ mostrar_versao() {
 ###############################
 
 PASTA_AVANCO="/u/rede/avanco"
-arquivos=""
 BATS="/u/bats"
 EXEC="/u/sist/exec"
 versaoCobol=""
@@ -54,140 +54,80 @@ url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/mai
 url_manual_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Manuais/atualizador.1.gz"
 url_base_status_online_gnt="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/gnt/"
 buscaStatusOnline=""
+url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"
 pacoteConfiguracao="https://github.com/ketteiGustavo/atualizador/raw/main/Atual/PacoteAtualizador.rar"
 
 # Funcao para verificar qual o cobol usado
-VERIFICA_COBOL() {
-    # Rebece as informacoes a funcao LER_ARQUIVO_TEXTO
-    RESULTADO=$(cobrun 2>&1)
-    if [[ $RESULTADO =~ V([0-9]+\.[0-9]+) ]]; then
-        versaoCobol="${BASH_REMATCH[1]}"
-        echo "Versao do Cobol: $versaoCobol"
+verifica_cobol() {
+    if command -v cobrun &> /dev/null; then
+        resultado=$(cobrun 2>&1)
+        versaoCobol=$(echo "$resultado" | sed -n 's/V\([0-9]\+\.[0-9]\+\).*/\1/p')
+        inf_versaoCobol="$versaoCobol"
+    else
+        while true; do
+            read -p "Informe a versao do Cobol nesse servidor: " versao_informada
+            case "$versao_informada" in
+            "40" | "4.0")
+                versaoCobol="4.0"
+                break
+                ;;
+            "41" | "4.1")
+                versaoCobol="4.1"
+                break
+                ;;
+            *)
+                echo "Favor informar o cobol corretamente!"
+                echo "EXEMPLO: '4.0'"
+                ;;
+            esac
+            read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
+            clear
+        done
     fi
 }
+
+checar_comandos() {
+    for comando in "$@"; do
+        if ! command -v "$comando" &> /dev/null; then
+            echo "Necessario configurar '$comando'."
+            exit 1
+        fi
+    done
+}
+
+checar_comandos wget curl mandb
 
 # Testa se o usuario e root.
 if [ "$(id -u)" -ne 0 ]; then
     #clear
     tput smso
     echo 'NECESSARIO ESTAR COM O USUARIO ROOT, ACESSO NEGADO !!!'
+    echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y') HOUVE UMA TENTATIVA DE CONFIGURAR O ATUALIZADOR" >> /u/sist/logs/registroConfiguracao.log
+    echo "O USUARIO $USER TENTOU UTILIZAR O CONFIGURADOR" >> /u/sist/logs/registroConfiguracao.log
     tput rmso
-    exit
+    exit 1
 else
     echo "INICIANDO A CONFIGURACAO"
 fi
 
-configurar_offline () {
-    arquivos=$(find "$PASTA_AVANCO" -type f -name "PacoteAtualizador.rar")
-    if [ -z "$arquivos" ]; then
-        echo "baixando pacote..."
-        if curl --output /dev/null --silent --head --fail "$pacoteConfiguracao"; then
-            wget -c "$pacoteConfiguracao" -P "$PASTA_AVANCO"
-            arquivos=$(find "$PASTA_AVANCO" -type f -name "PacoteAtualizador.rar")
-        fi
+# funcao para baixar os arquivos necessarios
+baixar_arquivo() {
+    local url=$1
+    local destino=$2
+    if curl -k --output /dev/null --silent --head --fail "$url"; then
+        wget -c "$url" -P "$destino"
     else
-        echo "Pacote de configuracao encontrado"
-    fi
-    if [[ -f $arquivos ]]; then
-        VERIFICA_COBOL
-        cd /u/sist/exec
-        pwd
-        echo "Pacote de configuracao encontrado"
-        echo ""
-        # Verificando a versao do COBOL
-        if [ "$versaoCobol" == "4.0" ]; then
-            rar e "$arquivos" "40$statusOnline" -o+ -y
-            mv 40$statusOnline $statusOnline
-        elif [ "$versaoCobol" == "4.1" ]; then
-            rar e "$arquivos" "41$statusOnline" -o+ -y
-            mv 41$statusOnline $statusOnline
-        else
-            echo "Versao do COBOL invalida."
-            exit 1
-        fi
-
-        chown avanco:sist /u/sist/exec/*.gnt
-        chmod 777 /u/sist/exec/*.gnt
-
-        if [ $? -eq 0 ]; then
-            echo "Programa '$statusOnline extraido com sucesso"
-        else
-            echo "Falha ao extrair"
-        fi
-        echo ""
-        cd /u/bats
-        pwd
-        rar e -o+ "$arquivos" "$script_atualizador"
-        if [ $? -eq 0 ]; then
-            echo "'$script extraido com sucesso"
-            chown avanco:sist /u/bats/$script_atualizador
-            chmod 777 /u/bats/$script_atualizador
-        else
-            echo "Falha ao extrair"
-        fi
-
-        rar e -o+ "$arquivos" "$script_baixar_atualizacao"
-        if [ $? -eq 0 ]; then
-            echo "'$script_baixar_atualizacao extraido com sucesso"
-            chown avanco:sist /u/bats/$script_baixar_atualizacao
-            chmod 777 /u/bats/$script_baixar_atualizacao
-        else
-            echo "Falha ao extrair"
-        fi
-        
-        echo ""
-        cd /usr/share/man/man1
-        pwd
-        rar e -o+ "$arquivos" "$manual_atualizador"
-        mandb
-
-        echo ""
-        cd /u/sist/controle
-        pwd
-        
-        chmod 700 /u/rede/avanco/configurarAtualizador.sh
-        chown root:root /u/rede/avanco/configurarAtualizador.sh
-        mv /u/rede/avanco/configurarAtualizador.sh /u/bats/
-    else
-        while true; do
-            read -p "Deseja buscar o pacote do atualizador online? (S/n)" buscar_online
-
-            case $buscar_online in
-                "S" | "s" )
-                    clear
-                    echo "Realizando busca no servidor..."
-                    configurar_online
-                    break
-                    ;;
-                "N" | "n" )
-                    clear
-                    tput smso
-                    echo "                                AVANCO INFORMATICA                              "
-                    echo ""
-                    echo "                            TELESUPORTE (31) 3025-1188                          "
-                    echo ""
-                    echo "                                    TELEGRAM                                    "
-                    echo ""
-                    echo "                            t.me/avancoinformatica_bot                          "
-                    tput rmso
-                    stty sane
-                    exit 0
-                    ;;
-                *)
-                    echo "Entrada invalida, confirme com (S) para sim ou (N) para nao"
-                    ;;
-            esac
-        done
-        
+        echo "NAO FOI POSSIVEL ACESSAR O '$url'"
     fi
 }
 
 configurar_online () {
 
     local novo_URL
-    VERIFICA_COBOL
-    cd /u/sist/exec
-    pwd
+    verifica_cobol
+    
+    cd "$EXEC" || { echo "Falha ao acessar diretorio $EXEC"; exit 1; }
+
     if [ "$versaoCobol" == "4.0" ]; then
         buscaStatusOnline=40
         novo_URL=$url_base_status_online_gnt$buscaStatusOnline$statusOnline
@@ -199,31 +139,18 @@ configurar_online () {
         exit 1
     fi
 
-    #baixando o programa status-online.gnt
-    if curl --output /dev/null --silent --head --fail "$novo_URL"; then
-        wget -c "$novo_URL" -P "/u/sist/exec"
-    fi
-
-    # baixando o atualizador
-    if curl --output /dev/null --silent --head --fail "$url_atualizador"; then
-        wget -c "$url_atualizador" -P "$PASTA_AVANCO"
-    fi
-
-    # baixando o baixarAtualizacao
-    if curl --output /dev/null --silent --head --fail "$url_baixarAtualizacao"; then
-        wget -c "$url_baixarAtualizacao" -P "$PASTA_AVANCO"
-    fi
-
-    # baixando o manual do Atualizador
-    if curl --output /dev/null --silent --head --fail "$url_manual_atualizador"; then
-        wget -c "$url_manual_atualizador" -P "$PASTA_AVANCO"
-    fi
+    baixar_arquivo "$novo_URL" "$EXEC"
+    baixar_arquivo "$url_atualizador" "$PASTA_AVANCO"
+    baixar_arquivo "$url_baixarAtualizacao" "$PASTA_AVANCO"
+    baixar_arquivo "$url_manual_atualizador" "$PASTA_AVANCO"
+    baixar_arquivo "$url_versao_release" "$PASTA_AVANCO"
 
 
     chown avanco:sist $PASTA_AVANCO/atualizador
     chown avanco:sist $PASTA_AVANCO/baixarAtualizacao
     chown root:root $PASTA_AVANCO/atualizador.1.gz
     chown avanco:sist $PASTA_AVANCO/versao_release.txt
+    chmod 666 $PASTA_AVANCO/versao_release.txt
 
     chmod 777 $PASTA_AVANCO/atualizador
     chmod 777 $PASTA_AVANCO/baixarAtualizacao
@@ -232,17 +159,18 @@ configurar_online () {
     mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
     mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
     mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
+    mv $PASTA_AVANCO/versao_release.txt /u/sist/controle
 
     mandb
 
-    chown root:root /u/rede/avanco/configurarAtualizador
-    chmod 700 /u/rede/avanco/configurarAtualizador
+    #chown root:root /u/rede/arqp/configurarAtualizador
+    #chmod 700 /u/rede/arqp/configurarAtualizador
 
-    mv /u/rede/avanco/configurarAtualizador /u/bats/
+    #mv /u/rede/arqp/configurarAtualizador /u/bats/
 
 
-    chown avanco:sist /u/sist/exec/*.gnt
-    chmod 777 /u/sist/exec/*.gnt
+    chown avanco:sist /u/sist/exec/*
+    chmod 777 /u/sist/exec/*
 
 }
 
@@ -262,12 +190,6 @@ case "$1" in
     mostrar_versao
     exit 0
     ;;
---online)
-    echo "Iniciando a configuracao buscando online"
-    configurar_online
-    su - avanco
-    exit 0
-    ;;
 *)
     if test -n "$1"; then
         echo Opcao invalida: $1
@@ -277,5 +199,5 @@ case "$1" in
 esac
 
 ###############################
-configurar_offline
+configurar_online
 su - avanco
