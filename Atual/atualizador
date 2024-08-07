@@ -631,21 +631,6 @@ verificar_dia() {
         exit 0
     fi
 
-    #if [ $dia_semana_lido -eq 2 ] && [ $hora_lida -ge 6 ] && [ $hora_lida -lt 15 ]; then
-    #    clear
-    #    tput smso
-    #    echo "                           TENTE NOVAMENTE MAIS TARDE                           "
-    #    echo ""
-    #    tput rmso
-    #    stty sane
-    #    mensagem_saida
-    #    echo "" >>$auditoria
-    #    echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-    #    echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL" >>$auditoria
-    #    echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
-    #    exit 0
-    #fi
-
     if [ $hora_lida -gt 18 ]; then
         clear
         tput smso
@@ -1084,6 +1069,7 @@ validar_ver_rel() {
     echo "VERSAO INSTALADA: $data_tratada_infVersaoLoja"
     echo "RELEASE INSTALADA: $data_tratada_dt_relaseLoja - $inf_releaseLoja"
     echo ""
+    sleep 2
     local data_informada_comparar=$(converter_datas "$inf_versaoLoja")
     local data_versao_comparar=$(converter_datas "$novoPortal")
 
@@ -2257,7 +2243,7 @@ ler_logs() {
             ;;
         3)
             clear
-            (head -n 2 "$infos_extras" && tail -n 25 "$infos_extras")
+            (head -n 2 "$infos_extras" && tail -n 9 "$infos_extras")
             ;;
         4)
             clear
