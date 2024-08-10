@@ -38,6 +38,8 @@
 ################################################################################
 #
 
+versaoPrograma="0.1.5"
+
 manual_uso="
 Programa: $(basename "$0")
 
@@ -450,6 +452,19 @@ validar_linux() {
     fi
 }
 
+# Controle de acesso
+verificar_usuario() {
+    if [[ "$USER" != "avanco" && "$USER" != "root" ]]; then
+        echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+        echo "" >>"$auditoria"
+        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO PARAMETROS" >>"$auditoria"
+        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>"$auditoria"
+        echo "USUARIO: $USER" >>"$auditoria"
+        exit 0
+    fi
+}
+
+
 ativar_desativar_online() {
     if [[ "$olhar_online" = "true" ]]; then
         status_ON=$(cobrun status-online.gnt "L") >/dev/null 2>&1
@@ -800,11 +815,6 @@ checar_internet() {
         rtt_max=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $6}')
 
         echo "CONEXAO COM A INTERNET OK"
-        #echo "TEMPO DE RESPOSTA (ms):"
-        #echo "MINIMO: $rtt_min"
-        #echo "MEDIO: $rtt_avg"
-        #echo "MAXIMO: $rtt_max"
-
         # Verificar se a conexão está lenta ou instável
         if (($(echo "$rtt_avg > 100" | bc -l))); then
             echo "AVISO: A CONEXAO ESTA LENTA"
@@ -1110,9 +1120,11 @@ baixar_atualizacoes() {
     abortado_controle="download"
     if [ "$flag_versao" = false ]; then
         echo "$atualizado_flag" >$controle_flag/controle_flag.txt
-        bash "$script_baixar_atualizacao" "--baixarVersao"
+        #bash "$script_baixar_atualizacao" "--baixarVersao"
+        baixarAtualizacao --baixarVersao
         sleep 1
-        bash "$script_baixar_atualizacao" "--baixarRelease"
+        #bash "$script_baixar_atualizacao" "--baixarRelease"
+        baixarAtualizacao --baixarRelease
         sleep 1
     fi
 
@@ -2066,7 +2078,7 @@ alterar_cron() {
                     crontab -l
                     echo ""
                     echo "# ATUALIZADOR AUTOMATICO"
-                    echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cronb 2>> /u/sist/logs/.erro-cron.log"
+                    echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cron 2>> /u/sist/logs/.erro-cron.log"
                     echo ""
                 ) | crontab -
                 break 2
@@ -2212,10 +2224,9 @@ menu_restaura() {
 
 # Funcao para extrair e exibir a versao do programa
 mostrar_versao() {
-    local versao=$(grep '^# DATA:' "$0" | head -1 | cut -d '-' -f 2 | sed 's/Versao //')
     echo -n "-Programa: $(basename "$0")"
     echo
-    echo "-Versao:  $versao"
+    echo "-Versao: $versaoPrograma"
 }
 
 # Funcao para visualizar logs
@@ -2369,14 +2380,7 @@ case "$1" in
     exit 0
     ;;
 -P)
-    if [ $USER != avanco ] || [ $USER != root ]; then
-        echo "Favor acionar o Suporte Avanco para realizar a configuracao"
-        echo "" >>$auditoria
-        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO PARAMETROS" >>$auditoria
-        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>$auditoria
-        echo "USUARIO: $USER" >>$auditoria
-        exit 0
-    fi
+    verificar_usuario
     shift
     clear
     echo "PARAMETRIZACAO"
@@ -2384,7 +2388,7 @@ case "$1" in
     exit 0
     ;;
 --cron)
-    if [ $USER != root ]; then
+    if [[ "$USER" != "root" ]]; then
         echo "Favor acionar o Suporte Avanco para realizar a configuracao"
         echo "" >>$auditoria
         echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRON" >>$auditoria
