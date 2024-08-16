@@ -30,17 +30,27 @@ definir_cobol() {
 baixar_pacote() {
     if [ "$versaoCobol" == "4.0" ]; then
         sleep 1
-        if curl --output /dev/null --silent --head --fail "$url_pacoteCobol40"; then
-            wget -c "$url_pacoteCobol40" -P "$local_download"
-            pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM40.rar")
-            echo "Pacote baixado: '$pacote_extrair'"
+        pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM40.rar")
+        if [ -z "$pacote_extrair" ]; then
+            if curl --output /dev/null --silent --head --fail "$url_pacoteCobol40"; then
+                wget -c "$url_pacoteCobol40" -P "$local_download"
+                pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM40.rar")
+                echo "Pacote baixado: '$pacote_extrair'"
+            fi
+        else
+            echo "PACOTE ENCONTRADO!"
         fi
     elif [ "$versaoCobol" == "4.1" ]; then
         sleep 1
-        if curl --output /dev/null --silent --head --fail "$url_pacoteCobol41"; then
-            wget -c "$url_pacoteCobol41" -P "$local_download"
-            pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM41.rar")
-            echo "Pacote baixado: '$pacote_extrair'"
+        pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM41.rar")
+        if [ -z "$pacote_extrair" ]; then
+            if curl --output /dev/null --silent --head --fail "$url_pacoteCobol41"; then
+                wget -c "$url_pacoteCobol41" -P "$local_download"
+                pacote_extrair=$(find "$local_download" -type f -name "atualizacaoNCM41.rar")
+                echo "Pacote baixado: '$pacote_extrair'"
+            fi
+        else
+            echo "PACOTE ENCONTRADO!"
         fi
     else
         echo "Versao do Cobol desconhecida: $versaoCobol"
@@ -62,6 +72,7 @@ fazer_backup() {
 extrair_pacote() {
     cd "$dirCerto"
     rar e -o+ "$pacote_extrair" /u/sist/exec
+    chmod 777 /u/sist/exec/* 2>>/dev/null
 }
 
 atu_help() {
@@ -77,15 +88,16 @@ limpar_pasta() {
         if [ -z "$(ls -A "$limpar_diretorio")" ]; then
             echo "A PASTA ESTA VAZIA"
         else
-            echo "A PASTA COM OS ARQUIVOS: "
+            echo "PASTA COM OS SEGUINTES ARQUIVOS: "
             ls -lth "$limpar_diretorio"
             echo
             echo -e "\nDESEJA REALMENTE LIMPAR A PASTA? (S/N)"
             read -n 1 answer
             answer=$(echo "$answer" | tr '[:lower:]' '[:upper:]')
             if [[ $answer == "S" ]]; then
-                rar a /u/rede/integral/trb/Bkp_Pasta_NCM /u/rede/integral/trb/ncm/ve-ncm-itens*
+                rar a /u/rede/integral/trb/Bkp_Pasta_NCM /u/rede/integral/trb/ncm/*
                 rm -rf "/u/rede/integral/trb/ncm/*"
+                rar e -o+ /u/rede/integral/trb/Bkp_Pasta_NCM.rar /u/rede/integral/trb/ncm/ve-ncm-itens.csv
                 echo "PASTA LIMPA"
             else
                 echo "PASTA MANTIDA"

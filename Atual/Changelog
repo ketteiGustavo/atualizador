@@ -1,0 +1,34 @@
+CONTROLE DE VERSOES - DETALHES DA VERSAO ATUAL.
+
+Versao 0: Programa de atualizacao automatica.
+Versao 0.0.1: Logica do programa ajustada para gravar versao e release apos
+              execucao completa da atualizacao
+Versao 0.0.2: Logica para obter links de releases corrigidos
+Versao 0.0.3: Comandos rar sao exibidos com porcentagem em tela
+Versao 0.0.4: Criado teste para os arquivos baixados
+Versao 0.0.5: Criado teste para validar usuarios logados
+Versao 0.0.6: Validacao do Online, atraves do status-online.gnt
+Versao 0.0.7: Melhora na parte visual com porcentagens nos progressos
+Versao 0.0.8: Confirmacao de iniciar atualizacao, para evitar caso seja acio-
+              nado acidentamente.
+Versao 0.0.9: Desativado validacao de usuarios logados.
+Versao 0.0.10: Novos recursos e opcoes para linha de comando.
+Versao 0.1.0:  Diversas correcoes e melhorias.
+              Dentre elas melhor logica para obter os links atuais.
+Versao 0.1.1: Leitura apenas de versao e release atuais, garantindo velocidade
+              de execucao.
+Versao 0.1.2: Criado opcoes de leitura de logs pela linha de comando
+Versao 0.1.3: Opcao de restauracao implementada
+Versao 0.1.4: Criado log de auditoria
+Versao 0.1.5: Funcao de parametrizacao, para executar o atualizador de acordo
+              com o que for predefinido pelo usuario.
+Versao 0.1.6: Alterações em todo o código para ser compilado.
+Versao 0.1.7: Colocado a função baixar versão e release dentro do código prin-
+              cipal novamente.
+Versao 0.1.8: Alterado o visual da barra de progresso, exemplo [####...] 50%
+Versao 0.1.9: Funcao para permissão total e definir grupo. Além não rodar o
+              o atu-help manual quando for acionado pelo cron, pois já é atua-
+              lizado toda madrugada.
+Versao 0.1.10: Alterado para portugues as opções da linha de comando, visando
+              a acessibilidade a todos usuários.
+Versao 0.1.11: Logo Avanço colorida nos terminais que suportam cores

@@ -3,7 +3,7 @@
 ################################################################################
 # configurarAtualizador.sh - realizar a configuracao basica do atualizador
 #
-# DATA: 03/07/2024 09:53 - Versao 2
+# DATA: 03/07/2024 09:53 - Versao 2.3
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
@@ -12,6 +12,12 @@
 # ------------------------------------------------------------------------------
 # Versao 1: realizar a configuracao de forma correta
 # Versao 2: Mudanças para baixar o configurador pelo help e rodar
+# Versão 2.1: Melhoria para servidores que usam slack, opções de download via
+#             comando curl -k
+# Versão 2.2: Opção de não sair caso não tenha algum dos comandos necessários,
+#             e caso o comando não esteja instalado não ativar os recursos do
+#             comando.
+# Versão 2.3 Melhoras visuais na configuração.
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar o uso do atualizador.
 ###############################
@@ -27,6 +33,7 @@ OPCOES NA LINHA DE COMANDO:
     -h, --help      Mostra esta tela de ajuda e sai
     -V, --version   Mostra a versao do programa e sai
 MODO DE USAR:
+    (em construção - AGUARDE
 
 --------------------------------------------------------------------------------
 "
@@ -56,6 +63,10 @@ url_base_status_online_gnt="https://raw.githubusercontent.com/ketteiGustavo/atua
 buscaStatusOnline=""
 url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"
 pacoteConfiguracao="https://github.com/ketteiGustavo/atualizador/raw/main/Atual/PacoteAtualizador.rar"
+distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
+clear
+echo "SERVIDOR UTILIZA: $distro_nome"
+
 
 # Funcao para verificar qual o cobol usado
 verifica_cobol() {
@@ -89,13 +100,10 @@ verifica_cobol() {
 checar_comandos() {
     for comando in "$@"; do
         if ! command -v "$comando" &> /dev/null; then
-            echo "Necessario configurar '$comando'."
-            exit 1
+            echo "O COMANDO '$comando' ESTA DESABILITADO NESSE SERVIDOR"
         fi
     done
 }
-
-checar_comandos wget curl mandb
 
 # Testa se o usuario e root.
 if [ "$(id -u)" -ne 0 ]; then
@@ -107,7 +115,12 @@ if [ "$(id -u)" -ne 0 ]; then
     tput rmso
     exit 1
 else
+    tput cup 3 28
+    tput smso
     echo "INICIANDO A CONFIGURACAO"
+    tput rmso
+    echo
+    checar_comandos wget curl mandb
 fi
 
 # funcao para baixar os arquivos necessarios
@@ -115,7 +128,8 @@ baixar_arquivo() {
     local url=$1
     local destino=$2
     if curl -k --output /dev/null --silent --head --fail "$url"; then
-        wget -c "$url" -P "$destino"
+        curl -# -O --output-dir "$destino" "$url"
+        sleep 2
     else
         echo "NAO FOI POSSIVEL ACESSAR O '$url'"
     fi
@@ -125,7 +139,6 @@ configurar_online () {
 
     local novo_URL
     verifica_cobol
-    
     cd "$EXEC" || { echo "Falha ao acessar diretorio $EXEC"; exit 1; }
 
     if [ "$versaoCobol" == "4.0" ]; then
@@ -139,39 +152,44 @@ configurar_online () {
         exit 1
     fi
 
-    baixar_arquivo "$novo_URL" "$EXEC"
+    if [ "$distro_nome" == "Debian" ]; then
+        echo INSTALANDO OS MANUAIS!
+        baixar_arquivo "$url_manual_atualizador" "$PASTA_AVANCO"
+        chown root:root $PASTA_AVANCO/atualizador.1.gz
+        mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
+        mandb > /dev/null 2>&1
+        echo
+    fi
+
+    if [ ! -e "$EXEC/status-online.gnt" ]; then
+        echo "INSTALANDO O STATUS-ONLINE.gnt"
+        baixar_arquivo "$novo_URL" "$EXEC"
+        mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
+        echo
+    fi
+
+    echo "ATIVANDO ATUALIZADOR! AGUARDE"
     baixar_arquivo "$url_atualizador" "$PASTA_AVANCO"
     baixar_arquivo "$url_baixarAtualizacao" "$PASTA_AVANCO"
-    baixar_arquivo "$url_manual_atualizador" "$PASTA_AVANCO"
-    baixar_arquivo "$url_versao_release" "$PASTA_AVANCO"
-
-
+    echo
     chown avanco:sist $PASTA_AVANCO/atualizador
     chown avanco:sist $PASTA_AVANCO/baixarAtualizacao
-    chown root:root $PASTA_AVANCO/atualizador.1.gz
-    chown avanco:sist $PASTA_AVANCO/versao_release.txt
-    chmod 666 $PASTA_AVANCO/versao_release.txt
 
     chmod 777 $PASTA_AVANCO/atualizador
     chmod 777 $PASTA_AVANCO/baixarAtualizacao
 
     mv $PASTA_AVANCO/atualizador /u/bats/
     mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
-    mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
-    mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
-    mv $PASTA_AVANCO/versao_release.txt /u/sist/controle
-
-    mandb
-
-    #chown root:root /u/rede/arqp/configurarAtualizador
-    #chmod 700 /u/rede/arqp/configurarAtualizador
-
-    #mv /u/rede/arqp/configurarAtualizador /u/bats/
-
 
     chown avanco:sist /u/sist/exec/*
     chmod 777 /u/sist/exec/*
-
+    echo
+    echo
+    echo "CONFIGURACAO REALIZADA!!!"
+    echo "LOGUE COMO 'avanco' PARA ATUALIZAR!!!"
+    sleep 3
+    echo
+    echo
 }
 
 
@@ -200,4 +218,4 @@ esac
 
 ###############################
 configurar_online
-su - avanco
+exit 0
