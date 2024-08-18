@@ -1,0 +1,82 @@
+
+fzr_bkp () {
+    definirPacote_por_cobol
+
+    if [ -e "$arquivo_versao_atual" ]; then
+        rar lb "$arquivo_versao_atual" > "$controle_servidor/programasVersao.txt"
+        total_bkp_versao=$(cat "$controle_servidor/programasVersao.txt" | wc -l )
+        contagem_versao=0
+        flag_versao=true
+    else
+        flag_versao=false
+    fi
+
+    if [ -e "$arquivo_release_atual" ]; then
+        rar lb "$arquivo_release_atual" > "$controle_servidor/programasRelease.txt"
+        total_bkp_release=$(cat "$controle_servidor/programasRelease.txt" | wc -l )
+        contagem_release=0
+        flag_release=true
+    else
+        flag_release=false
+    fi
+
+    echo "atual flag da versao: $flag_versao" > /dev/null
+    echo "atual flag da release: $flag_release" > /dev/null
+
+    if [ $flag_versao = true ]; then
+        arquivos_bkp_versao=()
+        while IFS= read -r arquivo; do
+            caminho_completo="$LOCAL_GNT/$arquivo"
+            if [ -f "$caminho_completo" ]; then
+                arquivos_bkp_versao+=("$caminho_completo")
+            else
+                echo "Programa $caminho_completo nao encontrado."
+            fi
+        done < "$controle_servidor/programasVersao.txt"
+
+        if rar a "$BKP_DESTINO/BKPTOTAL_VERSAO_$DATE" "${arquivos_bkp_versao[@]}" | while read -r line; do
+            ((contagem_versao++))
+            porcentagem_bkp_versao=$((contagem_versao * 100 / total_bkp_versao))
+            echo -ne "CRIANDO BACKUP: [$porcentagem_bkp_versao%]\r"
+        done
+        then
+            sleep 1
+            echo "bkp concluido"
+        else
+            echo "erro ao fazer bkp"
+        fi
+    fi
+
+    if [ $flag_release = true ]; then
+        arquivos_bkp_release=()
+        while IFS= read -r arquivo; do
+            caminho_completo="$LOCAL_GNT/$arquivo"
+            if [ -f "$caminho_completo" ]; then
+                arquivos_bkp_release+=("$caminho_completo")
+            else
+                echo "Programa $caminho_completo nao encontrado."
+            fi
+        done < "$controle_servidor/programasRelease.txt"
+
+        if rar a "$BKP_DESTINO/BKPRELEASE_$DATE" "${arquivos_bkp_release[@]}" | while read -r line; do
+            ((contagem_release++))
+            porcentagem_bkp_release=$((contagem_release * 100 / total_bkp_release))
+            echo -ne "CRIANDO BACKUP: [$porcentagem_bkp_release%]\r"
+        done
+        then
+            sleep 1
+            echo "bkp concluido"
+        else
+            echo "erro ao fazer bkp"
+        fi
+    fi
+
+    if [ -e "$controle_servidor/programasVersao.txt" ]; then
+        rm "$controle_servidor/programasVersao.txt"
+    fi
+    if [ -e "$controle_servidor/programasRelease.txt" ]; then
+        rm "$controle_servidor/programasRelease.txt"
+    fi
+
+}
+

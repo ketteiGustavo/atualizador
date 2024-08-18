@@ -1,0 +1,302 @@
+ATUALIZAR() {
+    BAIXAR_ATUALIZACOES
+    definirPacote_por_cobol
+    echo "Pacote da versao: $arquivo_versao_atual"
+    echo "Pacote da release: $arquivo_release_atual"
+    local DIRCERTO="/u/sist/exec"
+    
+    if [ ! -d "$DIRCERTO" ]; then
+        ERRO_MSG "O diretorio nao existe."
+        echo "O diretorio nao existe." >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+    cd "$DIRCERTO"
+    atualizado_flag=$(cat "$controle_flag/controle_flag.txt")
+    if [ -z "$atualizado_flag" ]; then
+        echo "STATUS NAO ENCONTRADO"
+        exit 1
+    fi
+
+    if [ "$atualizado_flag" != "true" ]; then
+        FAZER_BKP
+        VERIFICA_BACKUP
+    fi
+
+    echo "Loja: versao - $inf_versaoLoja - release - $releaseLoja"
+    echo "Portal: versao - $novoPortal - release - $letraRelease"
+
+    # Verifica se a versão está desatualizada
+    if [ "$inf_versaoLoja" != "$novoPortal" ]; then
+        # Verifica se o arquivo de atualização foi encontrado
+        if [ -z "$arquivo_versao_atual" ]; then
+            ERRO_MSG "Pacote de atualização da versão não encontrado"
+            echo "Pacote de atualização da versão não encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+            return
+        else
+            ALERTA_MSG "Descompactando a 'versão'... Por favor, aguarde!"
+            total_files=$(rar lb "$arquivo_versao_atual" | wc -l)
+            current_file=0
+
+            if rar e -o+ "$arquivo_versao_atual" | while read -r line; do
+                ((current_file++))
+                percent=$((current_file * 100 / total_files))
+                echo -ne "Atualizando: [$percent%]\r"
+            done
+            then
+                INFO_MSG "Atualização de Versão concluída!"
+                versaoLoja="$novoPortal"
+                
+                rm -rf "$arquivo_versao_atual"
+                INFO_MSG "Versão atualizada para '$novoPortal'"
+                sleep 1
+
+                # Verifica se o arquivo da release foi encontrado
+                if [ -z "$arquivo_release_atual" ]; then
+                    ERRO_MSG "Pacote de atualização da release não encontrado"
+                    echo "Pacote de atualização da release não encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                    return
+                else
+                    total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                    current_file_release=0
+                    ALERTA_MSG "Descompactando a 'release'... Por favor, aguarde!"
+                    if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                        ((current_file_release++))
+                        porcento=$((current_file_release * 100 / total_files_release))
+                        echo -ne "Atualizando: [$porcento%]\r"
+                    done
+                    then
+                        INFO_MSG "Atualização de Release concluída!"
+                        rm -rf "$arquivo_release_atual"
+                    else
+                        ERRO_MSG "Erro ao atualizar!"
+                        echo "Erro ao atualizar INTEGRAL! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                        exit 1
+                    fi
+                    echo ""
+                    INFO_MSG "Release atualizada"
+                    releaseLoja="$letraRelease"
+                fi
+            else
+                ALERTA_MSG "Nova Versão Disponível, mas não foi possível atualizar. Entre em contato com o suporte!"
+                echo "Nova Versão Disponível, mas não foi possível atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                exit 1
+            fi
+        fi
+    elif [ "$inf_versaoLoja" == "$novoPortal" ]; then
+        if [ "$releaseLoja" != "$letraRelease" ]; then
+            if [ -z "$arquivo_release_atual" ]; then
+                ERRO_MSG "Pacote de atualização da release não encontrado"
+                echo "Pacote de atualização da release não encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                return
+            else
+                ALERTA_MSG "Descompactando a 'release'... Por favor, aguarde!"
+                total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                current_file_release=0
+                if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                    ((current_file_release++))
+                    porcento=$((current_file_release * 100 / total_files_release))
+                    echo -ne "Atualizando: [$porcento%]\r"
+                done
+                then
+                    INFO_MSG "Atualização de Release Concluída!"
+                    rm -rf "$arquivo_release_atual"
+                    releaseLoja="$letraRelease"
+                else
+                    ALERTA_MSG "Nova Release Disponível, mas não foi possível atualizar. Entre em contato com o suporte!"
+                    echo "Nova Release Disponível, mas não foi possível atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                    exit 1
+                fi
+                echo
+                INFO_MSG "Atualização concluída com sucesso."
+            fi
+        else
+            echo "INTEGRAL JÁ ESTÁ COM A RELEASE MAIS RECENTE!"
+            echo "INTEGRAL JÁ ESTÁ COM A RELEASE MAIS RECENTE! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+        fi
+    else
+        echo "INTEGRAL JÁ ESTÁ COM VERSÃO E RELEASE MAIS RECENTES!"
+        echo "INTEGRAL JÁ ESTÁ COM VERSÃO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+    fi
+
+    sleep 1
+    echo "Aguarde..."
+    atu-help manual
+    if [ $? -ne 0 ]; then
+        ERRO_MSG "Erro ao executar 'atu-help manual'."
+        echo "Erro ao executar 'atu-help manual'! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+    chmod 777 /u/sist/exec/*.gnt || {
+        ERRO_MSG "Erro ao conceder permissoes."
+        echo "Erro ao conceder permissoes! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+        exit 1
+    }
+
+    INFO_MSG "Atualização realizada com sucesso!"
+    LOG_INFO "Atualização realizada com sucesso pela rotina AUTOMÁTICA!"
+
+    rm "$controle_flag/controle_flag.txt"
+}
+
+
+
+
+# Funcao para atualizar o sistema
+ATUALIZAR() {
+    BAIXAR_ATUALIZACOES
+    definirPacote_por_cobol
+    echo "pacote da versao: $arquivo_versao_atual"
+    echo "pacote da release: $arquivo_release_atual"
+    local DIRCERTO="/u/sist/exec"
+
+    if [ ! -d "$DIRCERTO" ]; then
+        ERRO_MSG "O diretorio nao existe."
+        echo "O diretorio nao existe." >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+    cd "$DIRCERTO"
+    atualizado_flag=$(cat "$controle_flag/controle_flag.txt")
+    if [ -z "$atualizado_flag" ]; then
+        echo "STATUS NAO ENCONTRADO"
+        exit 1
+    fi
+
+    if [ "$atualizado_flag" != "true" ]; then
+        FAZER_BKP
+        VERIFICA_BACKUP
+    fi
+
+    echo "Loja: versao - $inf_versaoLoja - release - $releaseLoja"
+    echo "Portal: versao - $novoPortal - release - $letraRelease"
+    
+    # Verifica se a vesao esta desatualizada
+    if [ "$inf_versaoLoja" != "$novoPortal" ]; then
+        # Verifica se o arquivo de atualizacao foi encontrado.
+        if [ -z "$arquivo_versao_atual" ]; then
+            ERRO_MSG "Pacote de atualizacao da versao nao encontrado"
+            echo "Pacote de atualizacao da versao nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+            return
+        else
+            ALERTA_MSG "Descompactando a 'versao'... Por favor aguarde!"
+            # Conta o numero total de arquivos no arquivo RAR
+            total_files=$(rar lb "$arquivo_versao_atual" | wc -l)
+            current_file=0
+
+            if rar e -o+ "$arquivo_versao_atual" | while read -r line; do
+                ((current_file++))
+                percent=$((current_file * 100 / total_files))
+                echo -ne "Atualizando: [$percent %]\r"
+            done
+            then
+                INFO_MSG "Atualizacao de Versao concluida!"
+                # atualizando a versao da loja apos descompactacao
+                versaoLoja="$novoPortal"
+                #echo "atualizado para: $versaoLoja"
+                
+                rm -rf $arquivo_versao_atual
+                INFO_MSG "Versao atualizada para '$novoPortal'"
+                sleep 1
+
+                # Verifica se o arquivo da release foi encontrado.
+                if [ -z "$arquivo_release_atual" ]; then
+                    ERRO_MSG "Pacote de atualizacao da release nao encontrado"
+                    echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                    return
+                else
+                    # Conta o numero total de arquivos no arquivo RAR
+                    total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                    current_file_release=0
+                    # Descompacta somente a release
+                    ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
+                    if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                        ((current_file_release++))
+                        porcento=$((current_file_release * 100 / total_files_release))
+                        echo -ne "Atualizando: [$porcento%]\r"
+                    done
+                    then
+                        INFO_MSG "Atualizacao de Release concluida!"
+                        rm $arquivo_release_atual
+                    else
+                        ERRO_MSG "Erro ao atualizar!"
+                        echo "Erro ao atualizar INTEGRAL! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                        exit 1
+                    fi
+                    echo ""
+                    INFO_MSG "Release atualizada"
+                    # atualizando a release da loja apos descompactacao
+                    releaseLoja="$letraRelease"
+                fi
+            else
+                ALERTA_MSG "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte!"
+                echo "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                exit 1
+            fi
+        fi
+    # se a versao ja estiver atualizada mas a release nao, atualizar somente a release.
+    elif [ "$versaoLoja" == "$novoPortal" ]; then
+        if [ "$releaseLoja" != "$letraRelease" ]; then
+            # Verifica se o arquivo da release foi encontrado.
+            if [ -z "$arquivo_release_atual" ]; then
+                ERRO_MSG "Pacote de atualizacao da release nao encontrado"
+                echo "Pacote de atualizacao da release nao encontrado! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                return
+            else
+                # Descompacta somente a release
+                ALERTA_MSG "Descompactando a 'release'... Por favor aguarde!"
+                # Conta o numero total de arquivos no arquivo RAR
+                total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                current_file_release=0
+                if rar e -o+ "$arquivo_release_atual" | while read -r line; do
+                    ((current_file_release++))
+                    porcento=$((current_file_release * 100 / total_files_release))
+                    echo -ne "Atualizando: [$porcento %]\r"
+                done
+                then
+                    INFO_MSG "Atualizacao de Release Concluida!"
+                    rm -rf "$arquivo_release_atual"
+                    releaseLoja="$letraRelease"
+                else
+                    ALERTA_MSG "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte!"
+                    echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+                    exit 1
+                fi
+
+
+                echo
+                INFO_MSG "Atualizacao concluida com sucesso."
+                
+                # atualizando a release da loja apos descompactacao
+                releaseLoja="$letraRelease"
+            fi
+        else
+            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE!"
+            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+        fi
+    else
+        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES!"
+        echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $LOG_FILE
+    fi
+    sleep 1
+    echo "aguarde..."
+    # Executa o comando 'atu-help manual'
+    atu-help manual
+    if [ $? -ne 0 ]; then
+        ERRO_MSG "Erro ao executar 'atu-help manual'."
+        echo "Erro ao executar 'atu-help manual'! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+        exit 1
+    fi
+
+    chmod 777 /u/sist/exec/*.gnt || {
+        ERRO_MSG "Erro ao conceder permissoes."
+        echo "Erro ao conceder permissoes! $(date +"%d/%m/%Y") - $(date +"%H:%M:%S")" >> $ERRO_LOG_FILE
+        exit 1
+    }
+
+    INFO_MSG "Atualizacao realizada com sucesso!"
+    LOG_INFO "Atualizacao realizada com sucesso pela rotina AUTOMATICA!"
+
+    rm "$controle_flag/controle_flag.txt"
+}

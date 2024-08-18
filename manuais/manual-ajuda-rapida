@@ -1,0 +1,156 @@
+Programa: atualizador
+Versao:
+Data:
+
+--------------------------------------------------------------------------------
+                              [OPCOES DISPONIVEIS]                              
+
+OPCOES NA LINHA DE COMANDO:
+    -h,  --help      Mostrar tela de ajuda.
+    -V,  --version   Mostrar versao do Atualizador
+    -b,  --baixar    Baixar atualizacoes do Integral
+    -up, --update    Realizar update do Atualizador
+    -m,  --menu      Menu interativo
+
+MODO DE USAR:
+Digite o nome do programa e a opcao desejada.
+    Exemplo:
+    atualizador --help
+    'Exibir tela de ajuda.'
+
+--------------------------------------------------------------------------------
+
+    Usando o programa de atualizacao automatica:
+    Na primeira utilizacao e necessario usar o configurarAtualizador.sh
+        -Modo de uso:
+        Baixe os seguintes arquivos no servidor da Avanco:
+        (Eles se encontram em '/u/rede/avanco/pacoteAtualizador')
+         - configurarAtualizador.sh
+         - atualizador.rar
+        Apos baixar na sua maquina, coloque os arquivos no diretorio do servi-
+        dor do cliente:
+         - '/u/rede/avanco/'
+        Apos colocar os arquivos no local correto e entrar como root, digite:
+         -> bash /u/rede/avanco/configurarAtualizador.sh
+        Basta apertar enter, e sera realizada a configuracao dos scripts nos
+        locais corretos.
+        Em seguida logue como usuario 'avanco'
+         -> su - avanco
+         
+    Apos a configuracao feita, digite o comando 'atualizador' no terminal e
+    pressionar Enter.
+
+    Para iniciar a atualizacao e necessario confirmar pressionando o 'S'.
+    Para sair, pressione 'N'.
+
+    Ao utilizar o 'Atualizador' pela primeira vez ele exibira a seguinte mensa-
+    gem:
+      'O arquivo com as informacoes de versao e release nao existe'.
+     - Informe a VERSAO ATUAL do Integral: (DDMMAA)
+
+    Nesse momento sera necessario informar a versao e release que se encontram
+    no servidor do cliente.
+    Informar a data somente com numeros conforme exemplo abaixo.
+     ex.: 090424
+
+    Apertar Enter.
+    Informe a RELEASE ATUAL do Integral (se nao existir deixe em branco):
+     ex.: e
+    Apertar Enter
+    
+    Sera exibido essa tela:
+      VERSAO COBOL: 4.0
+      VERSAO INTEGRAL: 090424
+      RELEASE INTEGRAL: E
+      Confirma as informacoes fornecidas? [S/n]
+
+    Caso as informacoes estiverem corretas basta apertar 'S' para prosseguir,
+    caso contrario pressione 'N'. Sera necessario reiniciar o processo.
+    
+
+    O atualizador conta com recursos extras atraves do menu.
+    Para acessar o menu digite na linha de comando:
+        -> 'atualizador --menu' ou 'atualizador -m' e aperte Enter.
+
+    Ao entrar no menu de recursos extras, aparecera a seguinte tela:
+   ___________________________________________________________________________
+  |                                                                           |
+  |  1) OBTER INFORMACOES DO SISTEMA         5) CONFIGURAR ROTINA NO CRON     |
+  |  2) ATUALIZAR                            6) OBTER UPDATE DO ATUALIZADOR   |
+  |  3) RESTAURAR ATUALIZACAO ANTERIOR       7) MANUAL                        |
+  |  4) CORRIGIR FALHAS DE ATUALIZACAO       99) SAIR                         |
+  |___________________________________________________________________________|
+
+    Escolha uma OPCAO:
+
+    Escolha a opcao desejada de acordo com os numeros exibidos acima.
+
+        1) OBTER INFORMACOES DO SISTEMA
+            Exibira na tela os detalhes da ultima atualizacao executada.
+
+        2) ATUALIZAR
+            Atualizara o sistema Integral
+        
+        3) RESTAURAR ATUALIZACAO ANTERIOR
+            Essa opcao so e recomendada caso alguma rotina nao estiver funcio-
+            nando como estava. Porem, antes de realiza-la acione o suporte
+            Avanco para que um tecnico registre a demanda e encaminhe para os
+            desenvolvedores.
+
+        3.a) Dentro da opcao 'RESTAURAR ATUALIZACAO ANTERIOR' aparecera o menu:
+
+
+        4) CORRIGIR FALHAS DE ATUALIZACAO
+            Essa opcao ira exibir possiveis falhas na hora de atualizar.
+            Consulte o topico de ajuda apertando 4, no menu.
+        
+        5) CONFIGURAR ROTINA NO CRON
+            Essa opcao devera ser executada somente pelo suporte Avanco.
+            Caso deseje que o Integral seja atualizado automaticamente durante
+            a madrugada acione o suporte Avanco para deixar essa opcao ativa.
+
+        6) OBTER UPDATE DO ATUALIZADOR
+            Executar essa opcao caso apareca alguma mensagem de erro ou falha
+            no terminal ao tentar atualizar.
+
+            Se voce executou o update do Atualizador e mesmo assim nao conseguiu
+            atualizar, veja o menu 4, caso o problema persista favor acionar o
+            Suporte Avanco.
+        
+        7) MANUAL
+            Sera exibido esse menu de ajuda.
+        
+        99) SAIR
+            Para sair do menu de interacao.
+        
+
+    # Programa de Atualizacao Automatica
+    #
+    # Este programa e responsavel por executar automaticamente o processo de
+    # atualizacao do sistema.
+    # Ao ser executado, o programa realizara as seguintes acoes:
+    #   1. Verificar o Online e desativa-lo durante a atualizacao.
+            Apos finalizar ativa-lo novamente.
+    #   2. Obter as atualizacoes mais recentes do Integral.
+    #   3. Ler versao e release informada pelo usuario e gravar para as proximas
+    #      atualizacoes, sendo necessario realizar esta acao apenas uma vez.
+    #   4. Realiza o backup respeitando os padroes da Avanco.
+    #   5. Descompactar os pacotes baixados no local correto e conceder as per-
+    #      missoes aos '.gnt'
+--------------------------------------------------------------------------------
+    #
+    # OBSERVACAO: SERA GERADO UM ARQUIVO DE LOG PARA CONSULTA! ELE CONTERA AS
+    # INFORMACOES DE:
+    #                 - DATA DA ATUALIZACAO
+    #                 - BACKUP VERIFICADO
+    #                 - VERSAO DO COBOL
+    #                 - VERSAO INTEGRAL ANTES DA ATUALIZACAO
+    #                 - RELEASE INTEGRAL ANTES DA ATUALIZACAO
+    #                 - VERSAO INTEGRAL INSTALADA
+    #                 - RELEASE INTEGRAL INSTALADA
+    #                 - DATA E HORA DO BACKUP
+--------------------------------------------------------------------------------
+    # Observacoes:
+    #   - Caso tenha alguma intercorrencia ou tenha alguma sugestao de melhoria,
+      contactar no e-mail: luiz.gustavo@avancoinfo.com.br
+--------------------------------------------------------------------------------
