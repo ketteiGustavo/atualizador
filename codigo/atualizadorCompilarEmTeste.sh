@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.1.15
+# DATA: 13/04/2024 11:27 - Versao 0.1.16
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -45,7 +45,8 @@
 # Versão 0.1.13: Remoção de logos de dentro do código
 # Versão 0.1:14: Retirado ajuda rápida, para ser atualizado externo, facilitando
 #                a manutenção.
-# Versão 0.1.15: Nova versão para menu e novos sub-menus
+# Versão 0.1.15: Nova versão para menu e novos sub-menus com diversas correcoes
+# Versão 0.1.16: Criado função para baixar ajuda rapida e manual completo
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -54,7 +55,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.1.15"
+versaoPrograma="0.1.16"
 ################################################################################
 #
 ### Configuração do Programa atualizador
@@ -162,6 +163,8 @@ URL_ATUALIZADOV41=""
 URL_ATUALIZADO_RELEASE=""
 
 URL_BUSCAR_RELEASE=""
+url_ajuda="https://raw.githubusercontent.com/ketteiGustavo/atualizador/testesHomologacao/manuais/manual-ajuda-rapida"
+url_manual="https://raw.githubusercontent.com/ketteiGustavo/atualizador/testesHomologacao/manuais/atualizador.1"
 #
 ### Variáveis de leitura
 versaoCobol=""   # usada para armazenar o cobol, apos rodar cobrun integral
@@ -518,11 +521,11 @@ notificar_usuarios() {
         for usuario in $(who | awk '{print $1}' | sort | uniq); do
             if [[ ! " ${usuarios_permitidos[@]} " =~ " ${usuario} " ]]; then
                 if ps -u $usuario -o cmd --no-headers | grep -q "rts32"; then
-                    echo -e "Favor encerrar sua sessao. O Integral sera atualizado em breve. \nAperte 'ESC' ate sair do INTEGRAL! \nDIGITE 10 para voltar a linha de comando! \nDEPOIS DIGITE 'exit'" | wall
+                    echo -e "FAVOR ENCERRAR SUA SESSAO. O INTEGRAL SERA ATUALIZADO EM BREVE. \nAPERTE 'ESC' ATE SAIR DO INTEGRAL! \nDIGITE 10 PARA VOLTAR A LINHA DE COMANDO! \nDEPOIS DIGITE 'exit'" | wall
                 fi
             fi
         done
-        sleep 5
+        sleep 60
     done
 }
 #
@@ -1544,7 +1547,55 @@ barra_progresso() {
     done
     echo -ne "] $progresso%" # imprime a porcentagem
 }
+# Função para baixar ajuda rapida atualizada
+mostrar_ajuda() {
+    TMP_ajuda=$(mktemp /tmp/ajuda-atualizador.XXXXXX)
+    TMP_manual=$(mktemp /tmp/manual-atualizador.XXXXXX)
+    local $1
+    $url_ajuda
+    $url_manual
+    clear
+    if [ $1 = 1 ]; then
+        echo
+        if curl -k --output /dev/null --silent --head --fail "$url_ajuda"; then
+            curl -k -# -o "$TMP_ajuda" "$url_ajuda"
+            if [ $? -eq 0 ]; then
+                chmod 444 "$TMP_ajuda"
+                cat "$TMP_ajuda"
+            else
+                echo "ERRO AO LER MANUAL DE AJUDA."
+                rm -f "$TMP_ajuda"
+                exit 1
+            fi
+        else
+            echo "ERRO: A URL DO MANUAL NAO ESTA ACESSIVEL."
+            rm -f "$TMP_ajuda"
+            exit 1
+        fi
+    elif [ $1 = 2 ]; then
+        echo
+        if curl -k --output /dev/null --silent --head --fail "$url_manual"; then
+            curl -k -# -o "$TMP_manual" "$url_manual"
+            if [ $? -eq 0 ]; then
+                chmod 444 "$TMP_manual"
+                cat "$TMP_manual"
+            else
+                echo "ERRO AO LER MANUAL DE AJUDA."
+                rm -f "$TMP_manual"
+                exit 1
+            fi
+        else
+            echo "ERRO: A URL DO MANUAL NAO ESTA ACESSIVEL."
+            rm -f "$TMP_manual"
+            exit 1
+        fi
+    else
+        echo "OPCAO INVALIDA"
+    fi
 
+    rm -rf /tmp/manual-atualizador.*
+    rm -rf /tmp/ajuda-atualizador.*
+}
 # Funcao para atualizar o script sempre para a versao mais recente
 nova_versao() {
     script_path="$0"
@@ -1553,7 +1604,6 @@ nova_versao() {
     echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
     if curl -k --output /dev/null --silent --head --fail "$script_url"; then
         curl -k -# -o "$TMP_PATH" "$script_url"
-        wget -qcO "$TMP_PATH" "$script_url"
 
         if [ $? -eq 0 ]; then
             mv "$script_path" "$minha_maquina/u/bats/atualizadorOLD"
@@ -1863,7 +1913,6 @@ menu_principal() {
             ;;
         7)
             clear
-            echo "MANUAIS"
             menu_7
             ;;
         88888) ;;
@@ -2206,7 +2255,7 @@ menu_6() {
             if [ $USER = avanco ] || [ $USER = root ]; then
                 conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
             else
-                echo "Favor acionar o Suporte Avanco para conceder as permissoes"
+                yellow_msg "FAVOR ACIONAR O SUPORTE AVANCO PARA CONCEDER AS PERMISSOES"
                 exit 1
             fi
 
@@ -2219,9 +2268,10 @@ menu_6() {
 
         4)
             clear
-            alerta_msg "!!!ATENCAO!!!"
-            echo "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
-            echo "QUE O INTEGRAL SERA ATUALIZADO EM INSTANTES!!!"
+            yellow_msg "!!!ATENCAO!!!"
+            yellow_msg "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
+            yellow_msg "QUE O INTEGRAL SERA ATUALIZADO EM INSTANTES!!!"
+            verifica_logados
             ;;
         9)
             menu_principal
@@ -2268,12 +2318,11 @@ menu_7() {
         case "$opcao_menu" in
         1)
             clear
-            echo "AJUDA RAPIDA"
+            mostrar_ajuda 1
             ;;
         2)
             clear
-            echo "MANUAL COMPLETO"
-
+            mostrar_ajuda 2
             ;;
         9)
             menu_principal
@@ -2286,6 +2335,8 @@ menu_7() {
             echo
             sleep 1
             exit 0
+            rm -rf "$TMP_manual"
+            rm -rf "$TMP_ajuda"
             ;;
         *)
             clear
@@ -2294,7 +2345,8 @@ menu_7() {
             ;;
         esac
         sleep 3
-        tput cup 14 18
+        #tput clear
+        tput cup 24 18
         read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
@@ -2305,9 +2357,8 @@ menu_correcoes() {
     echo "CENTRAL DE CORRECOES DO ATUALIZADOR"
     echo
     echo "1. Corrigir Detalhes da Versao e Release Nesse Servidor"
-    echo "2. Dar permissao total no 'sist/exec'"
-    echo "3. Limpar Exec"
-    echo "4. Liberar acesso ao Integral"
+    echo "2. Limpar Exec"
+    echo "3. Liberar acesso ao Integral"
 }
 
 # Função para ativar, editar, mostrar, desativar ou remover configuração do crontab
