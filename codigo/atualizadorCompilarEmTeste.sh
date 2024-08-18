@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.1.14
+# DATA: 13/04/2024 11:27 - Versao 0.1.15
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -43,7 +43,9 @@
 # Versao 0.1.12: Opções de donwload alteradas para curl, devido a facilidade em
 #                exibir a barra de progresso sem mostrar os links de download
 # Versão 0.1.13: Remoção de logos de dentro do código
-# Versão 0.1.14: Nova versão para menu e novos sub-menus
+# Versão 0.1:14: Retirado ajuda rápida, para ser atualizado externo, facilitando
+#                a manutenção.
+# Versão 0.1.15: Nova versão para menu e novos sub-menus
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -52,260 +54,102 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.1.14"
+versaoPrograma="0.1.15"
 ################################################################################
 #
 ### Configuração do Programa atualizador
 minha_maquina="/home/luiz/Documentos/mini_servidor"
-CONFIG_ATUALIZADOR="$minha_maquina/u/sist/controle/atualizador.config"       # Parametrização do atualizador usando 0 e 1
+CONFIG_ATUALIZADOR="$minha_maquina/u/sist/controle/atualizador.config" # Parametrização do atualizador usando 0 e 1
 ### Use 0 (zero) para desligar as opções e 1 (um) para ligar
 ### Use 0 (zero) para não e 1 (um) para sim
 ### O padrão é o como mostrado abaixo
 #
-USAR_CORES=1            # mostrar cores nas mensagens?
-NIVEL_MENSAGENS=2       # 0(zero) Nenhuma informação é exibida.
+USAR_CORES=1      # mostrar cores nas mensagens?
+NIVEL_MENSAGENS=2 # 0(zero) Nenhuma informação é exibida.
 #                         1(um) Exibe o mínino necessário, apenas mensagens essencias
 #                         2(dois) Exibe todas as informações.
-ALERTA_SONORO=0         # habilita alerta sonoro em ações executadas?
+ALERTA_SONORO=0 # habilita alerta sonoro em ações executadas?
 #
 ### Chaves de teste
 ### As chaves abaixo são usadas para os testes do atualizador, definindo o que
 ### deverá ser feito
 ### Elas iniciarão quase todas por padrão 0, para ser testado as condições
 ### O padrão usado é com ch (chave) e o nome da chave
-ch_versao_atualizada=0              # verifica se a versão está atualizada
-ch_release_atualizada=0             # verifica se a release está atualizada
-ch_esta_atualizado=0                # utilizado para validar o "info_loja"
-ch_renomear_integralGNT=0           # renomeara o prog 'integral.gnt'
-ch_carregar_parametros=1            # carrega os parametros e configuracoes
-ch_pacote_descompactado=0           # verifica se o pacote foi descompactado
-ch_chavear_online=1                 # altera o online de clientes
-ch_atualizacao_finalizada=0         # verifica se o programa foi bem executado
-ch_deslogar_usuariaos=0             # envia uma mensagem para os usuários deslogarem
-ch_impedir_logar_atualizando=0      # impede usuários logar durante a atualziacao
-ch_avisar_atualizacoes=0            # avisa que existe nova atualização disponível
-ch_notificar_extras=0               # utilizada para enviar atualizações extras
-ch_baixar_automaticamente=0         # baixar os pacotes das atualizacoes
-ch_instalar_automaticamente=0       # instala as atualizacoes pelo cron
-ch_todos_podem_atualizar=0          # todos os usuários podem atualizar
-ch_normal_atu_help=1                         # para atualizar o help
+ch_versao_atualizada=0         # verifica se a versão está atualizada
+ch_release_atualizada=0        # verifica se a release está atualizada
+ch_esta_atualizado=0           # utilizado para validar o "info_loja"
+ch_renomear_integralGNT=0      # renomeara o prog 'integral.gnt'
+ch_carregar_parametros=1       # carrega os parametros e configuracoes
+ch_pacote_descompactado=0      # verifica se o pacote foi descompactado
+ch_chavear_online=1            # altera o online de clientes
+ch_atualizacao_finalizada=0    # verifica se o programa foi bem executado
+ch_deslogar_usuariaos=0        # envia uma mensagem para os usuários deslogarem
+ch_impedir_logar_atualizando=0 # impede usuários logar durante a atualziacao
+ch_avisar_atualizacoes=0       # avisa que existe nova atualização disponível
+ch_notificar_extras=0          # utilizada para enviar atualizações extras
+ch_baixar_automaticamente=0    # baixar os pacotes das atualizacoes
+ch_instalar_automaticamente=0  # instala as atualizacoes pelo cron
+ch_todos_podem_atualizar=0     # todos os usuários podem atualizar
+ch_normal_atu_help=1           # para atualizar o help
 #
 ### Fim da configuração - NÃO EDITE DAQUI PARA BAIXO
 #
 ################################################################################
 
-
-manual_uso="
-Programa: $(basename "$0")
-
---------------------------------------------------------------------------------
-                              [OPCOES DISPONIVEIS]                              
-
-OPCOES NA LINHA DE COMANDO:
-    -h,  --help      Mostrar tela de ajuda.
-    -V,  --version   Mostrar versao do Atualizador
-    -b,  --baixar    Baixar atualizacoes do Integral
-    -up, --update    Realizar update do Atualizador
-    -m,  --menu      Menu interativo
-
-MODO DE USAR:
-Digite o nome do programa e a opcao desejada.
-    Exemplo:
-    atualizador --help
-    'Exibir tela de ajuda.'
-
---------------------------------------------------------------------------------
-
-    Usando o programa de atualizacao automatica:
-    Na primeira utilizacao e necessario usar o configurarAtualizador.sh
-        -Modo de uso:
-        Baixe os seguintes arquivos no servidor da Avanco:
-        (Eles se encontram em '/u/rede/avanco/pacoteAtualizador')
-         - configurarAtualizador.sh
-         - atualizador.rar
-        Apos baixar na sua maquina, coloque os arquivos no diretorio do servi-
-        dor do cliente:
-         - '/u/rede/avanco/'
-        Apos colocar os arquivos no local correto e entrar como root, digite:
-         -> bash /u/rede/avanco/configurarAtualizador.sh
-        Basta apertar enter, e sera realizada a configuracao dos scripts nos
-        locais corretos.
-        Em seguida logue como usuario 'avanco'
-         -> su - avanco
-         
-    Apos a configuracao feita, digite o comando 'atualizador' no terminal e
-    pressionar Enter.
-
-    Para iniciar a atualizacao e necessario confirmar pressionando o 'S'.
-    Para sair, pressione 'N'.
-
-    Ao utilizar o 'Atualizador' pela primeira vez ele exibira a seguinte mensa-
-    gem:
-      'O arquivo com as informacoes de versao e release nao existe'.
-     - Informe a VERSAO ATUAL do Integral: (DDMMAA)
-
-    Nesse momento sera necessario informar a versao e release que se encontram
-    no servidor do cliente.
-    Informar a data somente com numeros conforme exemplo abaixo.
-     ex.: 090424
-
-    Apertar Enter.
-    Informe a RELEASE ATUAL do Integral (se nao existir deixe em branco):
-     ex.: e
-    Apertar Enter
-    
-    Sera exibido essa tela:
-      VERSAO COBOL: 4.0
-      VERSAO INTEGRAL: 090424
-      RELEASE INTEGRAL: E
-      Confirma as informacoes fornecidas? [S/n]
-
-    Caso as informacoes estiverem corretas basta apertar 'S' para prosseguir,
-    caso contrario pressione 'N'. Sera necessario reiniciar o processo.
-    
-
-    O atualizador conta com recursos extras atraves do menu.
-    Para acessar o menu digite na linha de comando:
-        -> 'atualizador --menu' ou 'atualizador -m' e aperte Enter.
-
-    Ao entrar no menu de recursos extras, aparecera a seguinte tela:
-   ___________________________________________________________________________
-  |                                                                           |
-  |  1) OBTER INFORMACOES DO SISTEMA         5) CONFIGURAR ROTINA NO CRON     |
-  |  2) ATUALIZAR                            6) OBTER UPDATE DO ATUALIZADOR   |
-  |  3) RESTAURAR ATUALIZACAO ANTERIOR       7) MANUAL                        |
-  |  4) CORRIGIR FALHAS DE ATUALIZACAO       99) SAIR                         |
-  |___________________________________________________________________________|
-
-    Escolha uma OPCAO:
-
-    Escolha a opcao desejada de acordo com os numeros exibidos acima.
-
-        1) OBTER INFORMACOES DO SISTEMA
-            Exibira na tela os detalhes da ultima atualizacao executada.
-
-        2) ATUALIZAR
-            Atualizara o sistema Integral
-        
-        3) RESTAURAR ATUALIZACAO ANTERIOR
-            Essa opcao so e recomendada caso alguma rotina nao estiver funcio-
-            nando como estava. Porem, antes de realiza-la acione o suporte
-            Avanco para que um tecnico registre a demanda e encaminhe para os
-            desenvolvedores.
-
-        3.a) Dentro da opcao 'RESTAURAR ATUALIZACAO ANTERIOR' aparecera o menu:
-
-
-        4) CORRIGIR FALHAS DE ATUALIZACAO
-            Essa opcao ira exibir possiveis falhas na hora de atualizar.
-            Consulte o topico de ajuda apertando 4, no menu.
-        
-        5) CONFIGURAR ROTINA NO CRON
-            Essa opcao devera ser executada somente pelo suporte Avanco.
-            Caso deseje que o Integral seja atualizado automaticamente durante
-            a madrugada acione o suporte Avanco para deixar essa opcao ativa.
-
-        6) OBTER UPDATE DO ATUALIZADOR
-            Executar essa opcao caso apareca alguma mensagem de erro ou falha
-            no terminal ao tentar atualizar.
-
-            Se voce executou o update do Atualizador e mesmo assim nao conseguiu
-            atualizar, veja o menu 4, caso o problema persista favor acionar o
-            Suporte Avanco.
-        
-        7) MANUAL
-            Sera exibido esse menu de ajuda.
-        
-        99) SAIR
-            Para sair do menu de interacao.
-        
-
-    # Programa de Atualizacao Automatica
-    #
-    # Este programa e responsavel por executar automaticamente o processo de
-    # atualizacao do sistema.
-    # Ao ser executado, o programa realizara as seguintes acoes:
-    #   1. Verificar o Online e desativa-lo durante a atualizacao.
-            Apos finalizar ativa-lo novamente.
-    #   2. Obter as atualizacoes mais recentes do Integral.
-    #   3. Ler versao e release informada pelo usuario e gravar para as proximas
-    #      atualizacoes, sendo necessario realizar esta acao apenas uma vez.
-    #   4. Realiza o backup respeitando os padroes da Avanco.
-    #   5. Descompactar os pacotes baixados no local correto e conceder as per-
-    #      missoes aos '.gnt'
---------------------------------------------------------------------------------
-    #
-    # OBSERVACAO: SERA GERADO UM ARQUIVO DE LOG PARA CONSULTA! ELE CONTERA AS
-    # INFORMACOES DE:
-    #                 - DATA DA ATUALIZACAO
-    #                 - BACKUP VERIFICADO
-    #                 - VERSAO DO COBOL
-    #                 - VERSAO INTEGRAL ANTES DA ATUALIZACAO
-    #                 - RELEASE INTEGRAL ANTES DA ATUALIZACAO
-    #                 - VERSAO INTEGRAL INSTALADA
-    #                 - RELEASE INTEGRAL INSTALADA
-    #                 - DATA E HORA DO BACKUP
---------------------------------------------------------------------------------
-    # Observacoes:
-    #   - Caso tenha alguma intercorrencia ou tenha alguma sugestao de melhoria,
-      contactar no e-mail: luiz.gustavo@avancoinfo.com.br
---------------------------------------------------------------------------------
-"
-
-blue='\e[1;94m'    # Azul
-green='\e[1;92m'   # Verde
-no_color='\e[0m'   # Reset da cor
+blue='\e[1;94m'  # Azul
+green='\e[1;92m' # Verde
+no_color='\e[0m' # Reset da cor
 
 ### VARIÁVEIS GLOBAIS
 #
 ### variáveis que armazenam os locais utilizados no sistema
 #
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
-info_loja_txt="$minha_maquina/u/sist/controle/info_loja.txt"             # arquivo que grava informações da de verão e release da servidor
-controle_ver_rel="$minha_maquina/u/sist/controle/versao_release.txt"     # arquivo que grava informações de versão e release do Portal Avanço
-local_gnt="$minha_maquina/u/sist/exec"                            # local dos programas gnt
-removidos="$minha_maquina/u/rede/avanco/removidos"                # pasta que ficam os arquivos não permitidos no exec e que foram removidos do exec
-pasta_destino="$minha_maquina/u/rede/avanco/atualizacoes"        # local onde são realizados os downloads das atualizações
-arquivo_versao_atual=""                             # grava o nome do pacote.rar da versão
-arquivo_release_atual=""                            # grava o nome do pacote.rar da release
-local_log="$minha_maquina/u/sist/logs"                            # arquivo de log
-bkp_destino="$minha_maquina/u/sist/exec-a"                        # local onde ficam os backups
+info_loja_txt="$minha_maquina/u/sist/controle/info_loja.txt"         # arquivo que grava informações da de verão e release da servidor
+controle_ver_rel="$minha_maquina/u/sist/controle/versao_release.txt" # arquivo que grava informações de versão e release do Portal Avanço
+local_gnt="$minha_maquina/u/sist/exec"                               # local dos programas gnt
+removidos="$minha_maquina/u/rede/avanco/removidos"                   # pasta que ficam os arquivos não permitidos no exec e que foram removidos do exec
+pasta_destino="$minha_maquina/u/rede/avanco/atualizacoes"            # local onde são realizados os downloads das atualizações
+arquivo_versao_atual=""                                              # grava o nome do pacote.rar da versão
+arquivo_release_atual=""                                             # grava o nome do pacote.rar da release
+local_log="$minha_maquina/u/sist/logs"                               # arquivo de log
+bkp_destino="$minha_maquina/u/sist/exec-a"                           # local onde ficam os backups
 #
 ### Sessão dos logs
 ### Arquivos de logs para leitura e gravação
-teste_gnt_log="$minha_maquina/u/sist/logs/testeGNT.log"           # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
-validados_gnt="$minha_maquina/u/sist/logs/statusGNT.log"          # grava o nome dos programas que tiveram o teste falho
-infos_extras="$minha_maquina/u/sist/logs/infos_extras.log"        # grava informações de desempenho do servidor
-auditoria="$minha_maquina/u/sist/logs/auditoria.log"              # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
-log_file="$minha_maquina/u/sist/logs/log_$mes_ano.log"            # log de ações bem executadas
-erro_log_file="$minha_maquina/u/sist/logs/erro_$mes_ano.log"      # log de erro
-log_cron_erro="$minha_maquina/u/sist/logs/.cron-erro.log"         # log erro gravado pelo cron
+teste_gnt_log="$minha_maquina/u/sist/logs/testeGNT.log"      # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
+validados_gnt="$minha_maquina/u/sist/logs/statusGNT.log"     # grava o nome dos programas que tiveram o teste falho
+infos_extras="$minha_maquina/u/sist/logs/infos_extras.log"   # grava informações de desempenho do servidor
+auditoria="$minha_maquina/u/sist/logs/auditoria.log"         # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
+log_file="$minha_maquina/u/sist/logs/log_$mes_ano.log"       # log de ações bem executadas
+erro_log_file="$minha_maquina/u/sist/logs/erro_$mes_ano.log" # log de erro
+log_cron_erro="$minha_maquina/u/sist/logs/.cron-erro.log"    # log erro gravado pelo cron
 #
 ### Arquivos de Parametrização
-arquivo_parametros="$minha_maquina/u/sist/controle/parametros.config"        # Parametrização que pode ser alterada pelo programa, fora do script.
-config_cron="$minha_maquina/u/sist/controle/.config_cron.txt"                # Detalhes da configuração ativa no cron
+arquivo_parametros="$minha_maquina/u/sist/controle/parametros.config" # Parametrização que pode ser alterada pelo programa, fora do script.
+config_cron="$minha_maquina/u/sist/controle/.config_cron.txt"         # Detalhes da configuração ativa no cron
 
 #
 #
 ### Sessão de datas
-dia_semana_lido=$(date +%u)         # dia que será testado para liberar atualizar ou não
-hora_lida=$(date +%H)               # hora que será testada para liberar atualizar ou não
+dia_semana_lido=$(date +%u) # dia que será testado para liberar atualizar ou não
+hora_lida=$(date +%H)       # hora que será testada para liberar atualizar ou não
 mes_ano=$(date +"%m%y")
 mes_atual=$(date +"%m")
 ano_atual=$(date +"%y")
-mes_anterior=$(date -d "4 weeks ago" +"%m")         # utilizado para limpar logs antigos
-ano_anterior=$(date -d "4 weeks ago" +"%y")         # utilizado para limpar logs antigos
+mes_anterior=$(date -d "4 weeks ago" +"%m") # utilizado para limpar logs antigos
+ano_anterior=$(date -d "4 weeks ago" +"%y") # utilizado para limpar logs antigos
 date=$(date +"%d%m%y")
 #
 ### Validações de servidor
-conta_usarios=$(ps ax | grep rts32 | grep -v 'grep' | wc -l)        # verifica usuarios usando o integral
-usuarios_permitidos=("root" "super" "avanco")                       # usuários permitidos, independente dos parâmetros
+conta_usarios=$(ps ax | grep rts32 | grep -v 'grep' | wc -l) # verifica usuarios usando o integral
+usuarios_permitidos=("root" "super" "avanco")                # usuários permitidos, independente dos parâmetros
 #
 ### Parte web - Links
 #
-script_url="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizador"                     # Link do programa, para obter novas versões
+script_url="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizador" # Link do programa, para obter novas versões
 script_path="$0"
-url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"      # arquivo atualizado toda semana, com a versão e a release do Integral atual
+url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt" # arquivo atualizado toda semana, com a versão e a release do Integral atual
 URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
 URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao41-"
 
@@ -320,14 +164,14 @@ URL_ATUALIZADO_RELEASE=""
 URL_BUSCAR_RELEASE=""
 #
 ### Variáveis de leitura
-versaoCobol=""          # usada para armazenar o cobol, apos rodar cobrun integral
-novoPortal=""           # armazena a versão atual disponível no site
-releasePortal=""        # armazena a data da release disponível no site
-letraRelease=""         # armazena a letra da release disponível no site
-versaoLoja=""           # armazena a versao no servidor do cliente
-releaseLoja=""          # armazena a release no servidor do cliente
+versaoCobol=""   # usada para armazenar o cobol, apos rodar cobrun integral
+novoPortal=""    # armazena a versão atual disponível no site
+releasePortal="" # armazena a data da release disponível no site
+letraRelease=""  # armazena a letra da release disponível no site
+versaoLoja=""    # armazena a versao no servidor do cliente
+releaseLoja=""   # armazena a release no servidor do cliente
 inf_versao=""
-inf_release=""          # usada para obter a release digitada
+inf_release="" # usada para obter a release digitada
 inf_versaoCobol=""
 inf_versaoLoja=""
 inf_releaseLoja=""
@@ -341,11 +185,11 @@ data_release=""
 #
 ### Variáveis extras
 #
-cronometro_start=$(date +'%H:%M:%S')            # usada para validar o desempenho do atualizador no servidor
-cronometro_start_volta=""                       # usada para validar o desempenho do atualizador no servidor
-cronometro_stop=""                              # usada para validar o desempenho do atualizador no servidor
-cronometro_stop_volta=""                        # usada para validar o desempenho do atualizador no servidor
-tempo_gasto=""                                  # grava o tempo gasto na execuçãp
+cronometro_start=$(date +'%H:%M:%S') # usada para validar o desempenho do atualizador no servidor
+cronometro_start_volta=""            # usada para validar o desempenho do atualizador no servidor
+cronometro_stop=""                   # usada para validar o desempenho do atualizador no servidor
+cronometro_stop_volta=""             # usada para validar o desempenho do atualizador no servidor
+tempo_gasto=""                       # grava o tempo gasto na execuçãp
 atualizado_flag=""
 controle_flag="$minha_maquina/u/sist/controle"
 flag_versao=false
@@ -361,8 +205,7 @@ abortado_controle=""
 
 resultado="" # armazena a saida do comando cobrun, para separar somente a versao 4.0 ou 4.1
 
-data_atual=$(date +"%d%m%y")   # data obtida ao rodar o script, sera sempre o dia atual
-
+data_atual=$(date +"%d%m%y") # data obtida ao rodar o script, sera sempre o dia atual
 
 ################################################################################
 ### Inicio das Funções - serão dividas em blocos
@@ -482,33 +325,32 @@ conceder_permissao() {
     local nivel_permissao=$1
     local local_permissao=$2
     case $nivel_permissao in
-        "t" | "T")
-            chmod 777 "$local_permissao" || {
-                erro_msg "ERRO AO CONCEDER PERMISSAO TOTAL."
-                echo "Erro ao conceder permissoes! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-            }
-            chown avanco:sist "$local_permissao" || {
-                erro_msg "ERRO AO DEFINIR COMO: 'avanco:sist'"
-                echo "Erro ao definir 'dono' e 'grupo'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-            }
-            ;;
-        "rw" | "RW")
-            chmod 666 "$local_permissao" || {
-                erro_msg "ERRO AO CONCEDER PERMISSAO TOTAL."
-                echo "Erro ao conceder permissoes! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-            }
-            chown avanco:sist "$local_permissao" || {
-                erro_msg "ERRO AO DEFINIR COMO: 'avanco:sist'"
-                echo "Erro ao definir 'dono' e 'grupo'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-            }
-            ;;
-        *)
-            echo "PERMISSAO INVALIDA"
-            echo "USE 't' para total(777) ou 'rw' para leitura/escrita(666)"
-            ;;
+    "t" | "T")
+        chmod 777 "$local_permissao" || {
+            erro_msg "ERRO AO CONCEDER PERMISSAO TOTAL."
+            echo "Erro ao conceder permissoes! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+        }
+        chown avanco:sist "$local_permissao" || {
+            erro_msg "ERRO AO DEFINIR COMO: 'avanco:sist'"
+            echo "Erro ao definir 'dono' e 'grupo'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+        }
+        ;;
+    "rw" | "RW")
+        chmod 666 "$local_permissao" || {
+            erro_msg "ERRO AO CONCEDER PERMISSAO TOTAL."
+            echo "Erro ao conceder permissoes! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+        }
+        chown avanco:sist "$local_permissao" || {
+            erro_msg "ERRO AO DEFINIR COMO: 'avanco:sist'"
+            echo "Erro ao definir 'dono' e 'grupo'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+        }
+        ;;
+    *)
+        echo "PERMISSAO INVALIDA"
+        echo "USE 't' para total(777) ou 'rw' para leitura/escrita(666)"
+        ;;
     esac
 }
-
 
 interromper() {
     echo -e "\nPROCESSO INTERROMPIDO!"
@@ -558,8 +400,8 @@ validar_linux() {
     if [ ! -e /etc/debian_version ]; then
         clear
         echo -e "FAVOR ACIONAR O SETOR DE TECNOLOGIA E O ADMINISTRATIVO PARA AGENDAR \nA ATUALIZACAO DO SISTEMA OPERACIONAL DO SEU SERVIDOR."
-        echo "NO DIA $(date+ '%d/%m/%Y') FOI VERIFICADO OS DETALHES DO SERVIDOR" > "/u/sist/logs/OS-Servidor.txt"
-        more /etc/os-release >> "/u/sist/logs/OS-Servidor.txt"
+        echo "NO DIA $(date+ '%d/%m/%Y') FOI VERIFICADO OS DETALHES DO SERVIDOR" >"/u/sist/logs/OS-Servidor.txt"
+        more /etc/os-release >>"/u/sist/logs/OS-Servidor.txt"
         sleep 2
         #exit 1
     fi
@@ -797,7 +639,6 @@ seguranca() {
 
     sleep 1
     gnt_files=($(find "$local_gnt" -name "*.gnt"))
-
 
     if [ ${#gnt_files[@]} -eq 0 ]; then
         echo "Nenhum arquivo '.gnt' encontrado no diretorio '$local_gnt'." >/dev/null
@@ -1221,7 +1062,7 @@ manter_log_erro_atual() {
 log_info() {
     manter_log_atual
     local info="$1"
-    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y - %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLojaAntes \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") \n- LOCAL DO BACKUP: $bkp_destino/BKPTOTAL_$date.rar \n- USUARIO UTILIZADO: $USER\n################################################################################"
+    local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y - %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLojaAntes \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") \n- LOCAL DO BACKUP: $bkp_destino/BKPTOTAL_$date.rar \n- USUARIO: $USER\n################################################################################"
 
     # Escreve no arquivo de log
     echo -e "$log_msg\n" >>"$log_file"
@@ -1371,7 +1212,7 @@ baixar_release() {
             porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
             #barra_progresso $porcentagem
         done; then
-        
+
             release_download=$(tratar_datas "$release_busca")
             echo -e "\n\nDOWNLOAD DA RELEASE '$letraRelease, DO DIA $release_download' CONCLUIDO E PROGRAMAS 'TESTADOS'!!"
         else
@@ -1668,7 +1509,6 @@ gravando_atualizacoes() {
     exit 0
 }
 
-
 ### Funções extras
 #
 
@@ -1678,7 +1518,7 @@ gravando_atualizacoes() {
 ## Barra de progresso
 barra_progresso() {
     local progresso=$1
-    progresso=$((progresso > 100 ? 100 : progresso))        # Garante que o valor máximo seja 100
+    progresso=$((progresso > 100 ? 100 : progresso)) # Garante que o valor máximo seja 100
     local tamanho_barra=$2
 
     # Obtém o número total de colunas do terminal
@@ -1694,45 +1534,44 @@ barra_progresso() {
     local pos=$((progresso * bar_size / 100))
 
     # Inicializa a barra vazia
-    echo -ne '\033[G'             # vai para o começo da linha
-    echo -n '['                   # imprime o início da barra
-    for ((j=0; j<pos; j++)); do
-        echo -n '#'               # preenche a barra
+    echo -ne '\033[G' # vai para o começo da linha
+    echo -n '['       # imprime o início da barra
+    for ((j = 0; j < pos; j++)); do
+        echo -n '#' # preenche a barra
     done
-    for ((j=pos; j<bar_size; j++)); do
-        echo -n '.'               # preenche o restante da barra
+    for ((j = pos; j < bar_size; j++)); do
+        echo -n '.' # preenche o restante da barra
     done
-    echo -ne "] $progresso%"      # imprime a porcentagem
+    echo -ne "] $progresso%" # imprime a porcentagem
 }
 
-
-
 # Funcao para atualizar o script sempre para a versao mais recente
-update() {
+nova_versao() {
     script_path="$0"
     TMP_PATH=$(mktemp /tmp/$(basename "$script_path").XXXXXX)
     clear
     echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
     if curl -k --output /dev/null --silent --head --fail "$script_url"; then
         curl -k -# -o "$TMP_PATH" "$script_url"
-        #wget -qcO "$TMP_PATH" "$script_url"
+        wget -qcO "$TMP_PATH" "$script_url"
 
-        #if [ $? -eq 0 ]; then
-        #    mv "$TMP_PATH" "$script_path"
-        #    chmod +x "$script_path"
-            echo "ATUALIZACAO CONCLUIDA. EXECUTE O SCRIPT NOVAMENTE..."
-        #else
-        #    echo "ERRO AO BAIXAR A ATUALIZACAO."
-        #    rm -f "$TMP_PATH"
-        #fi
+        if [ $? -eq 0 ]; then
+            mv "$script_path" "$minha_maquina/u/bats/atualizadorOLD"
+            mv "$TMP_PATH" "$script_path"
+            chmod +x "$script_path"
+        echo "ATUALIZACAO CONCLUIDA. EXECUTE O SCRIPT NOVAMENTE..."
+        else
+            echo "ERRO AO BAIXAR A ATUALIZACAO."
+            rm -f "$TMP_PATH"
+            exit 1
+        fi
     else
         echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
-        #rm -f "$TMP_PATH"
+        rm -f "$TMP_PATH"
+        exit 1
     fi
-
     exit
 }
-
 
 #Nº | VERSAO | RELEASE | BACKUP
 
@@ -2002,57 +1841,33 @@ menu_principal() {
             ;;
         2)
             clear
-            echo "atu"
-            #menu_2
+            menu_2
             ;;
 
         3)
             clear
-            
+            menu_3
             ;;
         4)
             clear
-            echo "BACKUP"
-            fazer_bkp
+            menu_4
             ;;
         5)
             clear
-            ler_logs
+            menu_5
             ;;
-        666)
-            menu_correcoes
+        6)
+            clear
+            echo "EXTRAS"
+            menu_6
             ;;
         7)
             clear
-            echo "OBTER UPDATE DO ATUALIZADOR"
-            update
+            echo "MANUAIS"
+            menu_7
             ;;
-        8)
-            clear
-            if [ $USER = root ]; then
-                echo "CONFIGURACOES NO CRON"
-                sleep 1
-                clear
-                configurar_cron
-            else
-                echo "Favor acionar o Suporte Avanco para realizar a configuracao"
-                exit
-            fi
-            ;;
-        9)
-            clear
-            echo "PARAMETRIZAR ATUALIZADOR"
-            if [ $USER = avanco ] || [ $USER = root ]; then
-                parametros
-            else
-                echo "Favor acionar o Suporte Avanco para realizar a configuracao"
-                exit
-            fi
-            ;;
-        10)
-            clear
-            echo "$manual_uso"
-            ;;
+        88888) ;;
+        99999) ;;
         1188)
             clear
             if [ $USER = avanco ] || [ $USER = root ]; then
@@ -2120,36 +1935,36 @@ menu_1() {
         echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
-            1)
-                clear
-                echo
-                more "$minha_maquina/u/sist/controle/info_loja.txt"
-                ;;
-            2)
-                clear
-                baixar_controle >/dev/null 2>&1
-                tput cup 7 21
-                echo "DETALHES DA VERSAO E RELEASE OBTIDOS!"
-                tput cup 9 21
-                echo "ATUALIZACAO DISPONIVEL NO PORTAL AVANCO"
-                tput cup 10 21
-                echo "VERSAO ATUAL:   $data_tratada_novoPortal"
-                tput cup 11 21
-                echo "RELEASE ATUAL:  $data_tratada_dt_release - $letraRelease"
-                ;;
-            9)
-                menu_principal
-                return 1
-                ;;
+        1)
+            clear
+            echo
+            more "$minha_maquina/u/sist/controle/info_loja.txt"
+            ;;
+        2)
+            clear
+            baixar_controle >/dev/null 2>&1
+            tput cup 7 21
+            echo "DETALHES DA VERSAO E RELEASE OBTIDOS!"
+            tput cup 9 21
+            echo "ATUALIZACAO DISPONIVEL NO PORTAL AVANCO"
+            tput cup 10 21
+            echo "VERSAO ATUAL:   $data_tratada_novoPortal"
+            tput cup 11 21
+            echo "RELEASE ATUAL:  $data_tratada_dt_release - $letraRelease"
+            ;;
+        9)
+            menu_principal
+            return 1
+            ;;
 
-            99)
-                clear
-                mensagem_saida
-                echo
-                sleep 1
-                exit 0
-                ;;
-            *)
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
+        *)
             clear
             tput cup 8 32
             echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
@@ -2163,135 +1978,197 @@ menu_1() {
 }
 # sub-menu opção 2
 menu_2() {
+    local opcao_menu
     clear
-    echo "ATUALIZAR"
-    #validar_linux
-    verificar_dia
-    carregar_parametros
-    usuario_permitido
-    checar_internet
-    verifica_atualizacao
-    iniciar
-    verifica_logados
-    conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
-    ler_arquivo_texto
-    limpa_exec
-    seguranca
-    atualizar
-    ler_arquivo_texto >/dev/null 2>&1
-    conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
-    gravando_atualizacoes
-    #cobrun status-online.gnt "A" >/dev/null
-    #
+    while true; do
+        tput cup 5 28
+        echo -ne "\e[1;36mCENTRAL DE ATUALIZACOES DO INTEGRAL\e[0m"
+        tput cup 8 22
+        echo " 1  -  ATUALIZAR INTEGRAL"
+        tput cup 9 22
+        echo " 2  -  ATUALIZAR PACOTE POR ID"
+        tput cup 10 22
+        echo " 3  -  ESCOLHER PACOTE NA PASTA ATUALIZACOES"
+        tput cup 11 22
+        echo " 4  -  BAIXAR PACOTE VIA LINK"
+        tput cup 12 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 13 22
+        echo "99  -  SAIR"
+        tput cup 15 31
+        echo -ne "\e[1;32mOPCAO: \e[0m"
+        read opcao_menu
+        case "$opcao_menu" in
+        1)
+            clear
+            echo "Atualizando..."
+            #chamar_atualizacao
+            ;;
+        2)
+            clear
+            tput cup 6 29
+            echo "INFORME O ID DO PACOTE"
+            ;;
+        3)
+            clear
+            tput cup 6 27
+            echo "LISTAR PACOTE DISPONIVEIS"
+            ;;
+        4)
+            clear
+            tput cup 6 29
+            echo "INSIRA O LINK ABAIXO: "
+            ;;
+        9)
+            menu_principal
+            return 1
+            ;;
+
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
+        *)
+            clear
+            tput cup 8 32
+            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
+            ;;
+        esac
+        sleep 3
+        tput cup 14 18
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
+        clear
+    done
 }
 # sub-menu opção 3
 menu_3() {
     local opcao_menu
     clear
     while true; do
-        tput cup 3 38; echo "MENU"
-
-        echo -n "OPCAO: "
+        tput cup 5 28
+        echo -ne "\e[1;36mCENTRAL DE BACKUP DO INTEGRAL\e[0m"
+        tput cup 8 22
+        echo " 1  -  FAZER BACKUP DO 'sist/exec'"
+        tput cup 9 22
+        echo " 2  -  LISTAR BACKUP's DISPONIVEIS"
+        tput cup 10 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 11 22
+        echo "99  -  SAIR"
+        tput cup 14 31
+        echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
-            1)
-                ;;
-            2)
-                ;;
-            9)
-                menu_principal
-                return 1
-                ;;
+        1)
+            clear
+            echo "BACKUP EM ANDAMENTO"
+            #fazer_bkp
+            ;;
+        2)
+            clear
+            ls -tr $minha_maquina/u/sist/exec-a/BKPTOTAL_* | awk -F'/' '{print $NF}'
+            ;;
+        9)
+            menu_principal
+            return 1
+            ;;
 
-            99)
-                clear
-                mensagem_saida
-                echo
-                sleep 1
-                exit 0
-                ;;
-            *)
-                clear
-                red_msg "OPCAO INVALIDA"
-                ;;
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
+        *)
+            clear
+            tput cup 8 32
+            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
+            ;;
         esac
-        echo
-        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR..." -n 1
+        sleep 3
+        tput cup 14 18
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
 }
 # sub-menu opção 4
 menu_4() {
-    local opcao_menu
-    clear
-    while true; do
-        tput cup 3 38; echo "MENU"
-
-        echo -n "OPCAO: "
-        read opcao_menu
-        case "$opcao_menu" in
-            1)
-                ;;
-            2)
-                ;;
-            9)
-                menu_principal
-                return 1
-                ;;
-
-            99)
-                clear
-                mensagem_saida
-                echo
-                sleep 1
-                exit 0
-                ;;
-            *)
-                clear
-                red_msg "OPCAO INVALIDA"
-                ;;
-        esac
-        echo
-        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR..." -n 1
-        clear
-    done
+    ler_logs
 }
 # sub-menu opção
 menu_5() {
     local opcao_menu
     clear
     while true; do
-        tput cup 3 38; echo "MENU"
-
-        echo -n "OPCAO: "
+        tput cup 5 20
+        echo -ne "\e[1;36mCENTRAL DE CONFIGURACOES DO ATUALIZADOR\e[0m"
+        tput cup 8 22
+        echo " 1  -  CONFIGURAR ATUALIZADOR NO CRON"
+        tput cup 9 22
+        echo " 2  -  PARAMETROS DO ATUALIZADOR"
+        tput cup 10 22
+        echo " 3  -  PARAMETROS USUARIO"
+        tput cup 11 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 12 22
+        echo "99  -  SAIR"
+        tput cup 14 20
+        echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
-            1)
-                ;;
-            2)
-                ;;
-            9)
-                clear
-                mensagem_saida
-                echo
+        1)
+            echo
+            clear
+            if [ $USER = root ]; then
+                echo "CONFIGURACOES NO CRON"
                 sleep 1
-                exit 0
-                ;;
+                clear
+                configurar_cron
+            else
+                echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                exit
+            fi
+            ;;
+        2)
+            clear
+            echo "PARAMETROS ATUALIZADOR"
+            if [ $USER = avanco ] || [ $USER = root ]; then
+                parametros
+            else
+                echo "Favor acionar o Suporte Avanco para realizar a configuracao"
+                exit
+            fi
+            ;;
+        3)
+            clear
+            echo "OPCOES DE PARAMETROS INDIVIDUAIS"
+            ;;
+        9)
+            clear
+            menu_principal
+            return 1
+            ;;
 
-            99)
-                clear
-                mensagem_saida
-                echo
-                sleep 1
-                exit 0
-                ;;
-            *)
-                clear
-                red_msg "OPCAO INVALIDA"
-                ;;
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
+        *)
+            clear
+            tput cup 8 32
+            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
+            ;;
         esac
-        echo
-        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR..." -n 1
+        sleep 3
+        tput cup 14 18
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
 }
@@ -2300,34 +2177,73 @@ menu_6() {
     local opcao_menu
     clear
     while true; do
-        tput cup 3 38; echo "MENU"
-
-        echo -n "OPCAO: "
+        tput cup 5 26
+        echo -ne "\e[1;36mOPCOES EXTRAS DO ATUALIZADOR\e[0m"
+        tput cup 8 22
+        echo " 1  -  AJUSTES E CORRECOES"
+        tput cup 9 22
+        echo " 2  -  CONCEDER PERMISSAO"
+        tput cup 10 22
+        echo " 3  -  UPDATE ATUALIZADOR"
+        tput cup 11 22
+        echo " 4  -  AVISAR ATUALIZACAO"
+        tput cup 12 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 13 22
+        echo "99  -  SAIR"
+        tput cup 15 26
+        echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
-            1)
-                ;;
-            2)
-                ;;
-            9)
-                menu_principal
-                return 1
-                ;;
+        1)
+            clear
+            echo "MENU DE CORRECOES"
+            menu_correcoes
+            ;;
+        2)
+            clear
+            echo "CONDECENDO PERMISSAO TOTAL AO INTEGRAL"
+            if [ $USER = avanco ] || [ $USER = root ]; then
+                conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+            else
+                echo "Favor acionar o Suporte Avanco para conceder as permissoes"
+                exit 1
+            fi
 
-            99)
-                clear
-                mensagem_saida
-                echo
-                sleep 1
-                exit 0
-                ;;
-            *)
-                clear
-                red_msg "OPCAO INVALIDA"
-                ;;
+            ;;
+        3)
+            clear
+            echo "BUSCANDO NOVA VERSAO DO ATUALIZADOR! AGUARDE..."
+            nova_versao
+            ;;
+
+        4)
+            clear
+            alerta_msg "!!!ATENCAO!!!"
+            echo "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
+            echo "QUE O INTEGRAL SERA ATUALIZADO EM INSTANTES!!!"
+            ;;
+        9)
+            menu_principal
+            return 1
+            ;;
+
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
+        *)
+            clear
+            tput cup 8 32
+            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
+            ;;
         esac
-        echo
-        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR..." -n 1
+        sleep 3
+        tput cup 14 18
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
 }
@@ -2336,34 +2252,50 @@ menu_7() {
     local opcao_menu
     clear
     while true; do
-        tput cup 3 38; echo "MENU"
-
-        echo -n "OPCAO: "
+        tput cup 5 29
+        echo -ne "\e[1;36mMANUAIS DO ATUALIZADOR\e[0m"
+        tput cup 8 22
+        echo " 1  -  LER AJUDA RAPIDA"
+        tput cup 9 22
+        echo " 2  -  MANUAL COMPLETO"
+        tput cup 10 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 11 22
+        echo "99  -  SAIR"
+        tput cup 14 31
+        echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
-            1)
-                ;;
-            2)
-                ;;
-            9)
-                menu_principal
-                return 1
-                ;;
+        1)
+            clear
+            echo "AJUDA RAPIDA"
+            ;;
+        2)
+            clear
+            echo "MANUAL COMPLETO"
 
-            99)
-                clear
-                mensagem_saida
-                echo
-                sleep 1
-                exit 0
-                ;;
-            *)
-                clear
-                red_msg "OPCAO INVALIDA"
-                ;;
+            ;;
+        9)
+            menu_principal
+            return 1
+            ;;
+
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
+        *)
+            clear
+            tput cup 8 32
+            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
+            ;;
         esac
-        echo
-        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR..." -n 1
+        sleep 3
+        tput cup 14 18
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
 }
@@ -2635,7 +2567,29 @@ atualizar_pelo_cron() {
         exit 0
     fi
 }
-
+# Função para chamar opção de atualização na ordem
+chamar_atualizacao() {
+    clear
+    echo "ATUALIZAR"
+    #validar_linux
+    verificar_dia
+    carregar_parametros
+    usuario_permitido
+    checar_internet
+    verifica_atualizacao
+    iniciar
+    verifica_logados
+    conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+    ler_arquivo_texto
+    limpa_exec
+    seguranca
+    atualizar
+    ler_arquivo_texto >/dev/null 2>&1
+    conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+    gravando_atualizacoes
+    #cobrun status-online.gnt "A" >/dev/null
+    #
+}
 # Função para verificar a senha do usuário atual
 verificar_senha() {
     tentativas=3
@@ -2738,17 +2692,25 @@ mostrar_versao() {
 # Funcao para visualizar logs
 ler_logs() {
     clear
+    local opcao_log
     while true; do
+        tput cup 5 28
         echo "LOGS DISPONIVEIS PARA CONSULTA"
-        echo
-        echo "1  -  LOG DE ATUALIZACAO"
-        echo "2  -  LOG DE ERRO"
-        echo "3  -  LOG DE DESEMPENHO"
-        echo "4  -  LOG DE ARQUIVOS REMOVIDOS"
-        echo "9  -  VOLTAR AO MENU"
-        echo "99 -  SAIR"
-        echo
-        read -p "ESCOLHA UMA OPCAO: " opcao_log
+        tput cup 8 22
+        echo " 1  -  LOG DE ATUALIZACAO"
+        tput cup 9 22
+        echo " 2  -  LOG DE ERRO"
+        tput cup 10 22
+        echo " 3  -  LOG DE DESEMPENHO"
+        tput cup 11 22
+        echo " 4  -  LOG DE ARQUIVOS REMOVIDOS"
+        tput cup 12 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 13 22
+        echo "99  -  SAIR"
+        tput cup 15 31
+        echo -ne "ESCOLHA UMA OPCAO: "
+        read opcao_log
         case $opcao_log in
         1)
             clear
@@ -2784,10 +2746,13 @@ ler_logs() {
             fi
             ;;
         *)
-            echo "OPCAO INVALIDA!"
+            clear
+            tput cup 8 32
+            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
             ;;
         esac
-        echo
+        sleep 3
+        tput cup 20 18
         read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
@@ -2865,7 +2830,7 @@ case "$1" in
 -up | --update)
     # criar rotina pra baixar nova versao do atualizador.
     echo "Buscando update para o Atualizador..."
-    update
+    nova_versao
     exit 0
     ;;
 --man | --manual)
@@ -2940,5 +2905,5 @@ atualizar
 conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
 gravando_atualizacoes
 #cobrun status-online.gnt "A" >/dev/null
-#update > /dev/null
+#nova_versao > /dev/null
 exit 0
