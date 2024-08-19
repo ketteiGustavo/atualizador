@@ -268,6 +268,7 @@ local_gnt="/u/sist/exec"
 pasta_avanco="/u/rede/avanco"
 removidos="$pasta_avanco/removidos"
 pasta_destino="/u/rede/avanco/atualizacoes"
+BATS="/u/bats"
 
 arquivo_versao_atual=""
 arquivo_release_atual=""
