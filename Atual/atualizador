@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.1.5
+# DATA: 13/04/2024 11:27 - Versao 0.1.6
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -29,6 +29,8 @@
 # Versao 0.1.4: Criado log de auditoria
 # Versao 0.1.5: Funcao de parametrizacao, para executar o atualizador de acordo
 #               com o que for predefinido pelo usuario.
+# Versão 0.1.6: Alterações para instalar o 'xmlstarlet' e 'gera-xml-por-tag.sh'
+#               de acordo com o que foi pedido pelo Ronaldo
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -37,7 +39,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-
+distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
 
@@ -1370,12 +1372,13 @@ update() {
     clear
     echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
     if curl -k --output /dev/null --silent --head --fail "$script_url"; then
-        wget -qcO "$TMP_PATH" "$script_url"
+        curl -k -# -o "$TMP_PATH" "$script_url"
 
         if [ $? -eq 0 ]; then
+            mv "$script_path" "$minha_maquina/u/bats/atualizadorOLD"
             mv "$TMP_PATH" "$script_path"
             chmod +x "$script_path"
-            echo "ATUALIZACAO CONCLUIDA. EXECUTE O SCRIPT NOVAMENTE..."
+            echo "ATUALIZACAO CONCLUIDA."
         else
             echo "ERRO AO BAIXAR A ATUALIZACAO."
             rm -f "$TMP_PATH"
@@ -2309,6 +2312,44 @@ visualizar_logs() {
     fi
 }
 
+# Função para ser baixado e configurado scripts e programas extras
+baixar_extras() {
+    if [ "$distro_nome" = "Debian" ]; then
+        if [ ! -f "$BATS/xmlstarlet" ]; then
+            # Usando o link raw para baixar o binário corretamente
+            echo "CONFIGURANDO XMLSTARTLET"
+            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
+            chown avanco:sist /u/bats/xmlstarlet
+            chmod +x /u/bats/xmlstarlet
+        fi
+        
+        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
+            echo "CONFIGURANDO GERA-XML"
+            baixar_arquivo "$url_gera_xml" "$BATS"
+            chown avanco:sist /u/bats/gera-xml-por-tag.sh
+            chmod +x /u/bats/gera-xml-por-tag.sh
+        fi
+        echo
+
+    elif [ "$distro_nome" = "Slackware" ]; then
+        echo "CONFIGURANDO XMLSTARTLET"
+        if [ ! -f "$BATS/xmlstarlet" ]; then
+            # Usando o link raw para baixar o binário corretamente
+            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
+            chown avanco:sist /u/bats/xmlstarlet
+            chmod +x /u/bats/xmlstarlet
+        fi
+        
+        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
+            echo "CONFIGURANDO GERA-XML"
+            baixar_arquivo "$url_gera_xml" "$BATS"
+            chown avanco:sist /u/bats/gera-xml-por-tag.sh
+            chmod +x /u/bats/gera-xml-por-tag.sh
+        fi
+        echo
+    fi
+}
+
 ###############################
 # Tratamento das opcoes que serao responsaveis por controlar na linha de comando
 # ------------------------------------------------------------------------------
@@ -2428,5 +2469,5 @@ atualizar
 chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
 gravando_atualizacoes
 cobrun status-online.gnt "A" >/dev/null
-#update > /dev/null
+update > /dev/null
 exit 0
