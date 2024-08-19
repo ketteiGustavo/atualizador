@@ -1,10 +1,10 @@
-# Atualizar?
+# Atualizar? - INFORMAR APENAS SIM ou NAO
 SIM
 
-# Link do pacote
+# Link do pacote - INSERIR LINK ABAIXO
 https://we.tl/t-ziG3RjwJZm
 
-# ID do pacote
+# ID do pacote - INFORMAR O ID do PACOTE
 ID109970cobol40.rar
 
 # FAZER BACKUP DO QUE FOR LISTADO NO pacote
