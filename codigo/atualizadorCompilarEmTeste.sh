@@ -47,6 +47,7 @@
 #                a manutenção.
 # Versão 0.1.15: Nova versão para menu e novos sub-menus com diversas correcoes
 # Versão 0.1.16: Criado função para baixar ajuda rapida e manual completo
+# Versão 0.1.17: Ativando no cron uma rotina para testar se existe algo novo
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -60,7 +61,7 @@ versaoPrograma="0.1.16"
 #
 ### Configuração do Programa atualizador
 minha_maquina="/home/luiz/Documentos/mini_servidor"
-CONFIG_ATUALIZADOR="$minha_maquina/u/sist/controle/atualizador.config" # Parametrização do atualizador usando 0 e 1
+CONFIG_ATUALIZADOR="/u/sist/controle/atualizador.config" # Parametrização do atualizador usando 0 e 1
 ### Use 0 (zero) para desligar as opções e 1 (um) para ligar
 ### Use 0 (zero) para não e 1 (um) para sim
 ### O padrão é o como mostrado abaixo
@@ -106,29 +107,30 @@ no_color='\e[0m' # Reset da cor
 ### variáveis que armazenam os locais utilizados no sistema
 #
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
-info_loja_txt="$minha_maquina/u/sist/controle/info_loja.txt"         # arquivo que grava informações da de verão e release da servidor
-controle_ver_rel="$minha_maquina/u/sist/controle/versao_release.txt" # arquivo que grava informações de versão e release do Portal Avanço
-local_gnt="$minha_maquina/u/sist/exec"                               # local dos programas gnt
-removidos="$minha_maquina/u/rede/avanco/removidos"                   # pasta que ficam os arquivos não permitidos no exec e que foram removidos do exec
-pasta_destino="$minha_maquina/u/rede/avanco/atualizacoes"            # local onde são realizados os downloads das atualizações
+info_loja_txt="/u/sist/controle/info_loja.txt"         # arquivo que grava informações da de verão e release da servidor
+controle_ver_rel="/u/sist/controle/versao_release.txt" # arquivo que grava informações de versão e release do Portal Avanço
+local_gnt="/u/sist/exec"                               # local dos programas gnt
+removidos="/u/rede/avanco/removidos"                   # pasta que ficam os arquivos não permitidos no exec e que foram removidos do exec
+pasta_destino="/u/rede/avanco/atualizacoes"            # local onde são realizados os downloads das atualizações
+pasta_pacotes="/u/rede/avanco/atualizacoes/pacotes"
 arquivo_versao_atual=""                                              # grava o nome do pacote.rar da versão
 arquivo_release_atual=""                                             # grava o nome do pacote.rar da release
-local_log="$minha_maquina/u/sist/logs"                               # arquivo de log
-bkp_destino="$minha_maquina/u/sist/exec-a"                           # local onde ficam os backups
+local_log="/u/sist/logs"                               # arquivo de log
+bkp_destino="/u/sist/exec-a"                           # local onde ficam os backups
 #
 ### Sessão dos logs
 ### Arquivos de logs para leitura e gravação
-teste_gnt_log="$minha_maquina/u/sist/logs/testeGNT.log"      # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
-validados_gnt="$minha_maquina/u/sist/logs/statusGNT.log"     # grava o nome dos programas que tiveram o teste falho
-infos_extras="$minha_maquina/u/sist/logs/infos_extras.log"   # grava informações de desempenho do servidor
-auditoria="$minha_maquina/u/sist/logs/auditoria.log"         # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
-log_file="$minha_maquina/u/sist/logs/log_$mes_ano.log"       # log de ações bem executadas
-erro_log_file="$minha_maquina/u/sist/logs/erro_$mes_ano.log" # log de erro
-log_cron_erro="$minha_maquina/u/sist/logs/.cron-erro.log"    # log erro gravado pelo cron
+teste_gnt_log="/u/sist/logs/testeGNT.log"      # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
+validados_gnt="/u/sist/logs/statusGNT.log"     # grava o nome dos programas que tiveram o teste falho
+infos_extras="/u/sist/logs/infos_extras.log"   # grava informações de desempenho do servidor
+auditoria="/u/sist/logs/auditoria.log"         # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
+log_file="/u/sist/logs/log_$mes_ano.log"       # log de ações bem executadas
+erro_log_file="/u/sist/logs/erro_$mes_ano.log" # log de erro
+log_cron_erro="/u/sist/logs/.cron-erro.log"    # log erro gravado pelo cron
 #
 ### Arquivos de Parametrização
-arquivo_parametros="$minha_maquina/u/sist/controle/parametros.config" # Parametrização que pode ser alterada pelo programa, fora do script.
-config_cron="$minha_maquina/u/sist/controle/.config_cron.txt"         # Detalhes da configuração ativa no cron
+arquivo_parametros="/u/sist/controle/parametros.config" # Parametrização que pode ser alterada pelo programa, fora do script.
+config_cron="/u/sist/controle/.config_cron.txt"         # Detalhes da configuração ativa no cron
 
 #
 #
@@ -194,7 +196,7 @@ cronometro_stop=""                   # usada para validar o desempenho do atuali
 cronometro_stop_volta=""             # usada para validar o desempenho do atualizador no servidor
 tempo_gasto=""                       # grava o tempo gasto na execuçãp
 atualizado_flag=""
-controle_flag="$minha_maquina/u/sist/controle"
+controle_flag="/u/sist/controle"
 flag_versao=false
 flag_release=false
 flag_esta_atualizado=false
@@ -372,7 +374,7 @@ interromper() {
         echo "ABORTADO EM: $local_abortado" >>$auditoria
         echo "" >>$auditoria
         if [ "$flag_renomea" = true ]; then
-            mv $minha_maquina/u/sist/exec/cogumeloAzul.gnt $minha_maquina/u/sist/exec/integral.gnt
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
         fi
         echo
         if [[ "$abortado_controle" == "seguranca" ]]; then
@@ -385,8 +387,8 @@ interromper() {
         fi
 
         if [[ "$abortado_controle" == "download" ]]; then
-            rm -rf $minha_maquina/u/rede/avanco/atualizacoes/versao*
-            rm -rf $minha_maquina/u/rede/avanco/atualizacoes/release*
+            rm -rf /u/rede/avanco/atualizacoes/versao*
+            rm -rf /u/rede/avanco/atualizacoes/release*
         fi
 
         exit 0
@@ -430,7 +432,7 @@ iniciar() {
         "S" | "s")
             echo "Atualizador Integral"
             if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
-                mv $minha_maquina/u/sist/exec/integral.gnt $minha_maquina/u/sist/exec/cogumeloAzul.gnt
+                mv /u/sist/exec/integral.gnt /u/sist/exec/cogumeloAzul.gnt
                 flag_renomea=true
                 olhar_online=true
                 ativar_desativar_online
@@ -646,7 +648,7 @@ seguranca() {
     if [ ${#gnt_files[@]} -eq 0 ]; then
         echo "Nenhum arquivo '.gnt' encontrado no diretorio '$local_gnt'." >/dev/null
         if [ "$flag_renomea" = true ]; then
-            mv $minha_maquina/u/sist/exec/cogumeloAzul.gnt $minha_maquina/u/sist/exec/integral.gnt
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
         fi
         exit 1
     fi
@@ -691,7 +693,7 @@ seguranca() {
     else
         alerta_msg "E necessario acionar o suporte Avanco para executar as permissoes"
         if [ "$flag_renomea" = true ]; then
-            mv $minha_maquina/u/sist/exec/cogumeloAzul.gnt $minha_maquina/u/sist/exec/integral.gnt
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
         fi
         sleep 1
         exit 1
@@ -703,11 +705,11 @@ limpa_exec() {
     local_abortado="Limpando sist/exec"
     local data_clear=$(date +'%d/%m/%Y')
     local rar_file="$removidos/removidos_$data_atual.rar"
-    echo "Arquivos e Pastas que estavam no 'u/sist/exec' no dia $data_clear" >"$minha_maquina/u/sist/logs/removidos_$data_atual.log"
+    echo "Arquivos e Pastas que estavam no 'u/sist/exec' no dia $data_clear" >"/u/sist/logs/removidos_$data_atual.log"
     for item in "$local_gnt"/*; do
         # valida se e um programa gnt
         if [[ ! "$item" =~ \.gnt$ ]]; then
-            echo "Arquivo/Pasta encontrado -> $item" >>"$minha_maquina/u/sist/logs/removidos_$data_atual.log"
+            echo "Arquivo/Pasta encontrado -> $item" >>"/u/sist/logs/removidos_$data_atual.log"
 
             # compactando arquivo encontrado
             rar a "$rar_file" "$item"
@@ -716,7 +718,7 @@ limpa_exec() {
         fi
     done
     sleep 1
-    arquivo_testado="$minha_maquina/u/sist/logs/removidos_$data_atual.log"
+    arquivo_testado="/u/sist/logs/removidos_$data_atual.log"
     frase_validar="Arquivos e Pastas que estavam no 'u/sist/exec' no dia $data_clear"
     conteudo=$(cat "$arquivo_testado")
     if [ "$conteudo" == "$frase_validar" ]; then
@@ -786,8 +788,8 @@ fazer_bkp() {
         fi
     fi
 
-    find $minha_maquina/u/sist/exec-a -name "BKPTOTAL_*" -type f -printf '%T@ %p\n' | sort -n | head -n -5 | cut -d' ' -f2- | while read file; do
-        echo "No dia $(date +'%d/%m/%Y as %H:%M:%S') - o backup foi removido de: $file" >>$minha_maquina/u/sist/logs/log-de-remocao.log
+    find /u/sist/exec-a -name "BKPTOTAL_*" -type f -printf '%T@ %p\n' | sort -n | head -n -5 | cut -d' ' -f2- | while read file; do
+        echo "No dia $(date +'%d/%m/%Y as %H:%M:%S') - o backup foi removido de: $file" >>/u/sist/logs/log-de-remocao.log
         rm -f "$file"
     done
 }
@@ -809,20 +811,21 @@ verifica_backup() {
 }
 
 # Criando diretorio de logs e atualizacoes
-test -d "$minha_maquina/u/rede/avanco/atualizacoes" || mkdir "$minha_maquina/u/rede/avanco/atualizacoes" && chmod 777 -R "$minha_maquina/u/rede/avanco/atualizacoes"
+test -d "/u/rede/avanco/atualizacoes" || mkdir "/u/rede/avanco/atualizacoes" && chmod 777 -R "/u/rede/avanco/atualizacoes"
+test -d "/u/rede/avanco/atualizacoes/pacotes" || mkdir "/u/rede/avanco/atualizacoes/pacotes" && chmod 777 -R "/u/rede/avanco/atualizacoes/pacotes"
 
 # Criando diretório que ficarão os removidos do sist/exec
 test -d "$removidos" || mkdir "$removidos" && chmod 777 -R "$removidos"
 
 # Criando diretório de controle
-test -d "$minha_maquina/u/sist/controle" || mkdir -p "$minha_maquina/u/sist/controle" && chmod 766 -R "$minha_maquina/u/sist/controle"
+test -d "/u/sist/controle" || mkdir -p "/u/sist/controle" && chmod 766 -R "/u/sist/controle"
 
 # Criando diretório de logs
-test -d "$minha_maquina/u/sist/logs" || mkdir -p "$minha_maquina/u/sist/logs" && chmod 766 -R "$minha_maquina/u/sist/logs"
+test -d "/u/sist/logs" || mkdir -p "/u/sist/logs" && chmod 766 -R "/u/sist/logs"
 
-if [ ! -f "$minha_maquina/u/sist/logs/log-de-remocao.log" ]; then
-    echo "                          Controle de Backups Removidos                         " >$minha_maquina/u/sist/logs/log-de-remocao.log
-    echo "      DATA        -    HORA   -             DIRETORIO                           " >>$minha_maquina/u/sist/logs/log-de-remocao.log
+if [ ! -f "/u/sist/logs/log-de-remocao.log" ]; then
+    echo "                          Controle de Backups Removidos                         " >/u/sist/logs/log-de-remocao.log
+    echo "      DATA        -    HORA   -             DIRETORIO                           " >>/u/sist/logs/log-de-remocao.log
 fi
 
 if [ ! -f "$log_file" ]; then
@@ -837,9 +840,9 @@ if [ ! -f "$auditoria" ]; then
     echo "--------------------------------------------------------------------------------" >>"$auditoria"
 fi
 
-if [ ! -f "$minha_maquina/u/sist/logs/infos_extras.log" ]; then
-    echo "               CONTROLE DE DESEMPENHO DO ATUALIZADOR NO SERVIDOR                " >"$minha_maquina/u/sist/logs/infos_extras.log"
-    echo " DIA DA ATUALIZACAO -    HORA INICIAL    -    HORA FINAL    -    TEMPO GASTO    " >>"$minha_maquina/u/sist/logs/infos_extras.log"
+if [ ! -f "/u/sist/logs/infos_extras.log" ]; then
+    echo "               CONTROLE DE DESEMPENHO DO ATUALIZADOR NO SERVIDOR                " >"/u/sist/logs/infos_extras.log"
+    echo " DIA DA ATUALIZACAO -    HORA INICIAL    -    HORA FINAL    -    TEMPO GASTO    " >>"/u/sist/logs/infos_extras.log"
 fi
 
 #rm -rf $minha_maquina/u/rede/avanco/atualizacoes/versao*
@@ -1312,7 +1315,7 @@ atualizar() {
     local_abortado="Inicio Atualizacao"
     baixar_atualizacoes
     definirPacote_por_cobol
-    local DIRCERTO="$minha_maquina/u/sist/exec"
+    local DIRCERTO="/u/sist/exec"
     local_abortado="func. Atualizar: pos definir"
     if [ ! -d "$DIRCERTO" ]; then
         erro_msg "O diretorio nao existe."
@@ -1439,7 +1442,7 @@ atualizar() {
         echo "INTEGRAL JA ESTA COM VERSAO E RELEASE MAIS RECENTES! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$log_file
     fi
 
-    conceder_permissao "t" $minha_maquina/u/rede/avanco/atualizacoes/update_temp/*
+    conceder_permissao "t" /u/rede/avanco/atualizacoes/update_temp/*
     sleep 1
     cp $temp_dir_atu/* "$DIRCERTO" || {
         erro_msg "ERRO AO COPIAR ARQUIVOS PARA O DIRETORIO FINAL."
@@ -1448,7 +1451,7 @@ atualizar() {
     }
     rm -rf "$temp_dir_atu"
     chamar_atu_help
-    conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+    conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$validados_gnt"
     info_msg "ATUALIZACAO REALIZADA COM SUCESSO!"
     log_info "ATUALIZACAO REALIZADA PELO ATUALIZADOR"
     rm -rf "$controle_flag/controle_flag.txt"
@@ -1483,7 +1486,7 @@ gravando_atualizacoes() {
         ativar_desativar_online
 
         if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
-            mv $minha_maquina/u/sist/exec/cogumeloAzul.gnt $minha_maquina/u/sist/exec/integral.gnt
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
         fi
 
         echo
@@ -1500,8 +1503,8 @@ gravando_atualizacoes() {
     cronometro_stop_volta=$SECONDS
     tempo_gasto=$((cronometro_stop_volta - cronometro_start_volta))
     tempo_gasto_formatado=$(date -u -d @${tempo_gasto} +"%M min e %S seg")
-    echo "      $(date +"%d/%m/%y")      -      $cronometro_start      -    $cronometro_stop      -  $tempo_gasto_formatado  " >>"$minha_maquina/u/sist/logs/infos_extras.log"
-    echo "--------------------------------------------------------------------------------" >>"$minha_maquina/u/sist/logs/infos_extras.log"
+    echo "      $(date +"%d/%m/%y")      -      $cronometro_start      -    $cronometro_stop      -  $tempo_gasto_formatado  " >>"/u/sist/logs/infos_extras.log"
+    echo "--------------------------------------------------------------------------------" >>"/u/sist/logs/infos_extras.log"
     if [ "$USAR_CORES" -eq 1 ]; then
         echo -e "$avanco_colorido_logo"
     else
@@ -1606,7 +1609,7 @@ nova_versao() {
         curl -k -# -o "$TMP_PATH" "$script_url"
 
         if [ $? -eq 0 ]; then
-            mv "$script_path" "$minha_maquina/u/bats/atualizadorOLD"
+            mv "$script_path" "/u/bats/atualizadorOLD"
             mv "$TMP_PATH" "$script_path"
             chmod +x "$script_path"
         echo "ATUALIZACAO CONCLUIDA. EXECUTE O SCRIPT NOVAMENTE..."
@@ -1987,7 +1990,7 @@ menu_1() {
         1)
             clear
             echo
-            more "$minha_maquina/u/sist/controle/info_loja.txt"
+            more "/u/sist/controle/info_loja.txt"
             ;;
         2)
             clear
@@ -2118,7 +2121,7 @@ menu_3() {
             ;;
         2)
             clear
-            ls -tr $minha_maquina/u/sist/exec-a/BKPTOTAL_* | awk -F'/' '{print $NF}'
+            ls -tr /u/sist/exec-a/BKPTOTAL_* | awk -F'/' '{print $NF}'
             ;;
         9)
             menu_principal
@@ -2253,7 +2256,7 @@ menu_6() {
             clear
             echo "CONDECENDO PERMISSAO TOTAL AO INTEGRAL"
             if [ $USER = avanco ] || [ $USER = root ]; then
-                conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+                conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$validados_gnt"
             else
                 yellow_msg "FAVOR ACIONAR O SUPORTE AVANCO PARA CONCEDER AS PERMISSOES"
                 exit 1
@@ -2363,7 +2366,7 @@ menu_correcoes() {
 
 # Função para ativar, editar, mostrar, desativar ou remover configuração do crontab
 configurar_cron() {
-    local cron_command="$minha_maquina/u/bats/atualizador --atu-cron"
+    local cron_command="/u/bats/atualizador --atu-cron"
 
     while true; do
         echo "MENU DE CONFIGURACAO DO CRON"
@@ -2450,7 +2453,7 @@ configurar_cron() {
 # Funcao para configurar no cron
 configuracoes_cron() {
     local_abortado="configuracao do cron"
-    local cron_command="$minha_maquina/u/bats/atualizador --atu-cron"
+    local cron_command="/u/bats/atualizador --atu-cron"
     carregar_parametros
     if ! crontab -l | grep -q "$cron_command"; then
         if [[ "$flag_load_parametros" == "false" ]]; then
@@ -2568,7 +2571,7 @@ alterar_cron() {
                     crontab -l
                     echo ""
                     echo "# ATUALIZADOR AUTOMATICO"
-                    echo "0 $hora_informada * * $dia_definido $minha_maquina/u/bats/atualizador --atu-cron 2>> $minha_maquina/u/sist/logs/.erro-cron.log"
+                    echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cron 2>> /u/sist/logs/.erro-cron.log"
                     echo ""
                 ) | crontab -
                 break 2
@@ -2607,17 +2610,111 @@ atualizar_pelo_cron() {
         carregar_parametros
         checar_internet
         verifica_atualizacao
-        conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$log_cron_erro"
+        conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$log_cron_erro"
         limpa_exec
         ler_arquivo_texto >/dev/null 2>&1
         atualizar
-        conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$log_cron_erro"
+        conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$log_cron_erro"
         gravando_atualizacoes
-        conceder_permissao "rw" $minha_maquina/u/sist/logs/.cron-erro.log
-        conceder_permissao "rw" $minha_maquina/u/sist/logs/.cron-log.log
+        conceder_permissao "rw" /u/sist/logs/.cron-erro.log
+        conceder_permissao "rw" /u/sist/logs/.cron-log.log
         exit 0
     fi
 }
+
+# Função da versão 0.1.17
+ativar_no_cron() {
+    (
+        crontab -l
+        echo ""
+        echo "# ATUALIZADOR AUTOMATICO - RECURSOS EXTRAS - NAO REMOVER #"
+        echo "0 9,11,14,16 * * 1-4 /u/bats/atualizador --extras-atualizador 2>> /u/sist/logs/.erro-cron.log"
+        echo "30 9,14 * * 1-4 /u/bats/atualizador --extras-atualizador 2>> /u/sist/logs/.erro-cron.log"
+        echo ""
+    ) | crontab -
+}
+
+# Funcao que será chamada no cron
+somente_cron() {
+    atu-help manual >/dev/null 2>&1
+    local instrucoes_tmp=$(mktemp /tmp/instrucoes_atu-tmp.XXXXXX)
+    local url_instrucoes="https://raw.githubusercontent.com/ketteiGustavo/atualizador/testesHomologacao/extras/instrucoes.txt"
+    #local tem_pacote
+    if curl -k --output /dev/null --silent --head --fail "$url_instrucoes"; then
+        curl -k -# -o "$instrucoes_tmp" "$url_instrucoes"
+
+        if [ $? -eq 0 ]; then
+            if grep -q "^SIM" "$instrucoes_tmp"; then
+                executar_instrucoes "$instrucoes_tmp"
+            else
+                rm -f "$instrucoes_tmp"
+                exit 0
+            fi
+
+        else
+            echo "ERRO AO BAIXAR A ATUALIZACAO."
+            rm -f "$instrucoes_tmp"
+            exit 1
+        fi
+    else
+        echo "ERRO: A URL DO PACOTE NAO ESTA ACESSIVEL."
+        rm -f "$instrucoes_tmp"
+        exit 1
+    fi
+
+
+}
+
+# Funcao para executar os comandos passados no arquivo de texto
+executar_instrucoes() {
+    local arquivo=$1
+    local link_pacote=""
+    local id_pacote=""
+    local pasta_pacotes="/u/rede/avanco/atualizacoes/pacotes"
+
+    while IFS= read -r linha || [[ -n "$linha" ]]; do
+        if [[ "$linha" =~ ^# ]]; then
+            continue  # Ignora linhas de comentário
+        fi
+
+        if [[ "$linha" =~ ^https?:// ]]; then
+            # Detecta o link do pacote
+            link_pacote="$linha"
+        elif [[ "$linha" =~ ^ID.*\.rar$ ]]; then
+            # Detecta o ID do pacote
+            id_pacote="$linha"
+
+            if curl -k --output /dev/null --silent --head --fail "$link_pacote"; then
+                curl -k -# -O --output-dir "$pasta_pacotes" "$link_pacote"
+
+                if [ $? -ne 0 ]; then
+                    echo "ERRO AO BAIXAR A ATUALIZACAO."
+                    rm -f "$arquivo"
+                    exit 1
+                fi
+
+                # Lista os arquivos no pacote e faz o backup
+                rar lb "$pasta_pacotes/$id_pacote" > /tmp/$id_pacote.txt
+                cd /u/sist/exec
+                rar a "/u/sist/exec-a/bkp_antes_$id_pacote.rar" @/tmp/$id_pacote.txt
+
+                # Descompacta o pacote
+                rar e "$pasta_pacotes/$id_pacote" "/u/sist/exec/"
+                rm -r /tmp/$id_pacote.txt
+            else
+                echo "ERRO: A URL DO PACOTE NAO ESTA ACESSIVEL."
+                rm -f "$arquivo"
+                exit 1
+            fi
+        else
+            # Executa qualquer outro comando no arquivo
+            #eval "$linha"
+            echo
+        fi
+    done < "$arquivo"
+}
+
+
 # Função para chamar opção de atualização na ordem
 chamar_atualizacao() {
     clear
@@ -2630,13 +2727,13 @@ chamar_atualizacao() {
     verifica_atualizacao
     iniciar
     verifica_logados
-    conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+    conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$validados_gnt"
     ler_arquivo_texto
     limpa_exec
     seguranca
     atualizar
     ler_arquivo_texto >/dev/null 2>&1
-    conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+    conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$validados_gnt"
     gravando_atualizacoes
     #cobrun status-online.gnt "A" >/dev/null
     #
@@ -2810,7 +2907,7 @@ ler_logs() {
 }
 
 visualizar_logs() {
-    log_dir="$minha_maquina/u/sist/logs"
+    log_dir="/u/sist/logs"
     echo "LOGS DISPONIVEIS: "
     logs_removidos=($(ls -1 $log_dir | grep 'removidos'))
 
@@ -2861,7 +2958,7 @@ case "$1" in
 -i | --info)
     clear
     echo "OBTER INFORMACOES DO ATUAIS DO INTEGRAL"
-    more "$minha_maquina/u/sist/controle/info_loja.txt"
+    more "/u/sist/controle/info_loja.txt"
     exit 0
     ;;
 -d | --download)
@@ -2927,6 +3024,10 @@ case "$1" in
     atualizar_pelo_cron
     exit 0
     ;;
+--extras-cron)
+    somente_cron
+    exit 0
+    ;;
 *)
     if test -n "$1"; then
         echo Opcao invalida: $1
@@ -2939,7 +3040,7 @@ esac
 
 # Chamandos as funcoes na ordem
 testar_cores
-conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$validados_gnt"
 #validar_linux
 #verificar_dia
 carregar_parametros
@@ -2948,13 +3049,13 @@ checar_internet
 verifica_atualizacao
 iniciar
 verifica_logados
-conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$validados_gnt"
 limpa_exec
 #seguranca
 ler_arquivo_texto >/dev/null 2>&1
 atualizar
-conceder_permissao "t" $minha_maquina/u/sist/exec/*.gnt 2>>"$validados_gnt"
+conceder_permissao "t" /u/sist/exec/*.gnt 2>>"$validados_gnt"
 gravando_atualizacoes
-#cobrun status-online.gnt "A" >/dev/null
+cobrun status-online.gnt "A" >/dev/null
 #nova_versao > /dev/null
 exit 0
