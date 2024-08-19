@@ -2469,5 +2469,6 @@ atualizar
 chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
 gravando_atualizacoes
 cobrun status-online.gnt "A" >/dev/null
+baixar_extras
 update > /dev/null
 exit 0
