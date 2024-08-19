@@ -3,3 +3,5 @@ debug/*
 Atual/*.DEBUG
 Atual/parametros.txt
 Atual/notificar
+*/*debug*
+*/*DEBUG*

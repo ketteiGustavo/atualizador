@@ -1,0 +1,49 @@
+#!/bin/bash
+
+usuarios_permitidos=("root" "super" "avanco")
+programa_validar="rts32"
+notificar_usuarios() {
+    while true; do
+        for usuario in $(who | awk '{print $1}' | sort | uniq); do
+            if [[ ! " ${usuarios_permitidos[@]} " =~ " ${usuario} " ]]; then
+                if ps -u $usuario -o cmd --no-headers | grep -q "$programa_validar"; then
+                    echo -e "Favor encerrar sua sessao. O Integral sera atualizado em breve. \nAperte 'ESC' ate sair do INTEGRAL! \nDIGITE 10 para voltar a linha de comando! \nDEPOIS DIGITE 'exit'" | wall
+                fi
+            fi
+        done
+        sleep 5
+    done
+}
+
+usuarios_usando_programa() {
+    ps ax -o user=,cmd= | grep "$programa_validar" | grep -v 'grep' | awk '{print $1}' | sort | uniq
+}
+
+contar_usuarios_usando_programa() {
+    ps ax | grep "$programa_validar" | grep -v 'grep' | wc -l
+}
+
+verifica_logados() {
+
+    notificar_usuarios &
+    NOTIFICAR_PID=$!
+
+    # Esperar até que todos os usuários saiam
+    while true; do
+        if [ $(contar_usuarios_usando_programa) -eq 0 ]; then
+            clear
+            kill $NOTIFICAR_PID
+            wait $NOTIFICAR_PID 2>/dev/null
+            echo "NENHUM USUARIO LOGADO."
+            break
+        fi
+        clear
+        echo "USUARIOS COM O INTEGRAL ABERTO: "
+        usuarios_usando_programa
+        echo "AGUARDANDO OS USUARIOS ENCERRAREM SUAS SESSOES..."
+        sleep 5
+    done
+
+}
+
+verifica_logados
