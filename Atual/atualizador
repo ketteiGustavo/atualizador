@@ -1439,8 +1439,6 @@ gravando_atualizacoes() {
     echo "--------------------------------------------------------------------------------" >>"/u/sist/logs/infos_extras.log"
     echo "$avanco"
     sleep 2
-
-    exit 0
 }
 
 # Funcao para baixar arquivo atualizado
