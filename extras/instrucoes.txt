@@ -1,0 +1,11 @@
+# Atualizar?
+SIM
+
+# Link do pacote
+https://we.tl/t-ziG3RjwJZm
+
+# ID do pacote
+ID109970cobol40.rar
+
+# FAZER BACKUP DO QUE FOR LISTADO NO pacote
+rar a /u/sist/exec-a/bkp_ID109970A /u/sist/exec/fun657.gnt fun857.gnt
