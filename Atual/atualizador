@@ -2309,6 +2309,17 @@ visualizar_logs() {
         echo "NUMERO INVALIDO. TENTE NOVAMENTE."
     fi
 }
+# funcao para baixar os arquivos necessarios
+baixar_arquivo() {
+    local url=$1
+    local destino=$2
+    if curl -k --output /dev/null --silent --head --fail "$url"; then
+        curl -# -O --output-dir "$destino" "$url"
+        sleep 2
+    else
+        echo "NAO FOI POSSIVEL ACESSAR O '$url'"
+    fi
+}
 
 # Função para ser baixado e configurado scripts e programas extras
 baixar_extras() {
