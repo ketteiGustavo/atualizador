@@ -1350,6 +1350,7 @@ atualizar() {
         erro_msg "ERRO AO EXECUTAR 'ATU-HELP MANUAL'."
         echo "Erro ao executar 'atu-help manual'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
     fi
+    baixar_extras
 
     local_abortado="Func. Atualizar: Concedendo permissoes"
     chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt" || {
@@ -2341,8 +2342,8 @@ baixar_extras() {
         echo
 
     elif [ "$distro_nome" = "Slackware" ]; then
-        echo "CONFIGURANDO XMLSTARTLET"
         if [ ! -f "$BATS/xmlstarlet" ]; then
+            echo "CONFIGURANDO XMLSTARTLET"
             # Usando o link raw para baixar o binário corretamente
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
             chown avanco:sist /u/bats/xmlstarlet
@@ -2478,6 +2479,5 @@ atualizar
 chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
 gravando_atualizacoes
 cobrun status-online.gnt "A" >/dev/null
-baixar_extras
 update > /dev/null
 exit 0
