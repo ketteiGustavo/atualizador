@@ -64,6 +64,11 @@ buscaStatusOnline=""
 url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"
 pacoteConfiguracao="https://github.com/ketteiGustavo/atualizador/raw/main/Atual/PacoteAtualizador.rar"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
+url_xmlStarlet_Debian="https://github.com/ketteiGustavo/atualizador/blob/main/extras/xmlstarlet.Debian"
+url_xmlStarlet_Slackware="https://github.com/ketteiGustavo/atualizador/blob/main/extras/xmlstarlet.Slackware"
+
+url_gera_xml="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gera-xml-por-tag.sh"
+
 clear
 echo "SERVIDOR UTILIZA: $distro_nome"
 
@@ -151,23 +156,52 @@ configurar_online () {
         echo "Versao do COBOL invalida."
         exit 1
     fi
-
-    if [ "$distro_nome" == "Debian" ]; then
-        echo INSTALANDO OS MANUAIS!
+    echo "INICIANDO CONFIGURACAO NECESSARIA!"
+    echo
+    if [ "$distro_nome" = "Debian" ]; then
         baixar_arquivo "$url_manual_atualizador" "$PASTA_AVANCO"
-        chown root:root $PASTA_AVANCO/atualizador.1.gz
-        mv $PASTA_AVANCO/atualizador.1.gz /usr/share/man/man1/
+        chown root:root "$PASTA_AVANCO/atualizador.1.gz"
+        mv "$PASTA_AVANCO/atualizador.1.gz" /usr/share/man/man1/
         mandb > /dev/null 2>&1
+
+        if [ ! -f "$BATS/xmlstarlet" ]; then
+            # Usando o link raw para baixar o binário corretamente
+            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
+            chown avanco:sist /u/bats/xmlstarlet
+            chmod +x /u/bats/xmlstarlet
+        fi
+        
+        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
+            baixar_arquivo "$url_gera_xml" "$BATS"
+            chown avanco:sist /u/bats/gera-xml-por-tag.sh
+            chmod +x /u/bats/gera-xml-por-tag.sh
+        fi
+        echo
+
+    elif [ "$distro_nome" = "Slackware" ]; then
+        if [ ! -f "$BATS/xmlstarlet" ]; then
+            # Usando o link raw para baixar o binário corretamente
+            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
+            chown avanco:sist /u/bats/xmlstarlet
+            chmod +x /u/bats/xmlstarlet
+        fi
+        
+        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
+            baixar_arquivo "$url_gera_xml" "$BATS"
+            chown avanco:sist /u/bats/gera-xml-por-tag.sh
+            chmod +x /u/bats/gera-xml-por-tag.sh
+        fi
         echo
     fi
 
-    if [ ! -e "$EXEC/status-online.gnt" ]; then
+    if [ ! -f "$EXEC/status-online.gnt" ]; then
         echo "INSTALANDO O STATUS-ONLINE.gnt"
         baixar_arquivo "$novo_URL" "$EXEC"
         mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
         echo
     fi
 
+    echo
     echo "ATIVANDO ATUALIZADOR! AGUARDE"
     baixar_arquivo "$url_atualizador" "$PASTA_AVANCO"
     baixar_arquivo "$url_baixarAtualizacao" "$PASTA_AVANCO"
