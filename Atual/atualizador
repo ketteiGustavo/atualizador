@@ -268,7 +268,6 @@ local_gnt="/u/sist/exec"
 pasta_avanco="/u/rede/avanco"
 removidos="$pasta_avanco/removidos"
 pasta_destino="/u/rede/avanco/atualizacoes"
-BATS="/u/bats"
 
 arquivo_versao_atual=""
 arquivo_release_atual=""
@@ -2315,54 +2314,37 @@ visualizar_logs() {
         echo "NUMERO INVALIDO. TENTE NOVAMENTE."
     fi
 }
-# funcao para baixar os arquivos necessarios
-baixar_arquivo() {
-    local url=$1
-    local destino=$2
-    if curl -k --output /dev/null --silent --head --fail "$url"; then
-        curl -# -O --output-dir "$destino" "$url"
-        sleep 2
-    else
-        echo "NAO FOI POSSIVEL ACESSAR O '$url'"
-    fi
-}
 
 # Função para ser baixado e configurado scripts e programas extras
 baixar_extras() {
+
     if [ "$distro_nome" = "Debian" ]; then
-        if [ ! -f "$BATS/xmlstarlet" ]; then
+        if [ ! -f "/u/bats/xmlstarlet" ]; then
             # Usando o link raw para baixar o binário corretamente
             echo "CONFIGURANDO XMLSTARTLET"
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
-            chown avanco:sist /u/bats/xmlstarlet
+            #chown avanco:sist /u/bats/xmlstarlet
             chmod +x /u/bats/xmlstarlet
         fi
-        
-        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
-            echo "CONFIGURANDO GERA-XML"
-            baixar_arquivo "$url_gera_xml" "$BATS"
-            chown avanco:sist /u/bats/gera-xml-por-tag.sh
-            chmod +x /u/bats/gera-xml-por-tag.sh
-        fi
-        echo
-
     elif [ "$distro_nome" = "Slackware" ]; then
-        if [ ! -f "$BATS/xmlstarlet" ]; then
+        if [ ! -f "/u/bats/xmlstarlet" ]; then
             echo "CONFIGURANDO XMLSTARTLET"
             # Usando o link raw para baixar o binário corretamente
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
-            chown avanco:sist /u/bats/xmlstarlet
+            #chown avanco:sist /u/bats/xmlstarlet
             chmod +x /u/bats/xmlstarlet
         fi
-        
-        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
-            echo "CONFIGURANDO GERA-XML"
-            baixar_arquivo "$url_gera_xml" "$BATS"
-            chown avanco:sist /u/bats/gera-xml-por-tag.sh
-            chmod +x /u/bats/gera-xml-por-tag.sh
-        fi
-        echo
+    else
+        echo "NECESSARIO CONFIGURAR EXTRAS MANUALMENTE!!!"
     fi
+    echo
+    if [ ! -f "/u/bats/gera-xml-por-tag.sh" ]; then
+        echo "CONFIGURANDO GERA-XML"
+        curl -# -o "/u/bats/gera-xml-por-tag.sh" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gera-xml-por-tag.sh"
+        #chown avanco:sist /u/bats/gera-xml-por-tag.sh
+        chmod +x /u/bats/gera-xml-por-tag.sh
+    fi
+    echo
 }
 
 ###############################
