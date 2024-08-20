@@ -1452,10 +1452,10 @@ baixar_controle() {
     local_abortado="Baixando controle de versao/release"
     echo "OBTENDO DETALHES DA VERSAO E RELEASE"
     if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
-        curl -k -# -O "$controle_ver_rel.tmp" "$url_versao_release"
+        curl -k -# -O "$controle_ver_rel" "$url_versao_release"
 
         if [ $? -eq 0 ]; then
-            mv "$controle_ver_rel.tmp" "$controle_ver_rel"
+            mv "$controle_ver_rel" "$controle_ver_rel"
             chmod 777 "$controle_ver_rel"
             clear
             echo "DETALHES DA VERSAO E RELEASE OBTIDOS!"
