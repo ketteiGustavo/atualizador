@@ -1453,7 +1453,7 @@ baixar_controle() {
     echo "OBTENDO DETALHES DA VERSAO E RELEASE"
     if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
         curl -k -# -O --output-dir "$controle_ver_rel.tmp" "$url_versao_release"
-
+        
         if [ $? -eq 0 ]; then
             mv "$controle_ver_rel.tmp" "$controle_ver_rel"
             chmod 777 "$controle_ver_rel"
