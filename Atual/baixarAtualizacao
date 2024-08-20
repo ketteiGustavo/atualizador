@@ -223,12 +223,12 @@ update() {
     TMP_PATH=$(mktemp /tmp/$(basename "$SCRIPT_PATH").XXXXXX)
     echo "Baixando versao mais recente do atualizador"
     if curl -k --output /dev/null --silent --head --fail "$SCRIPT_URL"; then
-        curl -k -# -o "$TMP_PATH" "$script_url"
+        curl -k -# -o "$TMP_PATH.tmp" "$script_url"
         #wget -qcO "$TMP_PATH" "$SCRIPT_URL"
 
         if [ $? -eq 0 ]; then
             mv "$SCRIPT_PATH" "/u/bats/baixarAtualizacaoOLD"
-            mv "$TMP_PATH" "$SCRIPT_PATH"
+            mv "$TMP_PATH.tmp" "$SCRIPT_PATH"
             chmod +x "$SCRIPT_PATH"
             echo "Atualizacao concluida. Execute o script novamente..."
         else
