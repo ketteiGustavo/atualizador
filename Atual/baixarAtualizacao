@@ -3,7 +3,7 @@
 ################################################################################
 # baixarAtualizacao - Ira ler o arquivo gerado e baixar a atualizacao referente a data
 #
-# DATA: 01/07/2024 20:48 - Versao 1.1
+# DATA: 01/07/2024 20:48 - Versao 1
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
@@ -11,7 +11,6 @@
 # site: https://github.com/ketteiGustavo
 # ------------------------------------------------------------------------------
 # Versao 1: leitura do arquivo que contem a informacao
-# Versão 1.1 : utilização do comando curl para download
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar a execucao do atualizador.
 ###############################
@@ -143,7 +142,10 @@ baixar_versao() {
 
     URL_ATUALIZADO="$URL_BUSCAR_VERSAO$versaoBusca.rar"
     if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO"; then
-        curl -k -# -O --output-dir "$PASTA_DESTINO" "$URL_ATUALIZADO"
+        wget -c --progress=dot "$URL_ATUALIZADO" -P "$PASTA_DESTINO" 2>&1 |
+            grep --line-buffered "%" |
+            sed -u -e "s,\.,,g" |
+            awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
         echo ""
         sleep 1
         arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
@@ -192,8 +194,10 @@ baixar_release() {
 
     URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
     if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
-        curl -k -# -O --output-dir "$PASTA_DESTINO" "$URL_ATUALIZADO_RELEASE"
-
+        wget -c --progress=dot "$URL_ATUALIZADO_RELEASE" -P "$PASTA_DESTINO" 2>&1 |
+            grep --line-buffered "%" |
+            sed -u -e "s,\.,,g" |
+            awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
         echo ""
 
         arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
@@ -225,12 +229,12 @@ update() {
     TMP_PATH=$(mktemp /tmp/$(basename "$SCRIPT_PATH").XXXXXX)
     echo "Baixando versao mais recente do atualizador"
     if curl -k --output /dev/null --silent --head --fail "$SCRIPT_URL"; then
-        curl -k -# -o "$TMP_PATH" "$SCRIPT_URL"
+        wget -qcO "$TMP_PATH" "$SCRIPT_URL"
 
         if [ $? -eq 0 ]; then
             mv "$TMP_PATH" "$SCRIPT_PATH"
             chmod +x "$SCRIPT_PATH"
-            #echo "Atualizacao concluida. Execute o script novamente..."
+            echo "Atualizacao concluida. Execute o script novamente..."
         else
             echo "Erro ao baixar a atualizacao."
             rm -f "$TMP_PATH"
@@ -245,7 +249,7 @@ update() {
 baixar_controle() {
     #echo "OBTENDO VERSAO E RELEASE"
     if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
-        curl -k -# -o "$controle_ver_rel.tmp" "$url_versao_release"
+        wget -qcO "$controle_ver_rel.tmp" "$url_versao_release"
 
         if [ $? -eq 0 ]; then
             mv "$controle_ver_rel.tmp" "$controle_ver_rel"
@@ -320,4 +324,4 @@ esac
 clear
 baixar_controle
 ler_arquivo
-update > /dev/null 2>&1
+#update > /dev/null
