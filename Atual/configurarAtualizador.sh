@@ -17,7 +17,9 @@
 # Versão 2.2: Opção de não sair caso não tenha algum dos comandos necessários,
 #             e caso o comando não esteja instalado não ativar os recursos do
 #             comando.
-# Versão 2.3 Melhoras visuais na configuração.
+# Versão 2.3: Melhoras visuais na configuração.
+# Versão 2.4: Ativa recurso de conceder permissoes pelo root toda madrugada na
+#             pasta /u/sist/exec
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar o uso do atualizador.
 ###############################
@@ -71,6 +73,7 @@ url_gera_xml="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/e
 
 clear
 echo "SERVIDOR UTILIZA: $distro_nome"
+echo
 
 
 # Funcao para verificar qual o cobol usado
@@ -128,21 +131,10 @@ else
     checar_comandos wget curl mandb
 fi
 
-# funcao para baixar os arquivos necessarios
-baixar_arquivo() {
-    local url=$1
-    local destino=$2
-    if curl -k --output /dev/null --silent --head --fail "$url"; then
-        curl -# -O --output-dir "$destino" "$url"
-        sleep 2
-    else
-        echo "NAO FOI POSSIVEL ACESSAR O '$url'"
-    fi
-}
 
 configurar_online () {
-
     local novo_URL
+    tudo_ok=1
     verifica_cobol
     cd "$EXEC" || { echo "Falha ao acessar diretorio $EXEC"; exit 1; }
 
@@ -156,13 +148,14 @@ configurar_online () {
         echo "Versao do COBOL invalida."
         exit 1
     fi
-    echo "INICIANDO CONFIGURACAO NECESSARIA!"
+    echo "AGUARDE!"
     echo
+
     if [ "$distro_nome" = "Debian" ]; then
-        baixar_arquivo "$url_manual_atualizador" "$PASTA_AVANCO"
-        chown root:root "$PASTA_AVANCO/atualizador.1.gz"
-        mv "$PASTA_AVANCO/atualizador.1.gz" /usr/share/man/man1/
-        mandb > /dev/null 2>&1
+        #baixar_arquivo "$url_manual_atualizador" "$PASTA_AVANCO"
+        #chown root:root "$PASTA_AVANCO/atualizador.1.gz"
+        #mv "$PASTA_AVANCO/atualizador.1.gz" /usr/share/man/man1/
+        #mandb > /dev/null 2>&1
 
         if [ ! -f "$BATS/xmlstarlet" ]; then
             # Usando o link raw para baixar o binário corretamente
@@ -172,7 +165,13 @@ configurar_online () {
         fi
         
         if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
-            baixar_arquivo "$url_gera_xml" "$BATS"
+            if curl -k --output /dev/null --silent --head --fail "$url_gera_xml"; then
+                curl -k -# -o "/u/bats/gera-xml-por-tag.sh" "$url_gera_xml"
+                sleep 1
+            else
+                echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'gera-xml-por-tag'"
+            fi
+
             chown avanco:sist /u/bats/gera-xml-por-tag.sh
             chmod +x /u/bats/gera-xml-por-tag.sh
         fi
@@ -184,6 +183,7 @@ configurar_online () {
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
             chown avanco:sist /u/bats/xmlstarlet
             chmod +x /u/bats/xmlstarlet
+            
         fi
         
         if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
@@ -192,38 +192,80 @@ configurar_online () {
             chmod +x /u/bats/gera-xml-por-tag.sh
         fi
         echo
+    else
+        echo "VERSAO DE DISTRIBUICAO DESCONHECIDA!!!"
     fi
 
     if [ ! -f "$EXEC/status-online.gnt" ]; then
-        echo "INSTALANDO O STATUS-ONLINE.gnt"
-        baixar_arquivo "$novo_URL" "$EXEC"
-        mv /u/sist/exec/$buscaStatusOnline$statusOnline /u/sist/exec/$statusOnline
+        if curl -k --output /dev/null --silent --head --fail "$novo_URL"; then
+            echo "INSTALANDO O STATUS-ONLINE.gnt"
+            curl -k -# -o "/u/sist/exec/status-online.gnt" "$novo_URL"
+            tudo_ok=0
+            sleep 1
+        else
+            echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'status-online'"
+            tudo_ok=1
+        fi
         echo
     fi
 
     echo
     echo "ATIVANDO ATUALIZADOR! AGUARDE"
-    baixar_arquivo "$url_atualizador" "$PASTA_AVANCO"
-    baixar_arquivo "$url_baixarAtualizacao" "$PASTA_AVANCO"
     echo
-    chown avanco:sist $PASTA_AVANCO/atualizador
-    chown avanco:sist $PASTA_AVANCO/baixarAtualizacao
 
-    chmod 777 $PASTA_AVANCO/atualizador
-    chmod 777 $PASTA_AVANCO/baixarAtualizacao
+    if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
+        curl -k -# -o "/u/bats/atualizador" "$url_atualizador"
+        chown avanco:sist /u/bats/atualizador
+        chmod 700 /u/bats/atualizador
+        tudo_ok=0
+        sleep 1
+    else
+        echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'atualizador'"
+        tudo_ok=1
+    fi
 
-    mv $PASTA_AVANCO/atualizador /u/bats/
-    mv $PASTA_AVANCO/baixarAtualizacao /u/bats/
-
+    if curl -k --output /dev/null --silent --head --fail "$url_baixarAtualizacao"; then
+        curl -k -# -o "/u/bats/baixarAtualizacao" "$url_baixarAtualizacao"
+        chown avanco:sist /u/bats/baixarAtualizacao
+        chmod 700 /u/bats/baixarAtualizacao
+        tudo_ok=0
+        sleep 1
+    else
+        echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'baixarAtualizacao'"
+        tudo_ok=1
+    fi
+    echo
     chown avanco:sist /u/sist/exec/*
     chmod 777 /u/sist/exec/*
     echo
     echo
-    echo "CONFIGURACAO REALIZADA!!!"
-    echo "LOGUE COMO 'avanco' PARA ATUALIZAR!!!"
-    sleep 3
+    if [ "$tudo_ok" = 0 ]; then
+        echo "CONFIGURACAO REALIZADA!!!"
+        echo "LOGUE COMO 'avanco' PARA ATUALIZAR!!!"
+        ativar_permissao
+        sleep 1
+    else
+        echo "NAO FOI POSSIVEL FAZER A CONFIGURACAO"
+    fi
     echo
     echo
+}
+
+ativar_permissao() {
+    if [ ! -f /u/sist/controle/bkp_cron.config ]; then
+        echo "# BACKUP DO CRONTAB DO ROOT - NAO APAGAR - NAO ALTERAR"  >> /u/sist/controle/bkp_cron.config
+        crontab -l >> /u/sist/controle/bkp_cron.config
+        chmod 444 /u/sist/controle/bkp_cron.config
+        cp /u/sist/controle/bkp_cron.config /u/bats
+    fi
+
+    (
+        crontab -l
+        echo ""
+        echo "# ATUALIZADOR AUTOMATICO - CONCEDER PERMISSOES NO SIST/EXEC - NAO REMOVER"
+        echo "0 4 * * * /u/bats/atualizador --permissoes 2>> /u/sist/logs/.cron-erro.log"
+        echo ""
+    ) | crontab -
 }
 
 
