@@ -324,4 +324,4 @@ esac
 clear
 baixar_controle
 ler_arquivo
-#update > /dev/null
+update > /dev/null
