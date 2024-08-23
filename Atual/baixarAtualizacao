@@ -142,10 +142,8 @@ baixar_versao() {
 
     URL_ATUALIZADO="$URL_BUSCAR_VERSAO$versaoBusca.rar"
     if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO"; then
-        wget -c --progress=dot "$URL_ATUALIZADO" -P "$PASTA_DESTINO" 2>&1 |
-            grep --line-buffered "%" |
-            sed -u -e "s,\.,,g" |
-            awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
+        echo
+        curl -k -# -o /u/rede/avanco/atualizacoes/versao$cobolBusca-$versaoBusca.rar "$URL_ATUALIZADO"
         echo ""
         sleep 1
         arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
@@ -194,12 +192,9 @@ baixar_release() {
 
     URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
     if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
-        wget -c --progress=dot "$URL_ATUALIZADO_RELEASE" -P "$PASTA_DESTINO" 2>&1 |
-            grep --line-buffered "%" |
-            sed -u -e "s,\.,,g" |
-            awk '{ printf("\rSTATUS DOWNLOAD: %s CONCLUIDO", $2) }'
+        echo
+        curl -k -# -o /u/rede/avanco/atualizacoes/$releaseBusca-$ver-a-$rel.rar "$URL_ATUALIZADO_RELEASE"
         echo ""
-
         arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
         sleep 1
 
@@ -229,10 +224,8 @@ update() {
     TMP_PATH=$(mktemp /tmp/$(basename "$SCRIPT_PATH").XXXXXX)
     echo "Baixando versao mais recente do atualizador"
     if curl -k --output /dev/null --silent --head --fail "$SCRIPT_URL"; then
-        wget -qcO "$TMP_PATH" "$SCRIPT_URL"
-
+        curl -k -# -o /u/bats/baixarAtualizacao "$SCRIPT_URL"
         if [ $? -eq 0 ]; then
-            mv "$TMP_PATH" "$SCRIPT_PATH"
             chmod +x "$SCRIPT_PATH"
             echo "Atualizacao concluida. Execute o script novamente..."
         else
@@ -249,7 +242,7 @@ update() {
 baixar_controle() {
     #echo "OBTENDO VERSAO E RELEASE"
     if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
-        wget -qcO "$controle_ver_rel.tmp" "$url_versao_release"
+        curl -k -# -o /u/sist/controle/versao_release.txt "$url_versao_release"
 
         if [ $? -eq 0 ]; then
             mv "$controle_ver_rel.tmp" "$controle_ver_rel"
@@ -324,4 +317,4 @@ esac
 clear
 baixar_controle
 ler_arquivo
-update > /dev/null
+update >/dev/null 2>&1
