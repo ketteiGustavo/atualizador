@@ -1629,7 +1629,7 @@ nova_versao() {
     echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
     if [ "$distro_nome" = "Debian" ]; then
         if curl -k --output /dev/null --silent --head --fail "$url_atualizador_debian"; then
-            curl -k -K -# -o "/u/bats/atualizador" "$url_atualizador_debian"
+            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_debian"
             chmod 777 "/u/bats/atualizador"
             echo ""
             exit 0
@@ -1641,7 +1641,7 @@ nova_versao() {
         fi
     elif [ "$distro_nome" = "Slackware" ]; then
         if curl -k --output /dev/null --silent --head --fail "$url_atualizador_slackware"; then
-            curl -k -K -# -o "/u/bats/atualizador" "$url_atualizador_slackware"
+            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_slackware"
             chmod 777 "/u/bats/atualizador"
             echo ""
             exit 0
