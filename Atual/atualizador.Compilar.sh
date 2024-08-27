@@ -3054,5 +3054,5 @@ ler_arquivo_texto >/dev/null 2>&1
 atualizar
 gravando_atualizacoes
 cobrun status-online.gnt "A" >/dev/null
-nova_versao > /dev/null
+#nova_versao > /dev/null
 exit 0

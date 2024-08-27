@@ -1,14 +1,10 @@
 #!/bin/bash
-#
-################################################################################
 # configurarAtualizador.sh - realizar a configuracao basica do atualizador
 #
 # DATA: 03/07/2024 09:53 - Versao 2.3
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
-#                     <luizgcesar@gmail.com.br>
-# site: https://github.com/ketteiGustavo
 # ------------------------------------------------------------------------------
 # Versao 1: realizar a configuracao de forma correta
 # Versao 2: Mudanças para baixar o configurador pelo help e rodar
@@ -43,7 +39,6 @@ MODO DE USAR:
 mostrar_versao() {
     local versao=$(grep '^# DATA:' "$0" | head -1 | cut -d '-' -f 2 | sed 's/Versao //')
     echo -n "- Programa: $(basename "$0")"
-    echo
     echo "- Versao: $versao"
 }
 
@@ -121,7 +116,6 @@ verifica_cobol() {
 
 # Testa se o usuario e root.
 if [ "$(id -u)" -ne 0 ]; then
-    #clear
     tput smso
     echo 'NECESSARIO ESTAR COM O USUARIO ROOT, ACESSO NEGADO !!!'
     echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y') HOUVE UMA TENTATIVA DE CONFIGURAR O ATUALIZADOR" >>/u/sist/logs/registroConfiguracao.log
@@ -163,6 +157,7 @@ configurar_online() {
         log_erro "Versao do COBOL invalida: $versaoCobol."
         exit 1
     fi
+
     echo "AGUARDE!"
     echo
 
@@ -175,8 +170,6 @@ configurar_online() {
         else
             echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
             log_erro "URL inacessivel: $url_atualizador_debian."
-            rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
             tudo_ok=1
         fi
 
@@ -225,8 +218,6 @@ configurar_online() {
         else
             echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
             log_erro "URL inacessivel: $url_atualizador_slackware."
-            rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
             tudo_ok=1
         fi
 
@@ -255,33 +246,13 @@ configurar_online() {
         log_erro "Distribuicao desconhecida: $distro_nome."
     fi
 
-    if [ ! -f "$EXEC/status-online.gnt" ]; then
-        if curl -k --output /dev/null --silent --head --fail "$novo_URL"; then
-            echo "INSTALANDO O STATUS-ONLINE.gnt"
-            curl -k -# -o "/u/sist/exec/status-online.gnt" "$novo_URL"
-            tudo_ok=0
-            echo ""
-            sleep 1
-        else
-            echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'status-online'"
-            tudo_ok=1
-        fi
-        echo
-    fi
-
     echo
     echo "ATIVANDO ATUALIZADOR! AGUARDE"
     echo
 
-    echo
-    chown avanco:sist /u/sist/exec/*
-    chmod 777 /u/sist/exec/*
-
     if [ "$tudo_ok" = 0 ]; then
         echo "CONFIGURACAO REALIZADA!!!"
         echo "LOGUE COMO 'avanco' PARA ATUALIZAR!!!"
-        ativar_permissao
-        sleep 1
     else
         echo "NAO FOI POSSIVEL FAZER A CONFIGURACAO"
         log_erro "Configuracao falhou."
@@ -311,7 +282,6 @@ ativar_permissao() {
 
 # Tratamento das opcoes que serao responsaveis por controlar na linha de comando
 # ------------------------------------------------------------------------------
-
 case "$1" in
 -h | --help)
     clear
@@ -319,7 +289,6 @@ case "$1" in
     exit 0
     ;;
 -V | --version)
-    # Extrai a versao diretamente do cabecalho do programa
     clear
     mostrar_versao
     exit 0

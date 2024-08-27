@@ -142,9 +142,9 @@ configurar_online() {
     local tudo_ok=1
     verifica_cobol
 
-    local url_atualizador_debian="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Debian"
-    local url_atualizador_slackware_141="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Slackware14.1"
-    local url_atualizador_slackware_142="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Slackware14.2"
+    #local url_atualizador_debian="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Debian"
+    #local url_atualizador_slackware_141="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Slackware14.1"
+    #local url_atualizador_slackware_142="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Slackware14.2"
 
     cd "$EXEC" || {
         echo "Falha ao acessar diretorio $EXEC"
@@ -167,18 +167,18 @@ configurar_online() {
     echo
 
     if [ "$distro_nome" = "Debian" ]; then
-        if curl -k --output /dev/null --silent --head --fail "$url_atualizador_debian"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_debian"
-            chmod 777 "/u/bats/atualizador"
-            tudo_ok=0
-            echo ""
-        else
-            echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
-            log_erro "URL inacessivel: $url_atualizador_debian."
-            rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
-            tudo_ok=1
-        fi
+        #if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
+        #    curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
+        #    chmod 777 "/u/bats/atualizador"
+        #    tudo_ok=0
+        #    echo ""
+        #else
+        #    echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
+        #    log_erro "URL inacessivel: $url_atualizador_debian."
+        #    rm -f "/u/bats/atualizador"
+        #    mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
+        #    tudo_ok=1
+        #fi
 
         if [ ! -f "$BATS/xmlstarlet" ]; then
             # Usando o link raw para baixar o binário corretamente
@@ -207,28 +207,28 @@ configurar_online() {
         echo
 
     elif [ "$distro_nome" = "Slackware" ]; then
-        if [ "$distro_versao" = "141" ]; then
-            url_atualizador_slackware=$url_atualizador_slackware_141
-        elif [ "$distro_versao" = "142" ]; then
-            url_atualizador_slackware=$url_atualizador_slackware_142
-        else
-            echo "VERSAO DO SLACKWARE NAO SUPORTADA!"
-            log_erro "Versao Slackware nao suportada: $distro_versao."
-            exit 1
-        fi
+        #if [ "$distro_versao" = "141" ]; then
+        #    url_atualizador_slackware=$url_atualizador_slackware_141
+        #elif [ "$distro_versao" = "142" ]; then
+        #    url_atualizador_slackware=$url_atualizador_slackware_142
+        #else
+        #    echo "VERSAO DO SLACKWARE NAO SUPORTADA!"
+        #    log_erro "Versao Slackware nao suportada: $distro_versao."
+        #    exit 1
+        #fi
 
-        if curl -k --output /dev/null --silent --head --fail "$url_atualizador_slackware"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_slackware"
-            chmod 777 "/u/bats/atualizador"
-            tudo_ok=0
-            echo ""
-        else
-            echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
-            log_erro "URL inacessivel: $url_atualizador_slackware."
-            rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
-            tudo_ok=1
-        fi
+        #if curl -k --output /dev/null --silent --head --fail "$url_atualizador_slackware"; then
+        #    curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_slackware"
+        #    chmod 777 "/u/bats/atualizador"
+        #    tudo_ok=0
+        #    echo ""
+        #else
+        #    echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
+        #    log_erro "URL inacessivel: $url_atualizador_slackware."
+        #    rm -f "/u/bats/atualizador"
+        #    mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
+        #    tudo_ok=1
+        #fi
 
         if [ ! -f "$BATS/xmlstarlet" ]; then
             # Usando o link raw para baixar o binário corretamente
@@ -253,6 +253,17 @@ configurar_online() {
     else
         echo "VERSAO DE DISTRIBUICAO DESCONHECIDA!!!"
         log_erro "Distribuicao desconhecida: $distro_nome."
+    fi
+
+    if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
+        curl -k -# -o "/u/bats/atualizador" "$url_atualizador"
+        chown avanco:sist /u/bats/atualizador
+        chmod 700 /u/bats/atualizador
+        tudo_ok=0
+        sleep 1
+    else
+        echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'atualizador'"
+        tudo_ok=1
     fi
 
     if [ ! -f "$EXEC/status-online.gnt" ]; then
