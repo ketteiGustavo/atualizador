@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.2.1
+# DATA: 13/04/2024 11:27 - Versao 0.2.3
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -40,6 +40,9 @@
 # Versão 0.1.12: Correção na função de log removidos
 # Versão 0.2.0: Diversas melhorias implementadas.
 # Versão 0.2.1: Versao para ser compilada
+# Versão 0.2.2: Correção na versão compilada, compativel com Slackware e Debian
+# Versão 0.2.3: Teste para fazer autoupdate no progama, somente se ele estiver
+#               desatualizado
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -48,7 +51,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.2.1"
+versaoPrograma="0.2.3"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1621,17 +1624,30 @@ mostrar_ajuda() {
 
 # Funcao para atualizar o script sempre para a versao mais recente
 nova_versao() {
-    script_path="$0"
-    local url_atualizador_debian="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Debian"
-    local url_atualizador_slackware="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Slackware"
+    local url_teste_versao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/controle/versao-atualizador.txt"
+    local url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador"
+
     clear
-    mv "$script_path" "/u/bats/atualizadorOLD"
-    echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
-    if [ "$distro_nome" = "Debian" ]; then
-        if curl -k --output /dev/null --silent --head --fail "$url_atualizador_debian"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_debian"
+    if curl -k --output /dev/null --silent --head --fail "$url_teste_versao"; then
+        curl -k -s -o "/tmp/versao_remota.txt" "$url_teste_versao"
+        versao_do_atualizador=$(cat /tmp/versao_remota.txt)
+    else
+        erro_msg "ERRO: NAO FOI POSSIVEL OBTER DETALHES DE NOVA VERSAO DO ATUALIZADOR."
+        exit 1
+    fi
+
+    # comparando versoes do atualizador
+    if [ $versaoPrograma != $versao_do_atualizador ]; then
+        mv "/u/bats/atualizador" "/u/bats/atualizadorOLD"
+        echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
+        if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
+            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
             chmod 777 "/u/bats/atualizador"
             echo ""
+            echo "EXECUTE O ATUALIZADOR NOVAMENTE!"
+            if [ -f "/u/bats/baixarAtualizacao" ]; then
+                rm -f "/u/bats/baixarAtualizacao"
+            fi
             exit 0
         else
             echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
@@ -1639,18 +1655,9 @@ nova_versao() {
             mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
             exit 1
         fi
-    elif [ "$distro_nome" = "Slackware" ]; then
-        if curl -k --output /dev/null --silent --head --fail "$url_atualizador_slackware"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_slackware"
-            chmod 777 "/u/bats/atualizador"
-            echo ""
-            exit 0
-        else
-            echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
-            rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
-            exit 1
-        fi
+    else
+        rm -f "/tmp/versao_remota.txt"
+        exit 0
     fi
 }
 
@@ -3047,12 +3054,12 @@ usuario_permitido
 checar_internet
 verifica_atualizacao
 iniciar
-verifica_logados
+#verifica_logados
 limpa_exec
 seguranca
 ler_arquivo_texto >/dev/null 2>&1
 atualizar
 gravando_atualizacoes
 cobrun status-online.gnt "A" >/dev/null
-#nova_versao > /dev/null
+nova_versao > /dev/null
 exit 0
