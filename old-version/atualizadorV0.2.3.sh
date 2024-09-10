@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.2.4
+# DATA: 13/04/2024 11:27 - Versao 0.2.3
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -43,8 +43,6 @@
 # Versão 0.2.2: Correção na versão compilada, compativel com Slackware e Debian
 # Versão 0.2.3: Teste para fazer autoupdate no progama, somente se ele estiver
 #               desatualizado
-# Versão 0.2.4: Opcao para baixar pacotes de versao e release pela linha de co-
-#               mando
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -53,7 +51,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.2.4"
+versaoPrograma="0.2.3"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -2958,16 +2956,6 @@ case "$1" in
     clear
     ler_arquivo_texto
     baixar_atualizacoes
-    exit 0
-    ;;
---baixar-versao)
-    clear
-    baixar_versao
-    exit 0
-    ;;
---baixar-release)
-    clear
-    baixar_release
     exit 0
     ;;
 -b | --backup)
