@@ -1,0 +1,14 @@
+## Detalhes da Versão V2 beta.
+
+Foram realizadas alterações na estrutura do atualizador.
+As principais melhorias foram:
+    - Nova forma de obter versão e release que está no Portal Avanço
+    - Melhora nos log
+    - Parametrização do Atualizador
+    - Resolvido pendência de permissão e alteração de usuário/grupo
+    - Melhora em aspecto visual
+    - Implementado funções necessárias para segurança e execução.
+    - Implementado configuração dos scripts extras a pedido do Ronaldo
+    - Versão compilada, garantido segurança e integridade ao Atualizador.
+
+Essas foram as principais melhorais realizadas no atualizador.
