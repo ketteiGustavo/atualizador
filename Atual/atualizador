@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.2.4
+# DATA: 13/04/2024 11:27 - Versao 0.2.12
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -45,6 +45,17 @@
 #               desatualizado
 # Versão 0.2.4: Opcao para baixar pacotes de versao e release pela linha de co-
 #               mando
+# Versão 0.2.5: Novo help/ajuda
+# Versão 0.2.6: Exibe mensagem que esta na versao atual do atualizador, caso es-
+#               teja na versao atual. se nao ira baixar a nova versao do atuali-
+#               zador.
+# Versão 0.2.7: Ajuste na função de correção.
+# Versão 0.2.8: Ajuste nas opções de download de pacotes.
+# Versão 0.2.9: Inserido opção de -a e --ajuda
+# Versão 0.2.10: Teste de conexão de internet nas funções que requerem download
+# Versão 0.2.11: novas opções de linha de comando
+# Versão 0.2.12: Novas opções dentro do menu: Testar internet e alterar status
+#                onlide de vendas
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -53,7 +64,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.2.4"
+versaoPrograma="0.2.12"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -62,11 +73,33 @@ Programa: $(basename "$0")
                               [OPCOES DISPONIVEIS]                              
 
 OPCOES NA LINHA DE COMANDO:
-    -h,  --help      Mostrar tela de ajuda.
-    -V,  --version   Mostrar versao do Atualizador
-    -b,  --baixar    Baixar atualizacoes do Integral
-    -up, --update    Realizar update do Atualizador
-    -m,  --menu      Menu interativo
+    -h,  --help         Mostrar esta tela de ajuda
+    -a,  --ajuda        Mostrar esta tela de ajuda
+    -V,  --version      Mostrar a versao do Atualizador
+    --versao            Mostrar a versao do Atualizador
+    -i,  --info         Mostrar a versao e release no servidor
+    -d,  --download     Baixar Versao e Release
+    --baixar-versao     Baixar somente o pacote da Versao atual
+    --baixar-release    Baixar somente o pacote da Release atual
+    -b,  --backup       Realizar o backup do 'sist/exec'
+    -m,  --menu         Menu de opcoes do Atualizador
+    -up, --update       Realizar update do Atualizador
+    --man               Manual tecnico do Atualizador (em construcao)
+    -o,  --obter        Obter detalhes de Versao e Release disponiveis no portal
+                        Avanco
+    -l,  --log          Visualizar principais logs do Atualizador
+    -P                  Parametrizacao (somente para usuario 'avanco')
+    --cron              Ativar no cron (somente para usuario 'avanco')
+    --permissoes        Conceder permissao total no 'sist/exec' (somente para 
+                        usuario 'avanco')
+    --testar-internet   Verifica se o servidor tem conexao com a Internet
+    --online            Exibe e/ou altera o Online do vendas. Necessario infor-
+                        mar o argumento:
+                         '-L' - Para mostrar o status
+                         '-A' - Para ativar o Online
+                         '-D' - Para Desativar
+    
+    
 
 MODO DE USAR:
 Digite o nome do programa e a opcao desejada.
@@ -153,30 +186,30 @@ no_color='\e[0m' # Reset da cor
 #
 ### variáveis que armazenam os locais utilizados no sistema
 #
-info_loja_txt="/u/sist/controle/info_loja.txt"           # arquivo que grava informações da de verão e release da servidor
-controle_ver_rel="/u/sist/controle/versao_release.txt"   # arquivo que grava informações de versão e release do Portal Avanço
-local_gnt="/u/sist/exec"                                 # local dos programas gnt
-removidos="/u/rede/avanco/removidos"                     # pasta que ficam os arquivos não permitidos no exec e que foram removidos do exec
-pasta_destino="/u/rede/avanco/atualizacoes"              # local onde são realizados os downloads das atualizações
+info_loja_txt="/u/sist/controle/info_loja.txt"         # arquivo que grava informações da de verão e release da servidor
+controle_ver_rel="/u/sist/controle/versao_release.txt" # arquivo que grava informações de versão e release do Portal Avanço
+local_gnt="/u/sist/exec"                               # local dos programas gnt
+removidos="/u/rede/avanco/removidos"                   # pasta que ficam os arquivos não permitidos no exec e que foram removidos do exec
+pasta_destino="/u/rede/avanco/atualizacoes"            # local onde são realizados os downloads das atualizações
 pasta_pacotes="/u/rede/avanco/atualizacoes/pacotes"
-arquivo_versao_atual=""                                  # grava o nome do pacote.rar da versão
-arquivo_release_atual=""                                 # grava o nome do pacote.rar da release
-local_log="/u/sist/logs"                                 # arquivo de log
-bkp_destino="/u/sist/exec-a"                             # local onde ficam os backups
+arquivo_versao_atual=""      # grava o nome do pacote.rar da versão
+arquivo_release_atual=""     # grava o nome do pacote.rar da release
+local_log="/u/sist/logs"     # arquivo de log
+bkp_destino="/u/sist/exec-a" # local onde ficam os backups
 #
 ### Sessão dos logs
 ### Arquivos de logs para leitura e gravação
-teste_gnt_log="/u/sist/logs/testeGNT.log"                # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
-validados_gnt="/u/sist/logs/statusGNT.log"               # grava o nome dos programas que tiveram o teste falho
-infos_extras="/u/sist/logs/infos_extras.log"             # grava informações de desempenho do servidor
-auditoria="/u/sist/logs/auditoria.log"                   # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
-log_file="/u/sist/logs/log_$mes_ano.log"                 # log de ações bem executadas
-erro_log_file="/u/sist/logs/erro_$mes_ano.log"           # log de erro
-log_cron_erro="/u/sist/logs/.cron-erro.log"              # log erro gravado pelo cron
+teste_gnt_log="/u/sist/logs/testeGNT.log"      # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
+validados_gnt="/u/sist/logs/statusGNT.log"     # grava o nome dos programas que tiveram o teste falho
+infos_extras="/u/sist/logs/infos_extras.log"   # grava informações de desempenho do servidor
+auditoria="/u/sist/logs/auditoria.log"         # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
+log_file="/u/sist/logs/log_$mes_ano.log"       # log de ações bem executadas
+erro_log_file="/u/sist/logs/erro_$mes_ano.log" # log de erro
+log_cron_erro="/u/sist/logs/.cron-erro.log"    # log erro gravado pelo cron
 #
 ### Arquivos de Parametrização
-arquivo_parametros="/u/sist/controle/parametros.config"  # Parametrização que pode ser alterada pelo programa, fora do script.
-config_cron="/u/sist/controle/.config_cron.txt"          # Detalhes da configuração ativa no cron
+arquivo_parametros="/u/sist/controle/parametros.config" # Parametrização que pode ser alterada pelo programa, fora do script.
+config_cron="/u/sist/controle/.config_cron.txt"         # Detalhes da configuração ativa no cron
 #
 ### Sessão de datas
 dia_semana_lido=$(date +%u) # dia que será testado para liberar atualizar ou não
@@ -221,14 +254,14 @@ url_ajuda="https://raw.githubusercontent.com/ketteiGustavo/atualizador/testesHom
 url_manual="https://raw.githubusercontent.com/ketteiGustavo/atualizador/testesHomologacao/manuais/atualizador.1"
 #
 ### Variáveis de leitura
-versaoCobol=""                      # usada para armazenar o cobol, apos rodar cobrun integral
-novoPortal=""                       # armazena a versão atual disponível no site
-releasePortal=""                    # armazena a data da release disponível no site
-letraRelease=""                     # armazena a letra da release disponível no site
-versaoLoja=""                       # armazena a versao no servidor do cliente
-releaseLoja=""                      # armazena a release no servidor do cliente
-inf_versao=""                       #
-inf_release=""                      # usada para obter a release digitada
+versaoCobol=""   # usada para armazenar o cobol, apos rodar cobrun integral
+novoPortal=""    # armazena a versão atual disponível no site
+releasePortal="" # armazena a data da release disponível no site
+letraRelease=""  # armazena a letra da release disponível no site
+versaoLoja=""    # armazena a versao no servidor do cliente
+releaseLoja=""   # armazena a release no servidor do cliente
+inf_versao=""    #
+inf_release=""   # usada para obter a release digitada
 inf_versaoCobol=""
 inf_versaoLoja=""
 inf_releaseLoja=""
@@ -781,7 +814,7 @@ limpa_exec() {
     if [ ! -f "$log_file" ]; then
         echo "Arquivos e Pastas que estavam no 'u/sist/exec' no dia $data_clear" >"/u/sist/logs/removidos_$data_atual.log"
     fi
-    
+
     for item in "$local_gnt"/*; do
         # valida se e um programa gnt
         if [[ ! "$item" =~ \.gnt$ ]]; then
@@ -804,7 +837,6 @@ limpa_exec() {
         echo "Arquivo Removido" >/dev/null
     fi
 }
-
 
 # Funcao para testar e verificar sinal e qualidade da internet
 checar_internet() {
@@ -1543,7 +1575,6 @@ gravando_atualizacoes() {
 # Função para debugar o Atualizador
 # criar ainda #FIXME
 
-
 ## Barra de progresso
 barra_progresso() {
     local progresso=$1
@@ -1623,7 +1654,6 @@ mostrar_ajuda() {
     rm -rf /tmp/ajuda-atualizador.*
 }
 
-
 # Funcao para atualizar o script sempre para a versao mais recente
 nova_versao() {
     local url_teste_versao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/controle/versao-atualizador.txt"
@@ -1658,6 +1688,10 @@ nova_versao() {
             exit 1
         fi
     else
+        echo "Atualizador na versao atual"
+        echo
+        echo "-Versao: $versaoPrograma"
+        echo
         rm -f "/tmp/versao_remota.txt"
         exit 0
     fi
@@ -1668,7 +1702,6 @@ somente_permissao() {
     chmod 777 /u/sist/exec/*.gnt
     chown avanco:sist /u/sist/exec/*
 }
-
 
 parametros() {
     if [[ -z "$1" ]]; then
@@ -2102,18 +2135,21 @@ menu_2() {
             ;;
         2)
             clear
-            tput cup 6 29
+            tput cup 4 29
             echo "INFORME O ID DO PACOTE"
+            #informar_pacote
             ;;
         3)
             clear
-            tput cup 6 27
+            tput cup 4 27
             echo "LISTAR PACOTE DISPONIVEIS"
+            verificar_pacote
             ;;
         4)
             clear
-            tput cup 6 29
+            tput cup 4 29
             echo "INSIRA O LINK ABAIXO: "
+            #baixar_via_link
             ;;
         9)
             menu_principal
@@ -2161,7 +2197,8 @@ menu_3() {
         1)
             clear
             echo "BACKUP EM ANDAMENTO"
-            #fazer_bkp
+            fazer_bkp
+            verifica_backup
             ;;
         2)
             clear
@@ -2282,12 +2319,16 @@ menu_6() {
         tput cup 10 22
         echo " 3  -  UPDATE ATUALIZADOR"
         tput cup 11 22
-        echo " 4  -  AVISAR ATUALIZACAO"
+        echo " 4  -  TESTAR CONEXAO INTERNET"
         tput cup 12 22
-        echo " 9  -  MENU PRINCIPAL"
+        echo " 5  -  VERIFICAR ONLINE DE VENDAS"
         tput cup 13 22
+        echo " 6  -  AVISAR ATUALIZACAO"
+        tput cup 14 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 15 22
         echo "99  -  SAIR"
-        tput cup 15 26
+        tput cup 17 26
         echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
@@ -2298,7 +2339,7 @@ menu_6() {
             ;;
         2)
             clear
-            echo "CONDECENDO PERMISSAO TOTAL AO INTEGRAL"
+            echo "CONCEDENDO PERMISSAO TOTAL AO INTEGRAL"
             if [ $USER = avanco ] || [ $USER = root ]; then
                 chmod 777 /u/sist/exec/*.gnt 2>>"$validados_gnt"
             else
@@ -2312,8 +2353,15 @@ menu_6() {
             echo "BUSCANDO NOVA VERSAO DO ATUALIZADOR! AGUARDE..."
             nova_versao
             ;;
-
         4)
+            clear
+            checar_internet
+            ;;
+        5)
+            clear
+            testar_online
+            ;;
+        6)
             clear
             yellow_msg "!!!ATENCAO!!!"
             yellow_msg "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
@@ -2400,18 +2448,157 @@ menu_7() {
     done
 }
 
-
-# Funcao para corrigir erros ao tentar atualizar
+# Funcao para corrigir erros do atualizador
 menu_correcoes() {
-    echo "CENTRAL DE CORRECOES DO ATUALIZADOR"
-    echo
-    echo "1. Corrigir Detalhes da Versao e Release Nesse Servidor"
-    echo "2. Dar permissao total no 'sist/exec'"
-    echo "3. Limpar Exec"
-    echo "4. Liberar acesso ao Integral"
+    local opcao_menu
+    clear
+    while true; do
+        tput cup 5 24
+        echo -ne "\e[1;36mMENU DE CORRECOES DO ATUALIZADOR\e[0m"
+        tput cup 8 22
+        echo " 1  -  INFORMAR VERSAO E RELEASE"
+        tput cup 9 22
+        echo " 2  -  PERMISSAO TOTAL NO sist/exec"
+        tput cup 10 22
+        echo " 3  -  LIMPAR EXEC"
+        tput cup 11 22
+        echo " 4  -  LIBERAR ACESSO AO INTEGRAL"
+        tput cup 12 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 13 22
+        echo "99  -  SAIR"
+        tput cup 15 26
+        echo -ne "\e[1;32mOPCAO: \e[0m"
+        read opcao_menu
+        case "$opcao_menu" in
+        1)
+            clear
+            echo "SERA NECESSARIO INFORMAR A VERSAO E RELEASE!"
+            criar_info_loja
+            ;;
+        2)
+            clear
+            echo "CONCEDENDO PERMISSAO TOTAL AO INTEGRAL"
+            if [ $USER = avanco ] || [ $USER = root ]; then
+                somente_permissao
+            else
+                yellow_msg "FAVOR ACIONAR O SUPORTE AVANCO PARA CONCEDER AS PERMISSOES"
+                exit 1
+            fi
+            ;;
+        3)
+            clear
+            echo "LIMPANDO ARQUIVOS DESNECESSARIOS DENTRO DO sist/exec"
+            limpa_exec
+            ;;
+
+        4)
+            clear
+            if [ -f "/u/sist/exec/cogumeloAzul.gnt" ]; then
+                mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+                echo "FAVOR ACESSAR O INTEGRAL NOVAMENTE!"
+                echo "UTILIZE O COMANDO:"
+                echo "cobrun integral"
+                exit 0
+            fi
+            ;;
+        9)
+            menu_principal
+            return 1
+            ;;
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
+        *)
+            clear
+            tput cup 8 32
+            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
+            ;;
+        esac
+        sleep 3
+        tput cup 14 18
+        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
+        clear
+    done
 }
 
+# Função para verificar pacotes disponiveis na pasta /u/rede/avanco/atualizacoes/pacotes
+verificar_pacote() {
+    local testar_existe
 
+    if [ ! -d "/u/rede/avanco/atualizacoes/pacotes" ]; then
+        mkdir -p /u/rede/avanco/atualizacoes/pacotes
+    fi
+
+    testar_existe=$(ls /u/rede/avanco/atualizacoes/pacotes | wc -l)
+
+    if [ "$testar_existe" -eq 0 ]; then
+        yellow_msg "NAO EXISTE NENHUM PACOTE DISPONIVEL NA PASTA CORRETA!"
+        echo "FAVOR COLOCAR O PACOTE EM: "
+        echo "/u/rede/avanco/atualizacoes/pacotes"
+    else
+        instalar_pacotes
+    fi
+}
+
+# Função para instalar os pacotes verificados
+instalar_pacotes() {
+    clear
+    local pacote_disponivel
+    echo "EXISTEM OS SEGUINTES PACOTES: "
+    tput cup 0 62
+    echo "[M]enu ou [S]air"
+    pacote_disponivel=$(ls -p /u/rede/avanco/atualizacoes/pacotes | grep -v /)
+    select pacote in ${pacote_disponivel}; do
+        if [ "$REPLY" = "S" ] || [ "$REPLY" = "s" ]; then
+            exit 0
+        elif [ "$REPLY" = "M" ] || [ "$REPLY" = "m" ]; then
+            menu_principal
+        fi
+
+        if [[ -n $pacote ]]; then
+            echo "SERA INSTALADO O PACOTE: $pacote"
+
+            rar lb /u/rede/avanco/atualizacoes/pacotes/$pacote >/tmp/gnt-pacote-$pacote.txt
+
+            echo "REALIZANDO BACKUP DO(S) PROGRAMA(S)... AGUARDE"
+            while read -r arquivo; do
+                if [ -f "/u/sist/exec/$arquivo" ]; then
+                    rar a /u/sist/exec-a/bkpADP$pacote "/u/sist/exec/$arquivo"
+                else
+                    echo "O '$arquivo' NAO EXISTE NO '/u/sist/exec'."
+                fi
+            done </tmp/gnt-pacote-$pacote.txt
+
+            echo "DESCOMPACTANDO O PACOTE '$pacote'... AGUARDE"
+            rar e -o+ /u/rede/avanco/atualizacoes/pacotes/$pacote /u/sist/exec
+            # Remover o arquivo temporário após o backup e extração
+            rm -f /tmp/gnt-pacote-$pacote.txt
+            echo
+            echo "PACOTE $pacote INSTALADO COM SUCESSO!!!"
+            echo
+            read -p "DESEJA REMOVER O PACOTE INSTALADO? [S/n]" confirma_remocao
+            case $confirma_remocao in
+            "S" | "s" | "")
+                rm -f /u/rede/avanco/atualizacoes/pacotes/$pacote
+                ;;
+            "N" | "n")
+                return 1
+                ;;
+            *)
+                clear
+                echo "OPCAO INVALIDA!"
+                ;;
+            esac
+        else
+            echo "OPCAO ESCOLHIDA INVALIDA. TENTE NOVAMENTE."
+        fi
+    done
+}
 
 # Função para ativar, editar, mostrar, desativar ou remover configuração do crontab
 configurar_cron() {
@@ -2773,8 +2960,8 @@ menu_restaura() {
     entrada_log=$(awk -v RS="################################################################################" -v date="$data_bkp" '$0 ~ date {print}' $arquivo_log)
 
     if [[ -z $entrada_log ]]; then
-        erro_msg "NAO FOI POSSiVEL ENCONTRAR AS INFORMACOES DO BACKUP NO ARQUIVO DE LOG."
-        echo "NAO FOI POSSiVEL ENCONTRAR AS INFORMACOES DO BACKUP NO ARQUIVO DE LOG." >>$erro_log_file
+        erro_msg "NAO FOI POSSIVEL ENCONTRAR AS INFORMACOES DO BACKUP NO ARQUIVO DE LOG."
+        echo "NAO FOI POSSIVEL ENCONTRAR AS INFORMACOES DO BACKUP NO ARQUIVO DE LOG." >>$erro_log_file
         exit 1
     fi
 
@@ -2806,7 +2993,7 @@ menu_restaura() {
 mostrar_versao() {
     echo -n "-Programa: $(basename "$0")"
     echo
-    echo "-Versao: $versaoPrograma"
+    echo "-Versao  : $versaoPrograma"
 }
 
 # Funcao para visualizar logs
@@ -2900,6 +3087,98 @@ visualizar_logs() {
     fi
 }
 
+# Função para alterar o status do online pela linha de comando
+testar_online() {
+    echo
+    local teste_status_online
+    local opcao
+    if [[ -z "$1" ]]; then
+        clear
+        tput cup 2 21
+        echo "OPCAO PARA VERIFICAR/ALTERAR O ONLINE"
+        tput cup 5 24
+        echo " 1  -  ATIVAR O ONLINE"
+        tput cup 6 24
+        echo " 2  -  DESATIVAR O ONLINE"
+        tput cup 7 24
+        echo " 3  -  VISUALIZAR O ONLINE"
+        tput cup 8 24
+        echo " 9  -  VOLTAR AO MENU PRINCIPAL"
+        tput cup 9 24
+        echo "99  -  SAIR"
+        tput cup 11 26
+        echo -n "OPCAO: "
+        read opcao
+        case $opcao in
+            1)
+                clear
+                cobrun status-online.gnt "A" 2>&1
+                echo "ONLINE DE VENDAS ATIVADO!"
+                ;;
+            2)
+                clear
+                cobrun status-online.gnt "D" 2>&1
+                echo "ONLINE DE VENDAS DESATIVADO!"
+                ;;
+            3)
+                clear
+                teste_status_online=$(cobrun status-online.gnt "L")
+                if [ $teste_status_online = "ATIVADO" ]; then
+                    echo "ONLINE DE VENDAS ATIVADO!"
+                else
+                    echo "ONLINE DE VENDAS DESATIVADO!"
+                fi
+                ;;
+            9)
+                menu_principal
+                return 1
+                ;;
+
+            99)
+                clear
+                mensagem_saida
+                echo
+                sleep 1
+                exit 0
+                ;;
+        esac
+    else
+        while getopts ":Lade" opt; do
+            case ${opt} in
+            L)
+                clear
+                teste_status_online=$(cobrun status-online.gnt "L")
+                if [ $teste_status_online = "ATIVADO" ]; then
+                    echo "ONLINE DE VENDAS ATIVADO!"
+                else
+                    echo "ONLINE DE VENDAS DESATIVADO!"
+                fi
+                exit 0
+                ;;
+            A)
+                clear
+                cobrun status-online.gnt "A" 2>&1
+                echo "ONLINE DE VENDAS ATIVADO!"
+                exit 0
+                ;;
+            D)
+                clear
+                cobrun status-online.gnt "D" 2>&1
+                echo "ONLINE DE VENDAS DESATIVADO!"
+                exit 0
+                ;;
+            *)
+                clear
+                echo "OPCAOO INVALIDA."
+                echo "USE '-L' PARA VISUALIZAR O STATUS DO ONLINE DE VENDAS."
+                echo "USE '-A' PARA ATIVAR O ONLINE DE VENDAS."
+                echo "USE '-D' PARA DESATIVAR O ONLINE DE VENDAS."
+                ;;
+            esac
+        done
+    fi
+}
+
 # Função para ser baixado e configurado scripts e programas extras
 baixar_extras() {
 
@@ -2937,12 +3216,12 @@ baixar_extras() {
 # ------------------------------------------------------------------------------
 
 case "$1" in
--h | --help)
+-h | --help | -a | --ajuda)
     clear
     echo "$manual_uso"
     exit 0
     ;;
--V | -v | --version)
+-V | -v | --version | --versao)
     # Extrai a versao diretamente do cabecalho do programa
     clear
     mostrar_versao
@@ -2956,17 +3235,20 @@ case "$1" in
     ;;
 -d | --download)
     clear
+    checar_internet
     ler_arquivo_texto
     baixar_atualizacoes
     exit 0
     ;;
 --baixar-versao)
     clear
+    checar_internet
     baixar_versao
     exit 0
     ;;
 --baixar-release)
     clear
+    checar_internet
     baixar_release
     exit 0
     ;;
@@ -2983,6 +3265,7 @@ case "$1" in
     ;;
 -up | --update)
     clear
+    checar_internet
     # criar rotina pra baixar nova versao do atualizador.
     echo "Buscando update para o Atualizador..."
     nova_versao
@@ -2990,13 +3273,31 @@ case "$1" in
     ;;
 --man)
     clear
+    #checar_internet
     #man atualizador
     exit 0
     ;;
+--testar-internet)
+    clear
+    checar_internet
+    if [ $? -eq 0 ]; then
+        echo "CONEXAO COM A INTERNET OK!"
+        exit 0
+    else
+        exit 1
+    fi
+    ;;
 -o | --obter)
     clear
+    checar_internet
     # Busca no servidor a versao e release atualizada e exibi no terminal
     baixar_controle
+    exit 0
+    ;;
+--online)
+    clear
+    shift
+    testar_online "$@"
     exit 0
     ;;
 -r | --restore)
@@ -3046,6 +3347,12 @@ case "$1" in
     echo ""
     exit 0
     ;;
+--extras-atualizador)
+    clear
+    chmod -R 777 /u/sist/logs
+    chmod -R 777 /u/sist/controle
+    exit 0
+    ;;
 *)
     clear
     if test -n "$1"; then
@@ -3073,5 +3380,5 @@ ler_arquivo_texto >/dev/null 2>&1
 atualizar
 gravando_atualizacoes
 cobrun status-online.gnt "A" >/dev/null
-nova_versao > /dev/null
+nova_versao >/dev/null
 exit 0
