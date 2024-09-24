@@ -1,0 +1,320 @@
+#!/bin/bash
+#
+################################################################################
+# baixarAtualizacao - Ira ler o arquivo gerado e baixar a atualizacao referente a data
+#
+# DATA: 01/07/2024 20:48 - Versao 1
+#
+# ------------------------------------------------------------------------------
+# Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
+#                     <luizgcesar@gmail.com.br>
+# site: https://github.com/ketteiGustavo
+# ------------------------------------------------------------------------------
+# Versao 1: leitura do arquivo que contem a informacao
+# ------------------------------------------------------------------------------
+# Objetivo: facilitar a execucao do atualizador.
+###############################
+
+MENSAGEM_USO="
+Programa: $(basename "$0")
+
+--------------------------------------------------------------------------------
+                            [OPCOES DISPONIVEIS]
+
+OPCOES NA LINHA DE COMANDO:
+    -h, --help      Mostra esta tela de ajuda e sai
+    -V, --version   Mostra a versao do programa e sai
+MODO DE USAR:
+
+--------------------------------------------------------------------------------
+"
+#
+
+# variaveis
+URL_BASE_VERSAO40="https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
+URL_BASE_VERSAO41="https://s3.amazonaws.com/avancoprogramas/integral/versao41-"
+
+URL_BASE_RELEASE40="https://s3.amazonaws.com/avancoprogramas/integral/release40-"
+URL_BASE_RELEASE41="https://s3.amazonaws.com/avancoprogramas/integral/release-"
+
+URL_ATUALIZADOV40=""
+URL_ATUALIZADOV41=""
+
+URL_ATUALIZADO_RELEASE=""
+
+URL_ATUALIZADO_RELEASE_V40=""
+URL_ATUALIZADO_RELEASE_V41=""
+
+URL_BUSCAR_RELEASE=""
+
+versao_Portal=""
+release=""
+data_release=""
+cobolBusca=""
+
+release_busca=""
+releaseBusca=""
+letraRelease=""
+
+PASTA_DESTINO="/u/rede/avanco/atualizacoes"
+
+SCRIPT_PATH="$0"
+SCRIPT_URL="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao"
+url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"
+
+data_atual=$(date +%Y%m%d)
+
+atualizado_flag=""
+controle_flag="/u/sist/controle"
+info_loja_txt="/u/sist/controle/info_loja.txt"
+
+sleep 1
+clear
+# Funcao para extrair e exibir a versao do programa
+mostrar_versao() {
+    local versao=$(grep '^# DATA:' "$0" | head -1 | cut -d '-' -f 2 | sed 's/Versao //')
+    echo -n "-Programa: $(basename "$0")"
+    echo
+    echo "-Versao: $versao"
+}
+
+controle_ver_rel="/u/sist/controle/versao_release.txt"
+
+# Funcao para verificar qual o cobol usado
+verifica_cobol() {
+    inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
+    versaoCobol="$inf_versaoCobol"
+}
+
+# Funcao para tratar datas e inserir barras entre os digitos deixando DD/MM/AA
+tratar_datas() {
+    entrada_data=$1
+    dia_td=${entrada_data:0:2}
+    mes_td=${entrada_data:2:2}
+    ano_td=${entrada_data:4:2}
+    data_tratada="${dia_td}/${mes_td}/${ano_td}"
+    echo "$data_tratada"
+}
+
+# Função para ler o arquivo e armazenar as informações em variáveis
+ler_arquivo() {
+    local versao
+    local arquivo="$controle_ver_rel"
+    versao=$(grep -oP '(?<=Versao atual: )\d+' "$arquivo")
+    versao_Portal=$(grep -oP '(?<=Versao atual: )\d+' "$arquivo")
+    release_busca=$(grep -oP '(?<=Release atual: [A-Z] )\d{6}' "$arquivo")
+    data_release="$release_busca"
+    release=$(grep -oP '(?<=Release atual: )[A-Z]' "$arquivo")
+}
+
+# Funcao para converter datas no formato YYYYMMDD, para ser usado em equacoes de comparacao, maior, menor e igual
+converter_datas() {
+    local dia="${1:0:2}"
+    local mes="${1:2:2}"
+    local ano="${1:4:2}"
+
+    #echo "Dia: $dia"
+    #echo "Mes: $mes"
+    #echo "Ano: $ano"
+
+    # Convertendo para o formato 'YYYYMMDD' para facilitar a adição de dias
+    local data_formatada="20${ano}${mes}${dia}"
+    echo "$data_formatada"
+
+}
+
+# Funcao para obter o link da versao atual, com base em comparacao de data por trimestre
+baixar_versao() {
+    verifica_cobol
+    ler_arquivo
+    versaoBusca="$versao_Portal"
+    # Verificando a versao do COBOL
+    if [ "$versaoCobol" == "4.0" ]; then
+        URL_BUSCAR_VERSAO="$URL_BASE_VERSAO40"
+        cobolBusca="40"
+    elif [ "$versaoCobol" == "4.1" ]; then
+        URL_BUSCAR_VERSAO="$URL_BASE_VERSAO41"
+        cobolBusca="41"
+    else
+        echo "Versao do COBOL invalida."
+        exit 1
+    fi
+
+    URL_ATUALIZADO="$URL_BUSCAR_VERSAO$versaoBusca.rar"
+    if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO"; then
+        echo
+        curl -k -# -o /u/rede/avanco/atualizacoes/versao$cobolBusca-$versaoBusca.rar "$URL_ATUALIZADO"
+        echo ""
+        sleep 1
+        arquivo_versao_atual=$(find "$PASTA_DESTINO" -type f -name "versao$cobolBusca-$versaoBusca.rar")
+        testar_arquivos_versao=$(rar t "$arquivo_versao_atual" | wc -l)
+        arquivo_atual_testando=0
+        if rar t $arquivo_versao_atual | while read -r line; do
+            ((arquivo_atual_testando++))
+            porcentagem=$((arquivo_atual_testando * 100 / testar_arquivos_versao))
+            echo -ne "TESTANDO INTEGRIDADE DOS .gnt: [$porcentagem%]\r"
+        done; then
+            versao_exibir=$(tratar_datas "$versaoBusca")
+            echo "DOWNLOAD DA VERSAO '$versao_exibir' CONCLUIDO E PROGRAMAS 'TESTADOS'!"
+        else
+            echo "ARQUIVO CORROMPIDO!"
+            echo "ARQUIVO DA VERSAO $versaoBusca CORROMPIDO!"
+        fi
+        return 0
+    fi
+    sleep 1
+}
+
+# Funcao para verificar se a release e valida e mais recente
+baixar_release() {
+    verifica_cobol
+    ler_arquivo
+    arquivo_release_atual=""
+    buscarV40="release40"
+    buscarV41="release"
+
+    local rel="${release_busca:0:4}"
+    local ver="${versao_Portal:0:4}"
+
+    # Verificando a versao do COBOL
+    if [ "$versaoCobol" == "4.0" ]; then
+        URL_BUSCAR_RELEASE="$URL_BASE_RELEASE40"
+        cobolBusca="40"
+        releaseBusca=$buscarV40
+    elif [ "$versaoCobol" == "4.1" ]; then
+        URL_BUSCAR_RELEASE="$URL_BASE_RELEASE41"
+        cobolBusca="41"
+        releaseBusca=$buscarV41
+    else
+        echo "VERSAO DO COBOL INVALIDA."
+        exit 1
+    fi
+
+    URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
+    if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
+        echo
+        curl -k -# -o /u/rede/avanco/atualizacoes/$releaseBusca-$ver-a-$rel.rar "$URL_ATUALIZADO_RELEASE"
+        echo ""
+        arquivo_release_atual=$(find "$PASTA_DESTINO" -type f -name "$releaseBusca-$ver-a-$rel.rar")
+        sleep 1
+
+        testar_arquivos_release=$(rar t "$arquivo_release_atual" | wc -l)
+        release_release_testando=0
+        if rar t $arquivo_release_atual | while read -r line; do
+            ((release_atual_testando++))
+            porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
+            echo -ne "TESTANDO INTEGRIDADE DOS .gnt: [$porcentagem%]\r"
+        done; then
+            release_download=$(tratar_datas "$release_busca")
+            echo "DOWNLOAD DA RELEASE '$release, DO DIA $release_download' CONCLUIDO E PROGRAMAS 'TESTADOS'!!"
+        else
+            echo "Arquivo corrompido!"
+            echo "Arquivo de release '$release_download - $release' corrompido!"
+        fi
+
+        echo "PACOTE DE ATUALIZACAO BAIXADO!"
+        return 0
+    fi
+    sleep 1
+}
+
+# Funcao para atualizar o script sempre para a versao mais recente
+update() {
+    SCRIPT_PATH="$0"
+    TMP_PATH=$(mktemp /tmp/$(basename "$SCRIPT_PATH").XXXXXX)
+    echo "Baixando versao mais recente do atualizador"
+    if curl -k --output /dev/null --silent --head --fail "$SCRIPT_URL"; then
+        curl -k -# -o /u/bats/baixarAtualizacao "$SCRIPT_URL"
+        if [ $? -eq 0 ]; then
+            chmod +x "$SCRIPT_PATH"
+            echo "Atualizacao concluida. Execute o script novamente..."
+        else
+            echo "Erro ao baixar a atualizacao."
+            rm -f "$TMP_PATH"
+        fi
+    else
+        echo "ERRO: a URL do atualizador nao esta acessivel."
+        rm -f "$TMP_PATH"
+    fi
+}
+
+# Funcao para baixar arquivo atualizado
+baixar_controle() {
+    #echo "OBTENDO VERSAO E RELEASE"
+    if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
+        curl -k -# -o /u/sist/controle/versao_release.txt "$url_versao_release"
+
+        if [ $? -eq 0 ]; then
+            mv "$controle_ver_rel.tmp" "$controle_ver_rel"
+            chmod 777 "$controle_ver_rel"
+            clear
+            #echo "DETALHES DE VERSAO E RELEASE OBTIDOS!"
+            novoPortal=$(grep -oP '(?<=Versao atual: )\d+' "$controle_ver_rel")
+            letraRelease=$(grep -oP '(?<=Release atual: )[A-Z]' "$controle_ver_rel")
+            data_release=$(grep -oP '(?<=Release atual: [A-Z] )\d{6}' "$controle_ver_rel")
+            #echo "VERSAO ATUAL: $novoPortal"
+            #echo "RELEASE ATUAL: $data_release - $letraRelease"
+        else
+            echo "ERRO AO OBTER VERSAO E RELEASE RECENTES!"
+            rm -f "$controle_ver_rel.tmp"
+        fi
+    else
+        echo "ERROR: NAO FOI POSSIVEL OBTER AS INFORMACOES DE VERSAO E RELEASE."
+        rm -f "$controle_ver_rel.tmp"
+    fi
+}
+
+###############################
+# Tratamento das opcoes que serao responsaveis por controlar na linha de comando
+# ------------------------------------------------------------------------------
+
+case "$1" in
+-h | --help)
+    clear
+    echo "$MENSAGEM_USO"
+    exit 0
+    ;;
+-V | --version)
+    # Extrai a versao diretamente do cabecalho do programa
+    clear
+    mostrar_versao
+    exit 0
+    ;;
+-up | --update)
+    clear
+    update
+    exit 0
+    ;;
+-o | --obter)
+    clear
+    baixar_controle
+    ler_arquivo
+    exit 0
+    ;;
+--baixarVersao)
+    baixar_controle
+    ler_arquivo
+    baixar_versao
+    exit 0
+    ;;
+--baixarRelease)
+    baixar_controle
+    ler_arquivo
+    baixar_release
+    exit 0
+    ;;
+*)
+    if test -n "$1"; then
+        echo Opcao invalida: $1
+        exit 1
+    fi
+    ;;
+esac
+
+###############################
+
+# Chamar a função com o caminho do arquivo
+clear
+baixar_controle
+ler_arquivo
+update >/dev/null 2>&1
