@@ -3411,6 +3411,7 @@ case "$1" in
 --compilar)
     clear
     preparar_compilado
+    exit 0
     ;;
 *)
     clear
