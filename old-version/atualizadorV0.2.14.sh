@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.2.15
+# DATA: 13/04/2024 11:27 - Versao 0.2.14
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -58,7 +58,6 @@
 #                onlide de vendas
 # Versão 0.2.13: Desabilitando recursos do menu que ainda não estão disponíveis
 # Versão 0.2.14: Função para baixar a versão a ser compilada.
-# Versão 0.2.15: Correções dentro da busca dos pacotes na pasta
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -67,7 +66,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.2.15"
+versaoPrograma="0.2.14"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -187,19 +186,6 @@ no_color='\e[0m' # Reset da cor
 ###############################
 ### VARIAVEIS GLOBAIS
 #
-### Sessão de datas
-dia_semana_lido=$(date +%u) # dia que será testado para liberar atualizar ou não
-hora_lida=$(date +%H)       # hora que será testada para liberar atualizar ou não
-mes_ano=$(date +"%m%y")
-mes_atual=$(date +"%m")
-ano_atual=$(date +"%y")
-mes_anterior=$(date -d "4 weeks ago" +"%m") # utilizado para limpar logs antigos
-ano_anterior=$(date -d "4 weeks ago" +"%y") # utilizado para limpar logs antigos
-date=$(date +"%d%m%y")
-data_atual=$(date +"%d%m%y")   # data obtida ao rodar o script, sera sempre o dia atual
-hora_atual=$(date +"%H:%M:%S") # hora para gravacoes necessarias
-dia_hoje=$(date +"%Y%m%d")
-#
 ### variáveis que armazenam os locais utilizados no sistema
 #
 info_loja_txt="/u/sist/controle/info_loja.txt"         # arquivo que grava informações da de verão e release da servidor
@@ -227,7 +213,19 @@ log_cron_erro="/u/sist/logs/.cron-erro.log"    # log erro gravado pelo cron
 arquivo_parametros="/u/sist/controle/parametros.config" # Parametrização que pode ser alterada pelo programa, fora do script.
 config_cron="/u/sist/controle/.config_cron.txt"         # Detalhes da configuração ativa no cron
 #
-
+### Sessão de datas
+dia_semana_lido=$(date +%u) # dia que será testado para liberar atualizar ou não
+hora_lida=$(date +%H)       # hora que será testada para liberar atualizar ou não
+mes_ano=$(date +"%m%y")
+mes_atual=$(date +"%m")
+ano_atual=$(date +"%y")
+mes_anterior=$(date -d "4 weeks ago" +"%m") # utilizado para limpar logs antigos
+ano_anterior=$(date -d "4 weeks ago" +"%y") # utilizado para limpar logs antigos
+date=$(date +"%d%m%y")
+data_atual=$(date +"%d%m%y")   # data obtida ao rodar o script, sera sempre o dia atual
+hora_atual=$(date +"%H:%M:%S") # hora para gravacoes necessarias
+dia_hoje=$(date +"%Y%m%d")
+#
 ### Validações de servidor
 conta_usarios=$(ps ax | grep rts32 | grep -v 'grep' | wc -l) # verifica usuarios usando o integral
 usuarios_permitidos=("root" "super" "avanco")                # usuários permitidos, independente dos parâmetros
@@ -1235,7 +1233,7 @@ baixar_versao() {
         echo -e "\nDOWNLOAD COMPLETO!"
         echo -e "\n\nREALIZANDO TESTE DE INTEGRIDADE"
         sleep 1
-        arquivo_versao_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "versao$cobolBusca-$versaoBusca.rar")
+        arquivo_versao_atual=$(find "$pasta_destino" -type f -name "versao$cobolBusca-$versaoBusca.rar")
         testar_arquivos_versao=$(rar t "$arquivo_versao_atual" | wc -l)
         arquivo_atual_testando=0
         if rar t $arquivo_versao_atual | while read -r line; do
@@ -1288,7 +1286,7 @@ baixar_release() {
         curl -k -# -o "$pasta_destino/$releaseBusca-$ver-a-$rel.rar" "$URL_ATUALIZADO_RELEASE"
         echo -e "\nDOWNLOAD COMPLETO!"
 
-        arquivo_release_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "$releaseBusca-$ver-a-$rel.rar")
+        arquivo_release_atual=$(find "$pasta_destino" -type f -name "$releaseBusca-$ver-a-$rel.rar")
         echo -e "\n\nREALIZANDO TESTE DE INTEGRIDADE"
         sleep 1
 
@@ -1322,12 +1320,12 @@ definirPacote_por_cobol() {
     local rel="${data_release:0:4}"
     # Define o diretorio com base na versao do Cobol
     if [ "$versaoCobol" == "4.0" ]; then
-        arquivo_versao_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "versao40-$novoPortal.rar")
-        arquivo_release_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "release40-$ver-a-$rel.rar")
+        arquivo_versao_atual=$(find "$pasta_destino" -type f -name "versao40-$novoPortal.rar")
+        arquivo_release_atual=$(find "$pasta_destino" -type f -name "release40-$ver-a-$rel.rar")
         sleep 1
     elif [ "$versaoCobol" == "4.1" ]; then
-        arquivo_versao_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "versao41-$novoPortal.rar")
-        arquivo_release_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "release-$ver-a-$rel.rar")
+        arquivo_versao_atual=$(find "$pasta_destino" -type f -name "versao41-$novoPortal.rar")
+        arquivo_release_atual=$(find "$pasta_destino" -type f -name "release-$ver-a-$rel.rar")
         sleep 1
     else
         erro_msg "Versao do Cobol desconhecida: $versaoCobol"
@@ -1467,7 +1465,7 @@ atualizar() {
             else
                 local_abortado="Func. Atualizar: Tentativa de descompactar"
                 alerta_msg "NOVA VERSAO DISPONIVEL, MAS NAO FOI POSSIVEL ATUALIZAR. ENTRE EM CONTATO COM O SUPORTE AVANCO!"
-                echo "Nova Versao Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+                echo "Nova Versao Disponivel, mas nao foi possível atualizar. Entre em contato com o suporte Avanco! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
                 exit 1
             fi
         fi
@@ -2637,9 +2635,7 @@ preparar_compilado() {
         echo "Iniciando Download para compilacao..."
         curl -L -o /u/login-suporte/luizgustavo/atualizador.Compilar https://raw.githubusercontent.com/ketteiGustavo/atualizador/refs/heads/main/codigo/atualizador.Compilar.sh
         if [ $? -eq 0 ]; then
-            cd /u/login-suporte/luizgustavo/shc-master/src/
-            ./shc -f "/u/login-suporte/luizgustavo/atualizador.Compilar" -ro "/u/login-suporte/luizgustavo/atualizador.Compilado"
-            ls -lh /u/login-suporte/luizgustavo/atualizador.Compilado
+            bash /u/login-suporte/luizgustavo/shc-master/src/shc -f "/u/login-suporte/luizgustavo/atualizador.Compilar" -ro "/u/login-suporte/luizgustavo/atualizador.Compilado"
             rm -rf /u/login-suporte/luizgustavo/atualizador.Compilar
         else
             echo "NAO FOI POSSIVEL BAIXAR O ATUALIZADOR PARA COMPILAR"
@@ -2789,7 +2785,7 @@ alterar_cron() {
             "segunda" | "seg")
                 dia_definido=1
                 ;;
-            "terca" | "ter")
+            "terca" | "ter" | "terça")
                 dia_definido=2
                 ;;
             "quarta" | "qua")
@@ -2863,7 +2859,7 @@ alterar_cron() {
                     crontab -l
                     echo ""
                     echo "# ATUALIZADOR AUTOMATICO"
-                    echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cron 2>> /u/sist/logs/.cron-erro.log"
+                    echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cronb 2>> /u/sist/logs/.cron-erro.log"
                     echo ""
                 ) | crontab -
                 break 2
