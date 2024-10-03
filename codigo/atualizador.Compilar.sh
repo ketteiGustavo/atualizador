@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.3.1
+# DATA: 13/04/2024 11:27 - Versao 0.3.1c
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -72,7 +72,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.3.1"
+versaoPrograma="0.3.1c"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -861,11 +861,12 @@ limpa_exec() {
     # fazer backup se existir arquivos que foram movidos para a pasta
     if [ "$ch_fazer_backup_limpar" -eq 1 ]; then
         rar a -ep "$rar_file" "$destino_mover" >/dev/null 2>>"$erro_log_file" &
-        (
-            wait
-            rm -rf "$destino_mover"
-            echo "PROCESSO DE LIMPEZA REALIZADO" >>$auditoria
-        ) &
+        rar_pid=$!
+
+        wait $rar_pid
+        rm -rf "$destino_mover"
+        echo "PROCESSO DE LIMPEZA REALIZADO" >>$auditoria
+
     fi
 
 }
