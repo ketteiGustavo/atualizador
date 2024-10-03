@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.3.1c
+# DATA: 13/04/2024 11:27 - Versao 0.3.1d
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -64,6 +64,7 @@
 #               e trava de horario, após às 18h01 não liberar atualizar
 # Versão 0.3.1: Ajuste na função 'limpa-exec' para deixa-la mais rapida e fazer
 #               o backup em segundo plano.
+#               ajustes de disparar para segundo plano.
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -72,7 +73,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.3.1c"
+versaoPrograma="0.3.1d"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -434,6 +435,7 @@ interromper() {
         echo "HORA: $(date +'%H:%M:%S')" >>$auditoria
         echo "USUARIO: $USER" >>$auditoria
         echo "ABORTADO EM: $local_abortado" >>$auditoria
+        echo "################################################################################" >>$auditoria
         echo "" >>$auditoria
         if [ "$flag_renomea" = true ]; then
             if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
@@ -479,9 +481,14 @@ verificar_usuario() {
     if [[ "$USER" != "avanco" && "$USER" != "root" ]]; then
         echo "Favor acionar o Suporte Avanco para realizar a configuracao"
         echo "" >>"$auditoria"
-        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO PARAMETROS" >>"$auditoria"
-        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>"$auditoria"
+        echo "================================================================================" >>"$auditoria"
+        echo "PROGRAMA: $(basename "$0") --> parametrizacao atualizador " >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "TENTATIVA DE ACESSAR CONFIGURACAO DOS PARAMETROS" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
         echo "USUARIO: $USER" >>"$auditoria"
+        echo "" >>"$auditoria"
         exit 0
     fi
 }
@@ -545,9 +552,16 @@ usuario_permitido() {
 
         if [[ "$permitido_att" = false ]]; then
             echo "ESTE USUARIO NAO TEM PERMISSAO DE EXECUTAR ESSA ROTINA"
-            echo "" >>$auditoria
-            echo "AS $(date +'%H:%M') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-            echo "O USUARIO $USER TENTOU EXECUTAR UMA ACAO NAO LIBERADA" >>$auditoria
+            echo "" >>"$auditoria"
+            echo "================================================================================" >>"$auditoria"
+            echo "PROGRAMA: $(basename "$0") --> atualizar integral " >>$auditoria
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "TENTATIVA DE ATUALIZAR INTEGRAL SEM PERMISSAO" >>"$auditoria"
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+            echo "USUARIO: $USER" >>"$auditoria"
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "" >>"$auditoria"
             exit 1
         fi
     fi
@@ -571,11 +585,16 @@ verifica_atualizacao() {
 
             echo "" >>$auditoria
             echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-            echo "AS $(date +'%H:%M') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+            echo "PROGRAMA: $(basename "$0") --> atualizar integral " >>$auditoria
+            echo "--------------------------------------------------------------------------------" >>$auditoria
             echo "INTEGRAL ESTAVA ATUALIZADO NA TENTATIVA DE ATUALIZACAO" >>$auditoria
-            echo "USUARIO: $USER" >>$auditoria
-            echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-            echo "" >>$auditoria
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+            echo "USUARIO: $USER" >>"$auditoria"
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "" >>"$auditoria"
+
+
             sleep 2
             exit 0
         else
@@ -650,13 +669,18 @@ verificar_dia() {
         tput rmso
         stty sane
         mensagem_saida
-        echo "" >>$auditoria
-        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
-        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
-        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-        echo "" >>$auditoria
+        echo "" >>"$auditoria"
+        echo "================================================================================" >>"$auditoria"
+        echo "PROGRAMA: $(basename "$0") --> atualizar integral " >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+        echo "USUARIO: $USER" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "" >>"$auditoria"
+
+
         exit 0
     fi
 
@@ -669,13 +693,16 @@ verificar_dia() {
         tput rmso
         stty sane
         mensagem_saida
-        echo "" >>$auditoria
-        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL NO FIM DE SEMANA" >>$auditoria
-        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
-        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-        echo "" >>$auditoria
+        echo "" >>"$auditoria"
+        echo "================================================================================" >>"$auditoria"
+        echo "PROGRAMA: $(basename "$0") --> atualizar integral " >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "TENTATIVA DE ATUALIZAR INTEGRAL NO FIM DE SEMANA" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+        echo "USUARIO: $USER" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "" >>"$auditoria"
         exit 0
     fi
 
@@ -688,13 +715,16 @@ verificar_dia() {
         tput rmso
         stty sane
         mensagem_saida
-        echo "" >>$auditoria
-        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
-        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
-        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-        echo "" >>$auditoria
+        echo "" >>"$auditoria"
+        echo "================================================================================" >>"$auditoria"
+        echo "PROGRAMA: $(basename "$0") --> atualizar integral " >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+        echo "USUARIO: $USER" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "" >>"$auditoria"
         exit 0
     fi
 
@@ -860,13 +890,24 @@ limpa_exec() {
 
     # fazer backup se existir arquivos que foram movidos para a pasta
     if [ "$ch_fazer_backup_limpar" -eq 1 ]; then
-        rar a -ep "$rar_file" "$destino_mover" >/dev/null 2>>"$erro_log_file" &
+        alerta_msg "!!!ATENCAO!!!"
+        yellow_msg "   VERIFICANDO E REALIZANDO LIMPEZA DE ARQUIVOS DESNECESSARIOS NO 'sist/exec'  "
+        yellow_msg "AGUARDE..."
+        nohup rar a -ep "$rar_file" "$destino_mover" >/dev/null 2>>"$erro_log_file" &
         rar_pid=$!
 
         wait $rar_pid
         rm -rf "$destino_mover"
+        echo "================================================================================" >>$auditoria
+        echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+        echo "PROGRAMA: $(basename "$0") --> limpa-exec " >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
         echo "PROCESSO DE LIMPEZA REALIZADO" >>$auditoria
-
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "ARQUIVO DE LOG PARA CONSULTA: 'removidos_$data_atual.log' " >>$auditoria
+        echo "LOCAL DO LOG: '/u/sist/logs' " >>$auditoria
+        echo "EXECUTADO PELO USUARIO: $USER" >>$auditoria
+        echo "" >>$auditoria
     fi
 
 }
@@ -2929,11 +2970,16 @@ atualizar_pelo_cron() {
         echo "ACESSO NEGADO!!!"
         sleep 2
         tput rmso
-        echo "" >>$auditoria
-        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRON" >>$auditoria
-        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>$auditoria
-        echo "$(whoami)" >>"$auditoria"
-        echo "USUARIO: $USER" >>$auditoria
+        echo "" >>"$auditoria"
+        echo "================================================================================" >>"$auditoria"
+        echo "PROGRAMA: $(basename "$0") --> configuracoes do crontab" >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRONTAB" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+        echo "USUARIO: $USER" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "" >>"$auditoria"
         exit 1
     else
 
@@ -3407,6 +3453,11 @@ case "$1" in
     ler_logs
     exit 0
     ;;
+--limpa-exec)
+    clear
+    limpa_exec
+    exit 0
+    ;;
 -P)
     clear
     verificar_usuario
@@ -3420,10 +3471,16 @@ case "$1" in
     clear
     if [ $USER != root ]; then
         echo "Favor acionar o Suporte Avanco para realizar a configuracao"
-        echo "" >>$auditoria
-        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRON" >>$auditoria
-        echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>$auditoria
-        echo "USUARIO: $USER" >>$auditoria
+        echo "" >>"$auditoria"
+        echo "================================================================================" >>"$auditoria"
+        echo "PROGRAMA: $(basename "$0") --> configuracoes do crontab" >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "TENTATIVA DE ACESSAR CONFIGURACAO DO CRONTAB" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+        echo "USUARIO: $USER" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "" >>"$auditoria"
         exit 0
     fi
     echo "CONFIGURACAO DO CRON"
