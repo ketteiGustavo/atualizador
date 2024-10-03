@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.2.15
+# DATA: 13/04/2024 11:27 - Versao 0.3.1
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -59,6 +59,11 @@
 # Versão 0.2.13: Desabilitando recursos do menu que ainda não estão disponíveis
 # Versão 0.2.14: Função para baixar a versão a ser compilada.
 # Versão 0.2.15: Correções dentro da busca dos pacotes na pasta
+# Versão 0.2.16: Correções de logs e testes de gravação de logs
+# Versão 0.3.0: Ajuste para utilizar o comando cobrun versao-release.gnt
+#               e trava de horario, após às 18h01 não liberar atualizar
+# Versão 0.3.1: Ajuste na função 'limpa-exec' para deixa-la mais rapida e fazer
+#               o backup em segundo plano.
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -67,7 +72,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.2.15"
+versaoPrograma="0.3.1"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -215,13 +220,13 @@ bkp_destino="/u/sist/exec-a" # local onde ficam os backups
 #
 ### Sessão dos logs
 ### Arquivos de logs para leitura e gravação
-teste_gnt_log="/u/sist/logs/testeGNT.log"      # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
-validados_gnt="/u/sist/logs/statusGNT.log"     # grava o nome dos programas que tiveram o teste falho
-infos_extras="/u/sist/logs/infos_extras.log"   # grava informações de desempenho do servidor
-auditoria="/u/sist/logs/auditoria.log"         # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
-log_file="/u/sist/logs/log_$mes_ano.log"       # log de ações bem executadas
-erro_log_file="/u/sist/logs/erro_$mes_ano.log" # log de erro
-log_cron_erro="/u/sist/logs/.cron-erro.log"    # log erro gravado pelo cron
+teste_gnt_log="/u/sist/logs/testeGNT.log"             # grava o teste dos programas de permissão e dono e no fim da atualização limpa o arquivo
+validados_gnt="/u/sist/logs/statusGNT.log"            # grava o nome dos programas que tiveram o teste falho
+infos_extras="/u/sist/logs/infos_extras.log"          # grava informações de desempenho do servidor
+auditoria="/u/sist/logs/auditoria.log"                # registro de auditoria, de tentativas forçadas de alteração ou ações não permitidas
+log_file="/u/sist/logs/log_$(date +"%m%y").log"       # log de ações bem executadas
+erro_log_file="/u/sist/logs/erro_$(date +"%m%y").log" # log de erro
+log_cron_erro="/u/sist/logs/.cron-erro.log"           # log erro gravado pelo cron
 #
 ### Arquivos de Parametrização
 arquivo_parametros="/u/sist/controle/parametros.config" # Parametrização que pode ser alterada pelo programa, fora do script.
@@ -497,7 +502,7 @@ iniciar() {
             fi
             clear
             sleep 1
-            ler_arquivo_texto
+            ler_arquivo_texto >/dev/null 2>&1
             break
             ;;
         "N" | "n")
@@ -565,9 +570,12 @@ verifica_atualizacao() {
             mensagem_saida
 
             echo "" >>$auditoria
+            echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
             echo "AS $(date +'%H:%M') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
             echo "INTEGRAL ESTAVA ATUALIZADO NA TENTATIVA DE ATUALIZACAO" >>$auditoria
             echo "USUARIO: $USER" >>$auditoria
+            echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
+            echo "" >>$auditoria
             sleep 2
             exit 0
         else
@@ -633,6 +641,25 @@ verifica_logados() {
 # Funcao para verificar o dia da semana e hora
 verificar_dia() {
     local_abortado="Validando dia"
+
+    if [ $hora_lida -ge 18 ]; then
+        clear
+        tput smso
+        echo "               FAVOR EXECUTAR A ATUALIZACAO EM HORARIO COMERCIAL!               "
+        echo ""
+        tput rmso
+        stty sane
+        mensagem_saida
+        echo "" >>$auditoria
+        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
+        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
+        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
+        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
+        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
+        echo "" >>$auditoria
+        exit 0
+    fi
+
     if [ $dia_semana_lido -eq 5 ] || [ $dia_semana_lido -eq 6 ] || [ $dia_semana_lido -eq 7 ]; then
         clear
         tput smso
@@ -643,9 +670,12 @@ verificar_dia() {
         stty sane
         mensagem_saida
         echo "" >>$auditoria
+        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
         echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
         echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL NO FIM DE SEMANA" >>$auditoria
         echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
+        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
+        echo "" >>$auditoria
         exit 0
     fi
 
@@ -659,26 +689,15 @@ verificar_dia() {
         stty sane
         mensagem_saida
         echo "" >>$auditoria
+        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
         echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
         echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
         echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
+        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
+        echo "" >>$auditoria
         exit 0
     fi
 
-    if [ $hora_lida -gt 18 ]; then
-        clear
-        tput smso
-        echo "               FAVOR EXECUTAR A ATUALIZACAO EM HORARIO COMERCIAL!               "
-        echo ""
-        tput rmso
-        stty sane
-        mensagem_saida
-        echo "" >>$auditoria
-        echo "AS $(date +'%H:%M:%S') DO DIA $(date +'%d/%m/%Y')" >>$auditoria
-        echo "HOUVE TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>$auditoria
-        echo "REALIZADA PELO USUARIO: $USER" >>$auditoria
-        exit 0
-    fi
     sleep 3
 }
 
@@ -812,34 +831,43 @@ seguranca() {
 limpa_exec() {
     local_abortado="Limpando sist/exec"
     local data_clear=$(date +'%d/%m/%Y')
+    local destino_mover="/u/rede/avanco/removidos/limpeza-dia-$data_atual"
     local rar_file="$removidos/removidos_$data_atual.rar"
-    local log_file="/u/sist/logs/removidos_$data_atual.log"
+    local log_removidos="/u/sist/logs/removidos_$data_atual.log"
+    local ch_fazer_backup_limpar=1
 
-    if [ ! -f "$log_file" ]; then
+    # criar diretorio para receber arquivos
+    mkdir -p "$destino_mover"
+
+    if [ ! -f "$log_removidos" ]; then
         echo "Arquivos e Pastas que estavam no 'u/sist/exec' no dia $data_clear" >"/u/sist/logs/removidos_$data_atual.log"
     fi
 
-    for item in "$local_gnt"/*; do
-        # valida se e um programa gnt
-        if [[ ! "$item" =~ \.gnt$ ]]; then
-            echo "Arquivo/Pasta encontrado -> $item" >>"/u/sist/logs/removidos_$data_atual.log"
+    # faz a busca e move o que não for gnt para outra pasta
+    find "$local_gnt" -type f ! -name "*.gnt" -exec mv {} "$destino_mover" \;
 
-            # compactando arquivo encontrado
-            rar a "$rar_file" "$item"
+    # gera um log
+    ls -lh "$destino_mover" >>"/u/sist/logs/removidos_$data_atual.log"
 
-            rm -rf "$item"
-        fi
-    done
-    sleep 1
-    arquivo_testado="/u/sist/logs/removidos_$data_atual.log"
-    frase_validar="Arquivos e Pastas que estavam no 'u/sist/exec' no dia $data_clear"
-    conteudo=$(cat "$arquivo_testado")
-    if [ "$conteudo" == "$frase_validar" ]; then
-        rm "$arquivo_testado"
-        echo "Arquivo vazio removido" >/dev/null
-    else
-        echo "Arquivo Removido" >/dev/null
+    # testa a pasta
+    if [ -z "$(ls -A $destino_mover)" ]; then
+        rmdir "$destino_mover"
+        echo "PASTA EXEC VERIFICADA!!!"
+        ch_fazer_backup_limpar=0
+        rm -rf "/u/sist/logs/removidos_$data_atual.log"
+        return 0
     fi
+
+    # fazer backup se existir arquivos que foram movidos para a pasta
+    if [ "$ch_fazer_backup_limpar" -eq 1 ]; then
+        rar a "$rar_file" "$destino_mover" 2>>"$erro_log_file" &
+        (
+            wait
+            rm -rf "$destino_mover"
+            echo "PROCESSO DE LIMPEZA REALIZADO" >>$auditoria
+        ) &
+    fi
+
 }
 
 # Funcao para testar e verificar sinal e qualidade da internet
@@ -1014,19 +1042,30 @@ criar_info_loja() {
 # Funcao para ler o arquivo 'info_loja_txt'
 ler_arquivo_texto() {
     local_abortado="Lendo arquivo de versao e release"
-    # verifica se o arquivo existe
-    if [ ! -f "$info_loja_txt" ]; then
-        echo "FAVOR INFORMAR A VERSAO E RELEASE QUE ESTAO NESSE SERVIDOR!" 2> >(tee -a "$erro_log_file")
-        criar_info_loja
-        return 1
-    else
-        inf_data=$(grep -oP '(?<=DATA: )\d+/\d+/\d+' "$info_loja_txt")
-        inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
+
+    # testa se o programa versao-release.gnt existe, se sim extrai as informações através dele.
+    if [ -f "/u/sist/exec/versao-release.gnt" ]; then
+        verifica_cobol
         versaoCobol="$inf_versaoCobol"
-        inf_versaoLoja=$(grep -oP '(?<=VERSAO INTEGRAL: )\d+' "$info_loja_txt")
-        inf_releaseLoja=$(grep -oP '(?<=RELEASE: )[[:alpha:]]' "$info_loja_txt")
+        inf_versaoLoja=$(cobrun versao-release.gnt | grep -oP '\d{2}/\d{2}/\d{2}' | tr -d '/')
+        inf_releaseLoja=$(cobrun versao-release.gnt | grep -oP '[a-zA-Z]$')
         inf_releaseLojaAntes="$inf_releaseLoja"
         data_release_servidor=$(grep -oP '(?<=DATA RELEASE: )\d+' "$info_loja_txt")
+    else
+        # verifica se o arquivo existe
+        if [ ! -f "$info_loja_txt" ]; then
+            echo "FAVOR INFORMAR A VERSAO E RELEASE QUE ESTAO NESSE SERVIDOR!" 2> >(tee -a "$erro_log_file")
+            criar_info_loja
+            return 1
+        else
+            inf_data=$(grep -oP '(?<=DATA: )\d+/\d+/\d+' "$info_loja_txt")
+            inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
+            versaoCobol="$inf_versaoCobol"
+            inf_versaoLoja=$(grep -oP '(?<=VERSAO INTEGRAL: )\d+' "$info_loja_txt")
+            inf_releaseLoja=$(grep -oP '(?<=RELEASE: )[[:alpha:]]' "$info_loja_txt")
+            inf_releaseLojaAntes="$inf_releaseLoja"
+            data_release_servidor=$(grep -oP '(?<=DATA RELEASE: )\d+' "$info_loja_txt")
+        fi
     fi
     validar_ver_rel
 }
@@ -2647,15 +2686,14 @@ preparar_compilado() {
     else
         red_msg "SENHA INCORRETA!!!"
         red_msg "ROTINA NAO AUTORIZADA"
-        echo "TENTATIVA DE UTILIZAR COMPILADOR. USUARIO: $USER - DATA: $(date +'%d/%m/%Y %H:%M')" >> /u/rede/avanco/luizgustavo/atualizador.log
+        echo "TENTATIVA DE UTILIZAR COMPILADOR. USUARIO: $USER - DATA: $(date +'%d/%m/%Y %H:%M')" >>/u/rede/avanco/luizgustavo/atualizador.log
         exit 1
     fi
 }
 
-
 # Função para ativar, editar, mostrar, desativar ou remover configuração do crontab
 configurar_cron() {
-    local cron_command="/u/bats/atualizador --atu-cron"
+    local cron_command=". /etc/profile; /u/bats/atualizador --atu-cron"
 
     while true; do
         echo "MENU DE CONFIGURACAO DO CRON"
@@ -2673,8 +2711,8 @@ configurar_cron() {
         case $opcao in
         1)
             # Ativar atualizador no cron
-            if crontab -l | grep -q "$cron_command"; then
-                if crontab -l | grep -q "#.*$cron_command"; then
+            if crontab -l | grep -Fq "$cron_command"; then
+                if crontab -l | grep -Fq "#.*$cron_command"; then
                     echo "ATIVANDO ATUALIZADOR...AGUARDE"
                     crontab -l | sed "s|# \(.*$cron_command.*\)|\1|" | crontab -
                     echo "ATUALIZADOR ATIVO NO CRON!"
@@ -2693,8 +2731,8 @@ configurar_cron() {
             ;;
         3)
             # Mostrar atualizador no cron
-            if crontab -l | grep -q "$cron_command"; then
-                echo "# ATUALIZADOR AUTOMATICO"
+            if crontab -l | grep -Fq "$cron_command"; then
+                echo "# ATUALIZADOR AUTOMATICO - NAO REMOVER - NAO ALTERAR"
                 crontab -l | grep "$cron_command"
                 if [ -f "$config_cron" ]; then
                     more "$config_cron"
@@ -2704,13 +2742,13 @@ configurar_cron() {
                 fi
             else
                 echo "NAO FOI ENCONTRADO NO CRON A CONFIGURACAO!"
-                rm -rf "$config_cron" 2>>/dev/nul
+                rm -rf "$config_cron" 2>>/dev/null
             fi
             ;;
         4)
             # Desativar atualizador no cron
-            if crontab -l | grep -q "$cron_command"; then
-                if ! crontab -l | grep -q "^#.*$cron_command"; then
+            if crontab -l | grep -Fq "$cron_command"; then
+                if ! crontab -l | grep -Fq "^#.*$cron_command"; then
                     echo "DESATIVANDO ATUALIZADOR...AGUARDE"
                     crontab -l | sed "s|\(.*$cron_command\)|# \1|" | crontab -
                     echo "ATUALIZADOR DESATIVADO NO CRON!"
@@ -2862,8 +2900,8 @@ alterar_cron() {
                 (
                     crontab -l
                     echo ""
-                    echo "# ATUALIZADOR AUTOMATICO"
-                    echo "0 $hora_informada * * $dia_definido /u/bats/atualizador --atu-cron 2>> /u/sist/logs/.cron-erro.log"
+                    echo "# ATUALIZADOR AUTOMATICO - NAO REMOVER - NAO ALTERAR"
+                    echo "0 $hora_informada * * $dia_definido . /etc/profile; /u/bats/atualizador --atu-cron 2>> /u/sist/logs/.cron-erro.log"
                     echo ""
                 ) | crontab -
                 break 2
@@ -2883,6 +2921,7 @@ alterar_cron() {
 
 # Funcao exclusiva para o cron
 atualizar_pelo_cron() {
+    export TERM=xterm
     if [ "$(id -u)" -ne 0 ]; then
         clear
         tput smso
@@ -2894,8 +2933,9 @@ atualizar_pelo_cron() {
         echo "NO DIA $(date +'%d/%m/%Y') AS $(date +'%H:%M:%S') HORAS" >>$auditoria
         echo "$(whoami)" >>"$auditoria"
         echo "USUARIO: $USER" >>$auditoria
-        exit
+        exit 1
     else
+
         inf_versaoCobol=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
         versaoCobol="$inf_versaoCobol"
         ch_normal_atu_help=0
@@ -3163,37 +3203,37 @@ testar_online() {
         echo -n "OPCAO: "
         read opcao
         case $opcao in
-            1)
-                clear
-                cobrun status-online.gnt "A" 2>&1
+        1)
+            clear
+            cobrun status-online.gnt "A" 2>&1
+            echo "ONLINE DE VENDAS ATIVADO!"
+            ;;
+        2)
+            clear
+            cobrun status-online.gnt "D" 2>&1
+            echo "ONLINE DE VENDAS DESATIVADO!"
+            ;;
+        3)
+            clear
+            teste_status_online=$(cobrun status-online.gnt "L")
+            if [ $teste_status_online = "ATIVADO" ]; then
                 echo "ONLINE DE VENDAS ATIVADO!"
-                ;;
-            2)
-                clear
-                cobrun status-online.gnt "D" 2>&1
+            else
                 echo "ONLINE DE VENDAS DESATIVADO!"
-                ;;
-            3)
-                clear
-                teste_status_online=$(cobrun status-online.gnt "L")
-                if [ $teste_status_online = "ATIVADO" ]; then
-                    echo "ONLINE DE VENDAS ATIVADO!"
-                else
-                    echo "ONLINE DE VENDAS DESATIVADO!"
-                fi
-                ;;
-            9)
-                menu_principal
-                return 1
-                ;;
+            fi
+            ;;
+        9)
+            menu_principal
+            return 1
+            ;;
 
-            99)
-                clear
-                mensagem_saida
-                echo
-                sleep 1
-                exit 0
-                ;;
+        99)
+            clear
+            mensagem_saida
+            echo
+            sleep 1
+            exit 0
+            ;;
         esac
     else
         while getopts ":Lade" opt; do
