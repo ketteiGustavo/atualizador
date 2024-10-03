@@ -860,7 +860,7 @@ limpa_exec() {
 
     # fazer backup se existir arquivos que foram movidos para a pasta
     if [ "$ch_fazer_backup_limpar" -eq 1 ]; then
-        rar a "$rar_file" "$destino_mover" 2>>"$erro_log_file" &
+        rar a -ep "$rar_file" "$destino_mover" >/dev/null 2>>"$erro_log_file" &
         (
             wait
             rm -rf "$destino_mover"
