@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.3.2
+# DATA: 13/04/2024 11:27 - Versao 0.3.1e
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -65,9 +65,6 @@
 # Versão 0.3.1: Ajuste na função 'limpa-exec' para deixa-la mais rapida e fazer
 #               o backup em segundo plano.
 #               ajustes de disparar para segundo plano.
-# Versão 0.3.2: Nova função para testar se o Integral foi atualizado manualmente
-#               garantindo ao atualizador a possibilidade de registrar as alte-
-#               rações
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -76,7 +73,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.3.2"
+versaoPrograma="0.3.1e"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1801,90 +1798,11 @@ nova_versao() {
 somente_permissao() {
     chmod 777 /u/sist/exec/*.gnt
     chown avanco:sist /u/sist/exec/*
-    adicionar_cron_avanco
-}
-
-# Função para criar rotina no crontab da avanco
-adicionar_cron_avanco() {
-    local cron_job="0 6,20 * * * . /etc/profile ; /u/bats/atualizador --testar-atualizado >/dev/null 2>&1"
-    local comentario="# ATUALIZADOR AUTOMATICO - TESTAR SE FOI ATUALIZADO MANUALMENTE - NAO REMOVER"
-
-    # backup do cron antes da modificação
-    echo "NAO REMOVER E NAO ALTERAR" > /u/sist/controle/bkp-cron-avanco.txt
-    crontab -u avanco -l >> /u/sist/controle/bkp-cron-avanco.txt
-
-    if ! crontab -u avanco -l | grep -q "/u/bats/atualizador --testar-atualizado"; then
-        (crontab -u avanco -l; echo ""; echo "$comentario"; echo "$cron_job") | crontab -u avanco -
-    fi
 }
 
 # Função para testar se o Integral está atualizado e gravar no log
 testar_atualizado() {
-    baixar_controle >/dev/null 2>&1
-
-    if [ ! -f "/u/sist/exec/versao-release.gnt" ]; then
-        echo "PROGRAMA 'versao-release.gnt' NAO ENCONTRADO!" >> $erro_log_file
-        return 1
-    fi
-
-    # lendo o que está gravado no arquivo do atualizador
-    local data_atualizacao_gravada=$(grep -oP '(?<=DATA: )\d+/\d+/\d+' "$info_loja_txt")
-    local cobol_gravado=$(grep -oP '(?<=VERSAO COBOL: )\d+.\d+' "$info_loja_txt")
-    local versaoLoja_gravada=$(grep -oP '(?<=VERSAO INTEGRAL: )\d+' "$info_loja_txt")
-    local releaseLoja_gravada=$(grep -oP '(?<=RELEASE: )[[:alpha:]]' "$info_loja_txt")
-    local data_release_servidor_gravada=$(grep -oP '(?<=DATA RELEASE: )\d+' "$info_loja_txt")
-
-    # lendo o que é gerado através do versao-release.gnt
-    local versaoLoja_testado=$(cobrun versao-release.gnt | grep -oP '\d{2}/\d{2}/\d{2}' | tr -d '/')
-    local releaseLoja_testado=$(cobrun versao-release.gnt | grep -oP '[a-zA-Z]$')
-    
-    # datas tratadas para comparacao em formato YYYYMMDD
-    local versaoLoja_gravada_ttd=$(converter_datas "$versaoLoja_gravada")
-    local versaoLoja_testado_ttd=$(converter_datas "$versaoLoja_testado")
-
-    # gravando detalhes do versao-release.gnt
-    local possivel_hora=$(ls -lh versao-release.gnt | awk '{print $8}')
-    local possivel_dia=$(stat -c %y versao-release.gnt | cut -d'-' -f3 | cut -d'-' -f1)
-    local possivel_mes=$(stat -c %y versao-release.gnt | cut -d'-' -f2)
-    local possivel_ano=$(stat -c %y versao-release.gnt | cut -d'-' -f1)
-
-    if [ "$releaseLoja_testado" == "$letraRelease" ]; then
-        data_release_testado="$data_release"
-    fi
-
-    if [ "$versaoLoja_gravada_ttd" != "$versaoLoja_testado_ttd" ]; then
-        echo "################################################################################" >>$log_file
-        echo "- INFORMACAO GRAVADA EM: $(date +'%d/%m/%Y') - $(date +'%H:%M:%S')" >>$log_file
-        echo "- POSSIVEL ATUALIZACAO MANUAL" >>$log_file
-        echo "- DETALHES DE QUANDO OCORREU POSSIVEL ATUALIZACAO: " >>$log_file
-        echo "- DATA: $possivel_dia/$possivel_mes/$possivel_ano - HORA: $possivel_hora"
-        echo "" >>$log_file
-        echo "- VERSAO COBOL: $cobol_gravado" >>$log_file
-        echo "- DATA DA ULTIMA ATUALIZACAO EXECUTADA PELO ATUALIZADOR: $data_atualizacao_gravada">>$log_file
-        echo "- POSSIVEL VERSAO INTEGRAL ANTES: $versaoLoja_gravada">>$log_file
-        echo "- POSSIVEL RELEASE INTEGRAL ANTES: $releaseLoja_gravada">>$log_file
-        echo "" >>$log_file
-        echo "- POSSIVEL VERSAO INSTALADA: $versaoLoja_testado">>$log_file
-        echo "- POSSIVEL RELEASE INSTALADA: $data_release_testado - $releaseLoja_testado" >>$log_file
-        echo "################################################################################">>$log_file
-    else
-        if [ "$releaseLoja_gravada" != "$releaseLoja_testado" ]; then
-            echo "################################################################################" >>$log_file
-            echo "- INFORMACAO GRAVADA EM: $(date +'%d/%m/%Y') - $(date +'%H:%M:%S')" >>$log_file
-            echo "- POSSIVEL ATUALIZACAO MANUAL" >>$log_file
-            echo "- DETALHES DE QUANDO OCORREU POSSIVEL ATUALIZACAO: " >>$log_file
-            echo "- DATA: $possivel_dia/$possivel_mes/$possivel_ano - HORA: $possivel_hora"
-            echo "" >>$log_file
-            echo "- VERSAO COBOL: $cobol_gravado" >>$log_file
-            echo "- POSSIVEL VERSAO INTEGRAL ANTES: $versaoLoja_gravada">>$log_file
-            echo "- POSSIVEL RELEASE INTEGRAL ANTES: $releaseLoja_gravada">>$log_file
-            echo "" >>$log_file
-            echo "- POSSIVEL VERSAO INSTALADA: $versaoLoja_testado">>$log_file
-            echo "- POSSIVEL RELEASE INSTALADA: $data_release_testado - $releaseLoja_testado" >>$log_file
-            echo "################################################################################">>$log_file
-        fi
-    fi
-
+    echo
 }
 
 parametros() {
@@ -3108,12 +3026,10 @@ ativar_no_cron() {
         crontab -l
         echo ""
         echo "# ATUALIZADOR AUTOMATICO - RECURSOS EXTRAS - NAO REMOVER #"
-        echo "0 9,11,14,16 * * 1-4 /u/bats/atualizador --extras-atualizador >/dev/null 2>> /u/sist/logs/.erro-cron.log"
-        echo "30 9,14 * * 1-4 /u/bats/atualizador --extras-atualizador >/dev/null 2>> /u/sist/logs/.erro-cron.log"
+        echo "0 9,11,14,16 * * 1-4 /u/bats/atualizador --extras-atualizador 2>> /u/sist/logs/.erro-cron.log"
+        echo "30 9,14 * * 1-4 /u/bats/atualizador --extras-atualizador 2>> /u/sist/logs/.erro-cron.log"
         echo ""
     ) | crontab -
-
-
 }
 
 # Função para chamar opção de atualização na ordem
@@ -3610,10 +3526,6 @@ case "$1" in
 --compilar)
     clear
     preparar_compilado
-    exit 0
-    ;;
---testar-atualizado)
-    testar_atualizado
     exit 0
     ;;
 *)
