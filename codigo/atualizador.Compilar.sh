@@ -3,57 +3,10 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.3.2
+# DATA: 13/04/2024 11:27 - Versao 0.3.3
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
-# Versao 0: Programa de atualizacao automatica.
-# Versao 0.0.1: Logica do programa ajustada para gravar versao e release apos
-#               execucao completa da atualizacao
-# Versao 0.0.2: Logica para obter links de releases corrigidos
-# Versao 0.0.3: Comandos rar sao exibidos com porcentagem em tela
-# Versao 0.0.4: Criado teste para os arquivos baixados
-# Versao 0.0.5: Criado teste para validar usuarios logados
-# Versao 0.0.6: Validacao do Online, atraves do status-online.gnt
-# Versao 0.0.7: Melhora na parte visual com porcentagens nos progressos
-# Versao 0.0.8: Confirmacao de iniciar atualizacao, para evitar caso seja acio-
-#               nado acidentamente.
-# Versao 0.0.9: Desativado validacao de usuarios logados.
-# Versao 0.0.10: Novos recursos e opcoes para linha de comando.
-# Versao 0.1.0:  Diversas correcoes e melhorias.
-#                Dentre elas melhor logica para obter os links atuais.
-# Versao 0.1.1: Leitura apenas de versao e release atuais, garantindo velocidade
-#               de execucao.
-# Versao 0.1.2: Criado opcoes de leitura de logs pela linha de comando
-# Versao 0.1.3: Opcao de restauracao implementada
-# Versao 0.1.4: Criado log de auditoria
-# Versao 0.1.5: Funcao de parametrizacao, para executar o atualizador de acordo
-#               com o que for predefinido pelo usuario.
-# Versão 0.1.6: Alterações para instalar o 'xmlstarlet' e 'gera-xml-por-tag.sh'
-#               de acordo com o que foi pedido pelo Ronaldo
-# Versão 0.1.7: Correções para funcionar em slackware, opções de curl
-# Versão 0.1.8: Função para conceder permissão de madrugada.
-# Versão 0.1.9: Novos menus e submenus
-# Versão 0.1.10: Ativando recursos de cores visuais somente em terminais que
-#                aceitam cores
-# Versão 0.1.11: Opção para conceder permissão somente pelo usuário avanço
-# Versão 0.1.12: Correção na função de log removidos
-# Versão 0.2.0: Diversas melhorias implementadas.
-# Versão 0.2.1: Versao para ser compilada
-# Versão 0.2.2: Correção na versão compilada, compativel com Slackware e Debian
-# Versão 0.2.3: Teste para fazer autoupdate no progama, somente se ele estiver
-#               desatualizado
-# Versão 0.2.4: Opcao para baixar pacotes de versao e release pela linha de co-
-#               mando
-# Versão 0.2.5: Novo help/ajuda
-# Versão 0.2.6: Exibe mensagem que esta na versao atual do atualizador, caso es-
-#               teja na versao atual. se nao ira baixar a nova versao do atuali-
-#               zador.
-# Versão 0.2.7: Ajuste na função de correção.
-# Versão 0.2.8: Ajuste nas opções de download de pacotes.
-# Versão 0.2.9: Inserido opção de -a e --ajuda
-# Versão 0.2.10: Teste de conexão de internet nas funções que requerem download
-# Versão 0.2.11: novas opções de linha de comando
 # Versão 0.2.12: Novas opções dentro do menu: Testar internet e alterar status
 #                onlide de vendas
 # Versão 0.2.13: Desabilitando recursos do menu que ainda não estão disponíveis
@@ -68,6 +21,7 @@
 # Versão 0.3.2: Nova função para testar se o Integral foi atualizado manualmente
 #               garantindo ao atualizador a possibilidade de registrar as alte-
 #               rações
+# Versão 0.3.3: Ajuste para atualizar quando existir somente versao total
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -76,7 +30,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.3.2"
+versaoPrograma="0.3.3"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -184,6 +138,7 @@ ch_baixar_automaticamente=0    # baixar os pacotes das atualizacoes
 ch_instalar_automaticamente=0  # instala as atualizacoes pelo cron
 ch_todos_podem_atualizar=0     # todos os usuários podem atualizar
 ch_normal_atu_help=1           # para atualizar o help
+ch_release_existe=""           # para validar se existe apenas versao total
 #
 ### Fim da configuração - NÃO EDITE DAQUI PARA BAIXO
 #
@@ -328,8 +283,6 @@ readonly red='\e[1;91m'
 readonly green='\e[1;92m'
 readonly yellow='\e[1;93m'
 readonly blue='\e[1;94m'
-readonly magenta='\e[1;95m'
-readonly cyan='\e[1;96m'
 readonly no_color='\e[0m'
 
 ################################################################################
@@ -352,9 +305,9 @@ info_msg() {
 # exibi mensagens de alerta em amarelo
 alerta_msg() {
     if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${yellow}[ALERTA] - $1${no_color}"
+        echo -e "${yellow}[ATENCAO] - $1${no_color}"
     else
-        echo "[ALERTA] - $1"
+        echo "[ATENCAO] - $1"
     fi
 }
 # exibe mensagens em vermelho
@@ -381,31 +334,6 @@ yellow_msg() {
         echo "$1"
     fi
 }
-# exibi mensagens em azul
-blue_msg() {
-    if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${blue}$1${no_color}"
-    else
-        echo "$1"
-    fi
-}
-# exibi mensagens em magenta
-magenta_msg() {
-    if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${magenta}$1${no_color}"
-    else
-        echo "$1"
-    fi
-}
-# exibi mensagens em ciano
-cyan_mgs() {
-    if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${cyan}$1${no_color}"
-    else
-        echo "$1"
-    fi
-}
-#
 
 mensagem_saida() {
     tput smso
@@ -419,10 +347,8 @@ mensagem_saida() {
     tput rmso
     stty sane
 }
-
 ### SEGURANÇA E VALIDAÇÕES
 #
-
 interromper() {
     echo -e "\nPROCESSO INTERROMPIDO!"
     echo -e "\nDESEJA REALMENTE ABORTAR? [S/n]"
@@ -466,19 +392,7 @@ interromper() {
     fi
 
 }
-
 trap 'interromper' SIGINT SIGTERM SIGHUP
-
-validar_linux() {
-    local_abortado="Validacao LINUX"
-    if [ ! -e /etc/debian_version ]; then
-        clear
-        echo -e "FAVOR ACIONAR O SETOR DE TECNOLOGIA E O ADMINISTRATIVO PARA AGENDAR \nA ATUALIZACAO DO SISTEMA OPERACIONAL DO SEU SERVIDOR."
-        #echo "ATUALIZADOR CONFIGURADO PARA SERVIDORES DEBIAN"
-        sleep 2
-        #exit
-    fi
-}
 ### Controle de acesso
 verificar_usuario() {
     if [[ "$USER" != "avanco" && "$USER" != "root" ]]; then
@@ -495,12 +409,10 @@ verificar_usuario() {
         exit 0
     fi
 }
-
 iniciar() {
     local_abortado="Inicio da atualizacao"
     while true; do
         read -p "DESEJA INICIAR A ATUALIZACAO? [S/n] " confirma_inicio
-
         case $confirma_inicio in
         "S" | "s")
             echo "Atualizador Integral"
@@ -542,17 +454,14 @@ usuario_permitido() {
                 break
             fi
         done
-
         IFS=' '
         read -r -a lista_autorizados <<<"$autorizados"
-
         for user in "${lista_autorizados[@]}"; do
             if [[ "$user" == "$usuario_atual" ]]; then
                 permitido_att=true
                 break
             fi
         done
-
         if [[ "$permitido_att" = false ]]; then
             echo "ESTE USUARIO NAO TEM PERMISSAO DE EXECUTAR ESSA ROTINA"
             echo "" >>"$auditoria"
@@ -568,7 +477,6 @@ usuario_permitido() {
         fi
     fi
 }
-
 # funcao para verificar se o sistema foi atualizado no dia
 verifica_atualizacao() {
     local_abortado="Verificando atualizacao"
@@ -584,7 +492,6 @@ verifica_atualizacao() {
             tput rmso
             stty sane
             mensagem_saida
-
             echo "" >>$auditoria
             echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
             echo "PROGRAMA: $(basename "$0") --> atualizar integral               $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
@@ -594,67 +501,12 @@ verifica_atualizacao() {
             echo "USUARIO: $USER" >>"$auditoria"
             echo "--------------------------------------------------------------------------------" >>$auditoria
             echo "" >>"$auditoria"
-
-
             sleep 2
             exit 0
         else
             echo "Atualizando..." >/dev/null
             cronometro_start_volta=$SECONDS
         fi
-    fi
-}
-
-notificar_usuarios() {
-    while true; do
-        for usuario in $(who | awk '{print $1}' | sort | uniq); do
-            if [[ ! " ${usuarios_permitidos[@]} " =~ " ${usuario} " ]]; then
-                if ps -u $usuario -o cmd --no-headers | grep -q "$programa_validar"; then
-                    echo -e "Favor encerrar sua sessao. O Integral sera atualizado em breve. \nAperte 'ESC' ate sair do INTEGRAL! \nDIGITE 10 para voltar a linha de comando! \nDEPOIS DIGITE 'exit'" | wall
-                fi
-            fi
-        done
-        sleep 90
-    done
-}
-
-usuarios_usando_programa() {
-    ps ax -o user=,cmd= | grep "$programa_validar" | grep -v 'grep' | awk '{print $1}' | sort | uniq
-}
-
-contar_usuarios_usando_programa() {
-    ps ax | grep "$programa_validar" | grep -v 'grep' | wc -l
-}
-
-verifica_logados() {
-    local_abortado="Verificando usuarios logados"
-    if [[ "$flag_load_parametros" == "true" ]] && [[ "$deslogar_usuarios" == "S" ]]; then
-        notificar_usuarios &
-        NOTIFICAR_PID=$!
-
-        # Esperar até que todos os usuários saiam
-        while true; do
-            if [ $(contar_usuarios_usando_programa) -eq 0 ]; then
-                clear
-                kill $NOTIFICAR_PID
-                wait $NOTIFICAR_PID 2>/dev/null
-                echo "NENHUM USUARIO LOGADO. INICIANDO A ATUALIZACAO DO SERVIDOR..."
-                break
-            fi
-            clear
-            echo "USUARIOS COM O INTEGRAL ABERTO: "
-            usuarios_usando_programa
-            echo "AGUARDANDO OS USUARIOS ENCERRAREM SUAS SESSOES..."
-            sleep 5
-        done
-    elif [[ "$flag_load_parametros" == "true" ]] && [[ "$deslogar_usuarios" == "N" ]]; then
-        #echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
-        echo "" >/dev/null
-    elif [[ "$flag_load_parametros" == "false" ]]; then
-        #echo "flag: $flag_load_parametros e usuario: $deslogar_usuarios"
-        echo "" >/dev/null
-    else
-        echo "" >/dev/null
     fi
 }
 
@@ -725,7 +577,6 @@ verificar_dia() {
         echo "" >>"$auditoria"
         exit 0
     fi
-
     sleep 3
 }
 
@@ -1139,7 +990,7 @@ validar_ver_rel() {
     local_abortado="Verificando se esta na versao atual"
     baixar_controle
     novoPortal=$(grep -oP '(?<=Versao atual: )\d+' "$controle_ver_rel")
-    letraRelease=$(grep -oP '(?<=Release atual: )[A-Z]' "$controle_ver_rel")
+    letraRelease=$(grep -oP '(?<=Release atual: )[A-Z]+' "$controle_ver_rel")
     data_release=$(grep -oP '(?<=Release atual: [A-Z] )\d{6}' "$controle_ver_rel")
 
     data_tratada_infVersaoLoja=$(tratar_datas "$inf_versaoLoja")
@@ -1174,6 +1025,13 @@ validar_ver_rel() {
             flag_release=true
             echo "$atualizado_flag" >$controle_flag/controle_flag.txt
             flag_esta_atualizado=true
+        elif [[ "$inf_releaseLoja" == "VAZIO" ]]; then
+            echo "INTEGRAL ESTA ATUALIADO"
+            atualizado_flag=true
+            flag_release=true
+            echo "$atualizado_flag" >$controle_flag/controle_flag.txt
+            flag_esta_atualizado=true
+            letraRelease=""
         else
             echo "RELEASE INVALIDA!"
         fi
@@ -1189,7 +1047,7 @@ arquivo_versao_release_atual() {
     versao_Portal=$(grep -oP '(?<=Versao atual: )\d+' "$controle_ver_rel")
     release_busca=$(grep -oP '(?<=Release atual: [A-Z] )\d{6}' "$controle_ver_rel")
     data_release="$release_busca"
-    release_busca_letra=$(grep -oP '(?<=Release atual: )[A-Z]' "$controle_ver_rel")
+    release_busca_letra=$(grep -oP '(?<=Release atual: )[A-Z]+' "$controle_ver_rel")
 }
 
 # -----------------------------------------------------------------------------
@@ -1221,9 +1079,6 @@ manter_log_atual() {
     #echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/log_$MES_ANO.log"
     echo "" >>"$local_log/log_$mes_ano.log"
 }
-#
-## Funcoes de log
-#
 # Funcao para controlar registro de logs
 manter_log_erro_atual() {
     log_erro_atual=$ano_atual$mes_atual
@@ -1243,7 +1098,6 @@ manter_log_erro_atual() {
     #echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/erro_$MES_ANO.log"
     echo "" >>"$local_log/erro_$mes_ano.log"
 }
-
 # Funcao para criar e ou atualizar o arquivo de log com as informacoes padroes
 log_info() {
     manter_log_atual
@@ -1266,8 +1120,6 @@ log_error() {
     local error="$1"
     echo "$(date '+%d/%m/%Y %H:%M:%S') - $error" >>"$erro_log_file"
 }
-
-# ------------------------------------------------------------------------------
 
 # Funcao para converter datas no formato YYYYMMDD, para ser usado em equacoes de comparacao, maior, menor e igual
 converter_datas() {
@@ -1348,7 +1200,7 @@ baixar_versao() {
         fi
         return 0
     else
-        erro_msg "NAO FOI POSSIVEL ENCONTRAR O LINK PARA DOWNLOAD DA RELEASE!"
+        erro_msg "NAO FOI POSSIVEL ENCONTRAR O LINK PARA DOWNLOAD DA VERSAO!"
     fi
     sleep 2
 }
@@ -1378,36 +1230,41 @@ baixar_release() {
         exit 1
     fi
 
-    URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
-    if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
-        echo "REALIZANDO DOWNLOAD DA RELEASE!"
-        curl -k -# -o "$pasta_destino/$releaseBusca-$ver-a-$rel.rar" "$URL_ATUALIZADO_RELEASE"
-        echo -e "\nDOWNLOAD COMPLETO!"
-
-        arquivo_release_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "$releaseBusca-$ver-a-$rel.rar")
-        echo -e "\n\nREALIZANDO TESTE DE INTEGRIDADE"
-        sleep 1
-
-        testar_arquivos_release=$(rar t "$arquivo_release_atual" | wc -l)
-        release_release_testando=0
-
-        if rar t $arquivo_release_atual | while read -r line; do
-            ((release_atual_testando++))
-            porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
-            #barra_progresso $porcentagem
-        done; then
-
-            release_download=$(tratar_datas "$release_busca")
-            echo -e "\n\nDOWNLOAD DA RELEASE '$letraRelease, DO DIA $release_download' CONCLUIDO E PROGRAMAS 'TESTADOS'!!"
-        else
-            echo "Arquivo corrompido!"
-            echo "Arquivo de release '$release_download - $release' corrompido!"
-        fi
-
-        echo "PACOTE DE ATUALIZACAO BAIXADO!"
-        return 0
+    if [[ "$ch_release_existe" = false ]]; then
+        echo
+        letraRelease=""
     else
-        erro_msg "NAO FOI POSSIVEL ENCONTRAR O LINK PARA DOWNLOAD DA RELEASE!"
+        URL_ATUALIZADO_RELEASE="$URL_BUSCAR_RELEASE$ver-a-$rel.rar"
+        if curl -k --output /dev/null --silent --head --fail "$URL_ATUALIZADO_RELEASE"; then
+            echo "REALIZANDO DOWNLOAD DA RELEASE!"
+            curl -k -# -o "$pasta_destino/$releaseBusca-$ver-a-$rel.rar" "$URL_ATUALIZADO_RELEASE"
+            echo -e "\nDOWNLOAD COMPLETO!"
+
+            arquivo_release_atual=$(find "$pasta_destino" -maxdepth 1 -type f -name "$releaseBusca-$ver-a-$rel.rar")
+            echo -e "\n\nREALIZANDO TESTE DE INTEGRIDADE"
+            sleep 1
+
+            testar_arquivos_release=$(rar t "$arquivo_release_atual" | wc -l)
+            release_release_testando=0
+
+            if rar t $arquivo_release_atual | while read -r line; do
+                ((release_atual_testando++))
+                porcentagem=$((arquivo_release_testando * 100 / testar_arquivos_release))
+                #barra_progresso $porcentagem
+            done; then
+
+                release_download=$(tratar_datas "$release_busca")
+                echo -e "\n\nDOWNLOAD DA RELEASE '$letraRelease, DO DIA $release_download' CONCLUIDO E PROGRAMAS 'TESTADOS'!!"
+            else
+                echo "Arquivo corrompido!"
+                echo "Arquivo de release '$release_download - $release' corrompido!"
+            fi
+
+            echo "PACOTE DE ATUALIZACAO BAIXADO!"
+            return 0
+        else
+            erro_msg "NAO FOI POSSIVEL ENCONTRAR O LINK PARA DOWNLOAD DA RELEASE!"
+        fi
     fi
     sleep 1
 }
@@ -1444,15 +1301,31 @@ baixar_controle() {
             clear
             echo "DETALHES DA VERSAO E RELEASE OBTIDOS!"
             novoPortal=$(grep -oP '(?<=Versao atual: )\d+' "$controle_ver_rel")
-            letraRelease=$(grep -oP '(?<=Release atual: )[A-Z]' "$controle_ver_rel")
+            letraRelease=$(grep -oP '(?<=Release atual: )[A-Z]+' "$controle_ver_rel")
             data_release=$(grep -oP '(?<=Release atual: [A-Z] )\d{6}' "$controle_ver_rel")
             data_tratada_novoPortal=$(tratar_datas "$novoPortal")
-            data_tratada_dt_release=$(tratar_datas "$data_release")
+
             echo ""
             echo "ATUALIZACAO DISPONIVEL NO PORTAL AVANCO"
             echo "VERSAO ATUAL: $data_tratada_novoPortal"
-            echo "RELEASE ATUAL: $data_tratada_dt_release - $letraRelease"
-            echo ""
+
+            # verifica se a release esta marcada como "VAZIO"
+            if [[ "$letraRelease" == "VAZIO" ]]; then
+                letraRelease="VAZIO"
+                data_release="VAZIO"
+                ch_release_existe=false
+                echo "RELEASE ATUAL: "
+                echo
+                alerta_msg "Somente a versao sera considerada para atualizacao."
+                echo
+            else
+                
+                data_tratada_dt_release=$(tratar_datas "$data_release")
+                echo "RELEASE ATUAL: $data_tratada_dt_release - $letraRelease"
+                echo ""
+                ch_release_existe=true
+            fi
+            
         else
             echo "ERRO AO OBTER VERSAO E RELEASE RECENTES!"
             rm -f /u/sist/controle/versao_release.txt
@@ -1529,36 +1402,44 @@ atualizar() {
                 rm -rf "$arquivo_versao_atual"
                 info_msg "VERSAO ATUALIZADA PARA: '$novoPortal'"
                 sleep 1
-
-                if [ -z "$arquivo_release_atual" ]; then
-                    erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
-                    flag_pacote_descompactado=false
-                    echo "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-                    return
-                else
-                    local_abortado="Func. Atualizar: Descompactando Release"
-                    total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
-                    current_file_release=0
-                    alerta_msg "DESCOMPACTANDO A 'RELEASE'... AGUARDE!!!"
-                    if rar e -o+ "$arquivo_release_atual" "$DIRCERTO" | while read -r line; do
-                        ((current_file_release++))
-                        abortado_controle="descompactar"
-                        porcento=$((current_file_release * 100 / total_files_release))
-                        barra_progresso $porcento
-                    done; then
-                        info_msg "ATUALIZACAO DE RELEASE CONCLUIDA!"
-                        flag_pacote_descompactado=true
-                        rm -rf "$arquivo_release_atual"
-                    else
-                        erro_msg "ERRO AO ATUALIZAR!"
-                        flag_pacote_descompactado=false
-                        echo "ERRO AO ATUALIZAR INTEGRAL! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-                        exit 1
-                    fi
-                    echo ""
-                    info_msg "RELEASE ATUALIZADA PARA: $letraRelease"
+                if [[ "$ch_release_existe" =  false ]]; then
+                    # se for false, condições para serem gravadas
                     flag_pacote_descompactado=true
-                    inf_releaseLoja="$letraRelease"
+                    inf_releaseLoja=""
+                    data_release=""
+                    letraRelease=""
+
+                else
+                    if [ -z "$arquivo_release_atual" ]; then
+                        erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
+                        flag_pacote_descompactado=false
+                        echo "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+                        return
+                    else
+                        local_abortado="Func. Atualizar: Descompactando Release"
+                        total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                        current_file_release=0
+                        alerta_msg "DESCOMPACTANDO A 'RELEASE'... AGUARDE!!!"
+                        if rar e -o+ "$arquivo_release_atual" "$DIRCERTO" | while read -r line; do
+                            ((current_file_release++))
+                            abortado_controle="descompactar"
+                            porcento=$((current_file_release * 100 / total_files_release))
+                            barra_progresso $porcento
+                        done; then
+                            info_msg "ATUALIZACAO DE RELEASE CONCLUIDA!"
+                            flag_pacote_descompactado=true
+                            rm -rf "$arquivo_release_atual"
+                        else
+                            erro_msg "ERRO AO ATUALIZAR!"
+                            flag_pacote_descompactado=false
+                            echo "ERRO AO ATUALIZAR INTEGRAL! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+                            exit 1
+                        fi
+                        echo ""
+                        info_msg "RELEASE ATUALIZADA PARA: $letraRelease"
+                        flag_pacote_descompactado=true
+                        inf_releaseLoja="$letraRelease"
+                    fi
                 fi
             else
                 local_abortado="Func. Atualizar: Tentativa de descompactar"
@@ -1568,40 +1449,47 @@ atualizar() {
             fi
         fi
     elif [ "$inf_versaoLoja" == "$novoPortal" ]; then
-        if [ "$inf_releaseLoja" != "$letraRelease" ]; then
-            if [ -z "$arquivo_release_atual" ]; then
-                erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
-                flag_pacote_descompactado=false
-                echo "Pacote de atualizacao da release nao encontrado! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-                return
-            else
-                local_abortado="Func. Atualizar: Descompactando Release"
-                alerta_msg "DESCOMPACTANDO A 'RELEASE'... AGUARDE!!!"
-                total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
-                current_file_release=0
-                if rar e -o+ "$arquivo_release_atual" "$DIRCERTO" | while read -r line; do
-                    ((current_file_release++))
-                    abortado_controle="descompactar"
-                    porcento=$((current_file_release * 100 / total_files_release))
-                    barra_progresso $porcento
-                done; then
-                    info_msg "ATUALIZACAO DE RELEASE CONCLUIDA!"
-                    flag_pacote_descompactado=true
-                    rm -rf "$arquivo_release_atual"
-                    inf_releaseLoja="$letraRelease"
-                else
-                    local_abortado="Func. Atualizar: Tentativa descompactar Release"
-                    alerta_msg "NOVA RELEASE DISPONIVEL, MAS NAO FOI POSSIVEL ATUALIZAR. ENTRE EM CONTATO COM O SUPORTE AVANCO!"
-                    echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
-                    exit 1
-                fi
-                echo
-                info_msg "ATUALIZACAO CONCLUIDA COM SUCESSO."
-            fi
+        if [[ "$ch_release_existe" =  false ]]; then
+            echo "INTEGRAL ATUALIZADO!"
+            flag_pacote_descompactado=true
+            inf_releaseLoja=""
+            data_release=""
         else
-            local_abortado="Func. Atualizar: Validado que esta atualziado"
-            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE!"
-            echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$log_file
+            if [ "$inf_releaseLoja" != "$letraRelease" ]; then
+                if [ -z "$arquivo_release_atual" ]; then
+                    erro_msg "PACOTE DE ATUALIZACAO DA RELEASE NAO ENCONTRADO"
+                    flag_pacote_descompactado=false
+                    echo "Pacote de atualizacao da release nao encontrado! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+                    return
+                else
+                    local_abortado="Func. Atualizar: Descompactando Release"
+                    alerta_msg "DESCOMPACTANDO A 'RELEASE'... AGUARDE!!!"
+                    total_files_release=$(rar lb "$arquivo_release_atual" | wc -l)
+                    current_file_release=0
+                    if rar e -o+ "$arquivo_release_atual" "$DIRCERTO" | while read -r line; do
+                        ((current_file_release++))
+                        abortado_controle="descompactar"
+                        porcento=$((current_file_release * 100 / total_files_release))
+                        barra_progresso $porcento
+                    done; then
+                        info_msg "ATUALIZACAO DE RELEASE CONCLUIDA!"
+                        flag_pacote_descompactado=true
+                        rm -rf "$arquivo_release_atual"
+                        inf_releaseLoja="$letraRelease"
+                    else
+                        local_abortado="Func. Atualizar: Tentativa descompactar Release"
+                        alerta_msg "NOVA RELEASE DISPONIVEL, MAS NAO FOI POSSIVEL ATUALIZAR. ENTRE EM CONTATO COM O SUPORTE AVANCO!"
+                        echo "Nova Release Disponivel, mas nao foi possivel atualizar. Entre em contato com o suporte Avanco! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+                        exit 1
+                    fi
+                    echo
+                    info_msg "ATUALIZACAO CONCLUIDA COM SUCESSO."
+                fi
+            else
+                local_abortado="Func. Atualizar: Validado que esta atualziado"
+                echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE!"
+                echo "INTEGRAL JA ESTA COM A RELEASE MAIS RECENTE! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$log_file
+            fi
         fi
     else
         local_abortado="Func. Atualizar: Validado que esta atualizado"
@@ -1637,7 +1525,6 @@ gravando_atualizacoes() {
         echo "VERSAO INTEGRAL INSTALADA: $data_exibir"
         echo "RELEASE INTEGRAL INSTALADA: $inf_releaseLoja"
         echo "DATA DA RELEASE INSTALADA: $data_rel_exibir"
-
         echo "DATA: $data_configuracao" >"$info_loja_txt"
         echo "VERSAO COBOL: $inf_versaoCobol" >>"$info_loja_txt"
         echo "VERSAO INTEGRAL: $inf_versaoLoja" >>"$info_loja_txt"
@@ -1670,11 +1557,6 @@ gravando_atualizacoes() {
     sleep 2
 }
 ### Funções extras
-#
-
-# Função para debugar o Atualizador
-# criar ainda #FIXME
-
 ## Barra de progresso
 barra_progresso() {
     local progresso=$1
@@ -1844,7 +1726,7 @@ testar_atualizado() {
 
     # gravando detalhes do versao-release.gnt
     local possivel_hora=$(ls -lh versao-release.gnt | awk '{print $8}')
-    local possivel_dia=$(stat -c %y versao-release.gnt | cut -d'-' -f3 | cut -d'-' -f1)
+    local possivel_dia=$(stat -c %y versao-release.gnt | cut -d'-' -f3 | cut -d' ' -f1)
     local possivel_mes=$(stat -c %y versao-release.gnt | cut -d'-' -f2)
     local possivel_ano=$(stat -c %y versao-release.gnt | cut -d'-' -f1)
 
@@ -1873,7 +1755,7 @@ testar_atualizado() {
             echo "- INFORMACAO GRAVADA EM: $(date +'%d/%m/%Y') - $(date +'%H:%M:%S')" >>$log_file
             echo "- POSSIVEL ATUALIZACAO MANUAL" >>$log_file
             echo "- DETALHES DE QUANDO OCORREU POSSIVEL ATUALIZACAO: " >>$log_file
-            echo "- DATA: $possivel_dia/$possivel_mes/$possivel_ano - HORA: $possivel_hora"
+            echo "- DATA: $possivel_dia/$possivel_mes/$possivel_ano - HORA: $possivel_hora" >>$log_file
             echo "" >>$log_file
             echo "- VERSAO COBOL: $cobol_gravado" >>$log_file
             echo "- POSSIVEL VERSAO INTEGRAL ANTES: $versaoLoja_gravada">>$log_file
@@ -1884,7 +1766,6 @@ testar_atualizado() {
             echo "################################################################################">>$log_file
         fi
     fi
-
 }
 
 parametros() {
@@ -2567,7 +2448,6 @@ menu_6() {
             #yellow_msg "!!!ATENCAO!!!"
             #yellow_msg "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
             #yellow_msg "QUE O INTEGRAL SERA ATUALIZADO EM INSTANTES!!!"
-            #verifica_logados
             ;;
         9)
             menu_principal
@@ -3120,14 +3000,12 @@ ativar_no_cron() {
 chamar_atualizacao() {
     clear
     echo "ATUALIZAR"
-    #validar_linux
-    #verificar_dia
+    verificar_dia
     carregar_parametros
     usuario_permitido
     checar_internet
     verifica_atualizacao
     iniciar
-    verifica_logados
     ler_arquivo_texto
     limpa_exec
     seguranca
@@ -3625,18 +3503,14 @@ case "$1" in
     ;;
 esac
 
-###############################
-
 # Chamandos as funcoes na ordem
 testar_cores
-#validar_linux
 verificar_dia
 carregar_parametros
 usuario_permitido
 checar_internet
 verifica_atualizacao
 iniciar
-#verifica_logados
 limpa_exec
 seguranca
 ler_arquivo_texto >/dev/null 2>&1
