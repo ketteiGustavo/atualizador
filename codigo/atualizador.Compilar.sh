@@ -1013,7 +1013,14 @@ validar_ver_rel() {
         atualizado_flag=true
         flag_versao=true
         echo "$atualizado_flag" >$controle_flag/controle_flag.txt
-        if [[ "$inf_releaseLoja" < "$letraRelease" ]]; then
+        if [[ "$letraRelease" == "VAZIO" ]]; then
+            echo "INTEGRAL ESTA ATUALIADO"
+            echo "mostrando letra $letraReleas"
+            atualizado_flag=true
+            flag_release=true
+            echo "$atualizado_flag" >$controle_flag/controle_flag.txt
+            flag_esta_atualizado=true
+        elif [[ "$inf_releaseLoja" < "$letraRelease" ]]; then
             echo "NECESSARIO ATUALIZAR APENAS RELEASE!!!"
             atualizado_flag=false
             flag_release=false
@@ -1024,13 +1031,6 @@ validar_ver_rel() {
             flag_release=true
             echo "$atualizado_flag" >$controle_flag/controle_flag.txt
             flag_esta_atualizado=true
-        elif [[ "$inf_releaseLoja" == "$letraRelease" ]]; then
-            echo "INTEGRAL ESTA ATUALIADO"
-            atualizado_flag=true
-            flag_release=true
-            echo "$atualizado_flag" >$controle_flag/controle_flag.txt
-            flag_esta_atualizado=true
-            letraRelease=""
         else
             echo "RELEASE INVALIDA!"
         fi
