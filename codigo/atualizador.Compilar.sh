@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.3.3
+# DATA: 13/04/2024 11:27 - Versao 0.3.3b
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -22,6 +22,8 @@
 #               garantindo ao atualizador a possibilidade de registrar as alte-
 #               rações
 # Versão 0.3.3: Ajuste para atualizar quando existir somente versao total
+# Versão 0.3.3a: Ajuste para validar está atualizado corrigido
+# Versão 0.3.3b: correção no if de teste
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -30,7 +32,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 #
-versaoPrograma="0.3.3"
+versaoPrograma="0.3.3b"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -481,32 +483,28 @@ usuario_permitido() {
 verifica_atualizacao() {
     local_abortado="Verificando atualizacao"
     ler_arquivo_texto
-    if [ -f "$info_loja_txt" ]; then
-        ultima_atu=$(grep "DATA RELEASE: " "$info_loja_txt" | cut -d ' ' -f 2)
-        if [ "$ultima_atu" == "$(date +'%d%m%y')" ] || [ "$flag_esta_atualizado" = true ]; then
-
-            clear
-            tput smso
-            echo "                           O INTEGRAL ESTA ATUALIZADO                           "
-            echo ""
-            tput rmso
-            stty sane
-            mensagem_saida
-            echo "" >>$auditoria
-            echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
-            echo "PROGRAMA: $(basename "$0") --> atualizar integral               $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
-            echo "--------------------------------------------------------------------------------" >>$auditoria
-            echo "INTEGRAL ESTAVA ATUALIZADO NA TENTATIVA DE ATUALIZACAO" >>$auditoria
-            echo "--------------------------------------------------------------------------------" >>$auditoria
-            echo "USUARIO: $USER" >>"$auditoria"
-            echo "--------------------------------------------------------------------------------" >>$auditoria
-            echo "" >>"$auditoria"
-            sleep 2
-            exit 0
-        else
-            echo "Atualizando..." >/dev/null
-            cronometro_start_volta=$SECONDS
-        fi
+    if [ "$flag_esta_atualizado" = true ]; then
+        clear
+        tput smso
+        echo "                           O INTEGRAL ESTA ATUALIZADO                           "
+        echo ""
+        tput rmso
+        stty sane
+        mensagem_saida
+        echo "" >>$auditoria
+        echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >>$auditoria
+        echo "PROGRAMA: $(basename "$0") --> atualizar integral               $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "INTEGRAL ESTAVA ATUALIZADO NA TENTATIVA DE ATUALIZACAO" >>$auditoria
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "USUARIO: $USER" >>"$auditoria"
+        echo "--------------------------------------------------------------------------------" >>$auditoria
+        echo "" >>"$auditoria"
+        sleep 2
+        exit 0
+    else
+        echo "Atualizando..." >/dev/null
+        cronometro_start_volta=$SECONDS
     fi
 }
 
@@ -958,6 +956,7 @@ ler_arquivo_texto() {
         inf_versaoLoja=$(cobrun versao-release.gnt | grep -oP '\d{2}/\d{2}/\d{2}' | tr -d '/')
         inf_releaseLoja=$(cobrun versao-release.gnt | grep -oP '[a-zA-Z]$')
         inf_releaseLojaAntes="$inf_releaseLoja"
+
         data_release_servidor=$(grep -oP '(?<=DATA RELEASE: )\d+' "$info_loja_txt")
     else
         # verifica se o arquivo existe
@@ -1025,7 +1024,7 @@ validar_ver_rel() {
             flag_release=true
             echo "$atualizado_flag" >$controle_flag/controle_flag.txt
             flag_esta_atualizado=true
-        elif [[ "$inf_releaseLoja" == "VAZIO" ]]; then
+        elif [[ "$inf_releaseLoja" == "$letraRelease" ]]; then
             echo "INTEGRAL ESTA ATUALIADO"
             atualizado_flag=true
             flag_release=true
@@ -1316,7 +1315,7 @@ baixar_controle() {
                 ch_release_existe=false
                 echo "RELEASE ATUAL: "
                 echo
-                alerta_msg "Somente a versao sera considerada para atualizacao."
+                alerta_msg "Somente a versao sera considerada nessa atualizacao."
                 echo
             else
                 
