@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.3.3b
+# DATA: 13/04/2024 11:27 - Versao 0.3.5
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -24,6 +24,10 @@
 # Versão 0.3.3: Ajuste para atualizar quando existir somente versao total
 # Versão 0.3.3a: Ajuste para validar está atualizado corrigido
 # Versão 0.3.3b: correção no if de teste
+# Versão 0.3.4: Ajuste para liberar atualizar com condição pós horário atiava.
+# Versão 0.3.4a: Correção de mostrar o nome do usuário durante tentativa de atu-
+#                alizar se ele não estiver permitido.
+# Versão 0.3.5: Ajustes de novas cores e condições de cores
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -31,8 +35,8 @@
 # manual e dar permissao em /u/sist/exec/*gnt.
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
-#
-versaoPrograma="0.3.3b"
+
+versaoPrograma="0.3.5"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -274,24 +278,35 @@ resultado="" # armazena a saida do comando cobrun, para separar somente a versao
 testar_cores() {
     if [ "$(tput colors)" -ge 8 ]; then
         USAR_CORES=1
+        VERMELHO="\e[31m"
+        VERDE="\e[32m"
+        AMARELO="\e[33m"
+        AZUL="\e[34m"
+        MAGENTA="\e[35m"
+        CIANO="\e[36m"
+        CINZA="\e[37m"
+        NEGRITO="\e[1m"
+        PADRAO="\e[0m"
     else
         USAR_CORES=0
+        USAR_CORES=0
+        VERMELHO=""
+        VERDE=""
+        AMARELO=""
+        AZUL=""
+        MAGENTA=""
+        CIANO=""
+        CINZA=""
+        NEGRITO=""
+        PADRAO=""
     fi
 }
-################################################################################
-## Criando opcoes visuais
-## Cores
-readonly red='\e[1;91m'
-readonly green='\e[1;92m'
-readonly yellow='\e[1;93m'
-readonly blue='\e[1;94m'
-readonly no_color='\e[0m'
 
 ################################################################################
 # exibe mensagens de erro em vermelho
 erro_msg() {
     if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${red}[ERROR] - $1${no_color}"
+        echo -e "${VERMELHO}[ERROR] - $1${PADRAO}"
     else
         echo "[ERROR] - $1"
     fi
@@ -299,7 +314,7 @@ erro_msg() {
 # exibi mensagens de informacao em verde
 info_msg() {
     if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${green}[INFO] - $1${no_color}"
+        echo -e "${VERDE}[INFO] - $1${PADRAO}"
     else
         echo "[INFO] - $1"
     fi
@@ -307,7 +322,7 @@ info_msg() {
 # exibi mensagens de alerta em amarelo
 alerta_msg() {
     if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${yellow}[ATENCAO] - $1${no_color}"
+        echo -e "${AMARELO}[ATENCAO] - $1${PADRAO}"
     else
         echo "[ATENCAO] - $1"
     fi
@@ -315,15 +330,7 @@ alerta_msg() {
 # exibe mensagens em vermelho
 red_msg() {
     if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${red}$1${no_color}"
-    else
-        echo "$1"
-    fi
-}
-# exibi mensagens em verde
-green_msg() {
-    if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${green}$1${no_color}"
+        echo -e "${VERMELHO}$1${PADRAO}"
     else
         echo "$1"
     fi
@@ -331,7 +338,7 @@ green_msg() {
 # exibi mensagens em amarelo
 yellow_msg() {
     if [ "$USAR_CORES" -eq 1 ]; then
-        echo -e "${yellow}$1${no_color}"
+        echo -e "${AMARELO}$1${PADRAO}"
     else
         echo "$1"
     fi
@@ -465,7 +472,7 @@ usuario_permitido() {
             fi
         done
         if [[ "$permitido_att" = false ]]; then
-            echo "ESTE USUARIO NAO TEM PERMISSAO DE EXECUTAR ESSA ROTINA"
+            echo "$USER, O SEU USUARIO NAO TEM PERMISSAO DE EXECUTAR ESSA ROTINA"
             echo "" >>"$auditoria"
             echo "================================================================================" >>"$auditoria"
             echo "PROGRAMA: $(basename "$0") --> atualizar integral               $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
@@ -511,28 +518,7 @@ verifica_atualizacao() {
 # Funcao para verificar o dia da semana e hora
 verificar_dia() {
     local_abortado="Validando dia"
-
-    if [ $hora_lida -ge 18 ]; then
-        clear
-        tput smso
-        echo "               FAVOR EXECUTAR A ATUALIZACAO EM HORARIO COMERCIAL!               "
-        echo ""
-        tput rmso
-        stty sane
-        mensagem_saida
-        echo "" >>"$auditoria"
-        echo "================================================================================" >>"$auditoria"
-        echo "PROGRAMA: $(basename "$0") --> atualizar integral               $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
-        echo "--------------------------------------------------------------------------------" >>$auditoria
-        echo "TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>"$auditoria"
-        echo "--------------------------------------------------------------------------------" >>$auditoria
-        echo "USUARIO: $USER" >>"$auditoria"
-        echo "--------------------------------------------------------------------------------" >>$auditoria
-        echo "" >>"$auditoria"
-
-
-        exit 0
-    fi
+    carregar_parametros
 
     if [ $dia_semana_lido -eq 5 ] || [ $dia_semana_lido -eq 6 ] || [ $dia_semana_lido -eq 7 ]; then
         clear
@@ -552,7 +538,31 @@ verificar_dia() {
         echo "USUARIO: $USER" >>"$auditoria"
         echo "--------------------------------------------------------------------------------" >>$auditoria
         echo "" >>"$auditoria"
-        exit 0
+        exit 1
+    fi
+
+    if [[ "$permitir_pos18" = "S" ]] ; then
+        return
+    else
+        if [ $hora_lida -ge 18 ]; then
+            clear
+            tput smso
+            echo "               FAVOR EXECUTAR A ATUALIZACAO EM HORARIO COMERCIAL!               "
+            echo ""
+            tput rmso
+            stty sane
+            mensagem_saida
+            echo "" >>"$auditoria"
+            echo "================================================================================" >>"$auditoria"
+            echo "PROGRAMA: $(basename "$0") --> atualizar integral               $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "TENTATIVA DE ATUALIZAR INTEGRAL EM HORARIO NAO PERMITIDO" >>"$auditoria"
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "USUARIO: $USER" >>"$auditoria"
+            echo "--------------------------------------------------------------------------------" >>$auditoria
+            echo "" >>"$auditoria"
+            exit 1
+        fi
     fi
 
     if [ $dia_semana_lido -eq 4 ] && [ $hora_lida -ge 18 ]; then
@@ -573,9 +583,9 @@ verificar_dia() {
         echo "USUARIO: $USER" >>"$auditoria"
         echo "--------------------------------------------------------------------------------" >>$auditoria
         echo "" >>"$auditoria"
-        exit 0
+        exit 1
     fi
-    sleep 3
+    sleep 2
 }
 
 ## Online
@@ -1909,6 +1919,7 @@ carregar_parametros() {
         avisar_extras=$(grep -oP '^AVISAR EXTRAS - \K\S+' "$arquivo_parametros")
         baixar_automaticamente=$(grep -oP '^BAIXAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
         instalar_automaticamente=$(grep -oP '^INSTALAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
+        permitir_pos18=$(grep -oP '^PERMITIR ATUALIZAR APOS 18H - \K\S+' "$arquivo_parametros")
         todos_autorizados=$(grep -oP '^TODOS AUTORIZADOS - \K\S+' "$arquivo_parametros")
         autorizados=$(grep -oP '^AUTORIZADOS - \K.*' "$arquivo_parametros")
     else
