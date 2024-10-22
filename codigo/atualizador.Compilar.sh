@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.3.5
+# DATA: 13/04/2024 11:27 - Versao 0.4
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -28,6 +28,10 @@
 # Versão 0.3.4a: Correção de mostrar o nome do usuário durante tentativa de atu-
 #                alizar se ele não estiver permitido.
 # Versão 0.3.5: Ajustes de novas cores e condições de cores
+# Versão 0.3.5a: Apontando o Help para dev/null
+# Versão 0.3.6: Remoção de função de verificar programas no sist/exec, já esta
+#               rodando no cron toda madrugada com a função permissoes
+# Versão 0.4: Inicio de Refatoração de código
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -36,7 +40,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.3.5"
+versaoPrograma="0.4"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -82,35 +86,6 @@ Digite o nome do programa e a opcao desejada.
 --------------------------------------------------------------------------------
 "
 
-avanco="
-                                                          ##                    
-                                                        ####                    
-                                                      ######                    
-                                                    ########                    
-                        ------------              ##########                    
-                      ------                    ############                    
-                    ------                    ##############                    
-                      ----                  ################                    
-                      ----                ########  ########                    
-                        ----            ########    ########                    
-                          ----       #########      ########                    
-                            --    ########          ########                    
-                              --########            ########                    
-                              ##----                  ######                    
-                            ######----                ######                    
-                          ####        ----            ######                    
-                        ####              --                                    
-                      ####                    --                                
-                    ##                            --                            
-                  ##                                    --                      
-                                                                                
-                                                                                
-                                                                                
-     ##         ##  ##         ##         ##    ##        #####        #####
-   ##  ##       ##  ##       ##  ##       ####  ##       ##          ##    ##
-   ##  ##       ##  ##       ##  ##       ##  ####       ##          ##    ##
-   ##  ##         ##         ##  ##       ##    ##        #####       #####
-"
 ### Configuração do Programa atualizador
 CONFIG_ATUALIZADOR="/u/sist/controle/atualizador.config" # Parametrização do atualizador usando 0 e 1
 ### Use 0 (zero) para desligar as opções e 1 (um) para ligar
@@ -149,10 +124,6 @@ ch_release_existe=""           # para validar se existe apenas versao total
 ### Fim da configuração - NÃO EDITE DAQUI PARA BAIXO
 #
 ################################################################################
-
-blue='\e[1;94m'  # Azul
-green='\e[1;92m' # Verde
-no_color='\e[0m' # Reset da cor
 
 ###############################
 ### VARIAVEIS GLOBAIS
@@ -301,7 +272,37 @@ testar_cores() {
         PADRAO=""
     fi
 }
+testar_cores
 
+avanco="
+                                                          ${NEGRITO}${AZUL}##${PADRAO}                    
+                                                        ${NEGRITO}${AZUL}####${PADRAO}                    
+                                                      ${NEGRITO}${AZUL}######${PADRAO}                    
+                                                    ${NEGRITO}${AZUL}########${PADRAO}                    
+                        ${NEGRITO}${VERDE}------------${PADRAO}              ${NEGRITO}${AZUL}##########${PADRAO}                    
+                      ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}############${PADRAO}                    
+                    ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}##############${PADRAO}                    
+                     ${NEGRITO}${VERDE}-----${PADRAO}                  ${NEGRITO}${AZUL}################${PADRAO}                    
+                      ${NEGRITO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}########  ########${PADRAO}                    
+                        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}########    ########${PADRAO}                    
+                          ${NEGRITO}${VERDE}----${PADRAO}       ${NEGRITO}${AZUL}#########      ########${PADRAO}                    
+                            ${NEGRITO}${VERDE}--${PADRAO}    ${NEGRITO}${AZUL}########          ########${PADRAO}                    
+                              ${NEGRITO}${VERDE}--${PADRAO}${NEGRITO}${AZUL}########            ########${PADRAO}                    
+                              ${NEGRITO}${AZUL}##${PADRAO}${VERDE}----${PADRAO}                  ${NEGRITO}${AZUL}######${PADRAO}                    
+                            ${NEGRITO}${AZUL}######${PADRAO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}######${PADRAO}                    
+                          ${NEGRITO}${AZUL}####${PADRAO}        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}######${PADRAO}                    
+                        ${NEGRITO}${AZUL}####${PADRAO}              ${NEGRITO}${VERDE}--${PADRAO}                                    
+                      ${NEGRITO}${AZUL}####${PADRAO}                    ${NEGRITO}${VERDE}--${PADRAO}                                
+                    ${NEGRITO}${AZUL}##${PADRAO}                            ${NEGRITO}${VERDE}--${PADRAO}                            
+                  ${NEGRITO}${AZUL}##${PADRAO}                                    ${NEGRITO}${VERDE}--${PADRAO}                      
+                                                                                
+                                                                                
+                                                                                
+     ${NEGRITO}##         ##  ##         ##         ##    ##        #####        #####
+   ##  ##       ##  ##       ##  ##       ####  ##       ##          ##    ##
+   ##  ##       ##  ##       ##  ##       ##  ####       ##          ##    ##
+   ##  ##         ##         ##  ##       ##    ##        #####       #####${PADRAO}
+"
 ################################################################################
 # exibe mensagens de erro em vermelho
 erro_msg() {
@@ -381,10 +382,6 @@ interromper() {
             fi
         fi
         echo
-        if [[ "$abortado_controle" == "seguranca" ]]; then
-            rm -f "$teste_gnt_log"
-            rm -f "$validados_gnt"
-        fi
 
         if [[ "$abortado_controle" == "descompactar" ]]; then
             echo "restaurando"
@@ -415,7 +412,7 @@ verificar_usuario() {
         echo "$(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
         echo "USUARIO: $USER" >>"$auditoria"
         echo "" >>"$auditoria"
-        exit 0
+        exit 1
     fi
 }
 iniciar() {
@@ -650,70 +647,7 @@ fi
 rm -rf /u/rede/avanco/atualizacoes/versao*
 rm -rf /u/rede/avanco/atualizacoes/release*
 
-# Funcao para verificar permissao e grupo dos programas .gnt
-seguranca() {
-    local_abortado="Processo de validacao de permissoes"
-    abortado_controle="seguranca"
 
-    sleep 1
-    gnt_files=($(find "$local_gnt" -name "*.gnt"))
-
-    if [ ${#gnt_files[@]} -eq 0 ]; then
-        echo "Nenhum arquivo '.gnt' encontrado no diretorio '$local_gnt'." >/dev/null
-        if [ "$flag_renomea" = true ]; then
-            if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
-                mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
-            fi
-        fi
-        exit 1
-    fi
-
-    all_valide=true
-    total_files_teste=${#gnt_files[@]}
-    contagem_gnt=0
-
-    >"$teste_gnt_log"
-
-    for file in "${gnt_files[@]}"; do
-        clear
-        contagem_gnt=$((contagem_gnt + 1))
-        porc_gnt=$((contagem_gnt * 100 / total_files_teste))
-        echo "validando os programas... [$porc_gnt%]"
-        permissions=$(stat -c "%a" "$file")
-        if [ "$permissions" -ne 777 ]; then
-            #alerta_msg "O programa $file nao tem permissao total!"
-            echo "O programa $file nao tem permissao total!" >>$validados_gnt
-            #alerta_msg "SERA NECESSARIO CONCEDER PERMISSAO TOTAL!!!"
-            #all_valide=false
-            echo "$file" >>"$teste_gnt_log"
-        fi
-
-        dono=$(stat -c "%U %G" "$file")
-
-        if [ "$dono" != "avanco sist" ]; then
-            #alerta_msg "O programa $file nao esta com o usuario: avanco e o grupo: sist."
-            echo "O programa $file nao esta com o usuario: avanco e o grupo: sist." >>$validados_gnt
-            alerta_msg "Favor acionar o suporte Avanco!"
-            #all_valide=false
-            #echo "$file" >>"$teste_gnt_log"
-        fi
-    done
-
-    if [ "$all_valide" = true ]; then
-        info_msg "INICIANDO A ATUALIZACAO!"
-        rm -f "$teste_gnt_log"
-        rm -f "$validados_gnt"
-    else
-        alerta_msg "E necessario acionar o suporte Avanco para executar as permissoes"
-        if [ "$flag_renomea" = true ]; then
-            if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
-                mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
-            fi
-        fi
-        sleep 1
-        exit 1
-    fi
-}
 # Funcao para limpar qualquer arquivo ou pasta que esteja errado no sist/exec
 limpa_exec() {
     local_abortado="Limpando sist/exec"
@@ -780,36 +714,7 @@ checar_internet() {
 
     # Verificar se o comando ping teve sucesso
     if [ $ping_exit_status -eq 0 ]; then
-        # Extrair os tempos de resposta
-        rtt_min=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $4}')
-        rtt_avg=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $5}')
-        rtt_max=$(echo "$ping_output" | grep "rtt" | awk -F'/' '{print $6}')
-
         echo "CONEXAO COM A INTERNET OK"
-        #echo "TEMPO DE RESPOSTA (ms):"
-        #echo "MINIMO: $rtt_min"
-        #echo "MEDIO: $rtt_avg"
-        #echo "MAXIMO: $rtt_max"
-
-        # Verificar se a conexão está lenta ou instável
-        if (($(echo "$rtt_avg > 100" | bc -l))); then
-            echo "AVISO: A CONEXAO ESTA LENTA"
-            echo "================================================================================" >>$auditoria
-            echo "PROGRAMA: $(basename "$0") --> testa-internet             $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
-            echo "--------------------------------------------------------------------------------" >>$auditoria
-            echo "VERIFICANDO CONEXAO COM INTERNET - CONEXAO LENTA OU FRACA" >>$auditoria
-            echo "--------------------------------------------------------------------------------" >>$auditoria
-            echo "" >>$auditoria
-        fi
-        if (($(echo "$rtt_max - $rtt_min > 100" | bc -l))); then
-            echo "AVISO: A CONEXAO ESTA INSTAVEL"
-            echo "================================================================================" >>$auditoria
-            echo "PROGRAMA: $(basename "$0") --> testa-internet             $(date +'%d/%m/%Y') - $(date +'%H:%M')" >>$auditoria
-            echo "--------------------------------------------------------------------------------" >>$auditoria
-            echo "VERIFICANDO CONEXAO COM INTERNET - CONEXAO INSTAVEL" >>$auditoria
-            echo "--------------------------------------------------------------------------------" >>$auditoria
-            echo "" >>$auditoria
-        fi
     else
         # Mensagem de erro centralizada
         clear
@@ -1350,12 +1255,22 @@ baixar_controle() {
 # Função para controlar atu-help
 chamar_atu_help() {
     local_abortado="Func. Atualizar: Atu-help iniciando"
+    local log_atu_help="/u/sist/logs/atu-help.log"
+    local err_atu_help="/u/sist/logs/atu-help.err"
     sleep 1
-    echo "Aguarde..."
-    test $ch_normal_atu_help -eq 1 && atu-help manual
+    echo
+    echo "Aguarde... Atualizando o 'Help'..."
+    echo "LOG ATUALIZACAO DO HELP - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUAARIO: $USER " >$log_atu_help
+    echo >>$log_atu_help
+    echo "LOG ATUALIZACAO DO HELP ERROR - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUAARIO: $USER " >$err_atu_help
+    echo >>$err_atu_help
+    echo
+    test $ch_normal_atu_help -eq 1 && atu-help manual >>$log_atu_help 2>>$err_atu_help
     if [ $? -ne 0 ]; then
         erro_msg "ERRO AO EXECUTAR 'ATU-HELP MANUAL'."
         echo "Erro ao executar 'atu-help manual'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
+    elif [ $? -eq 1 ]; then
+        echo -e "${VERDE}${NEGRITO}[INFO]${PADRAO} - Help Atualizado"
     fi
     local_abortado="Func. Atualizar: Atu-help finalizado"
 }
@@ -1562,7 +1477,7 @@ gravando_atualizacoes() {
     tempo_gasto_formatado=$(date -u -d @${tempo_gasto} +"%M min e %S seg")
     echo "      $(date +"%d/%m/%y")      -      $cronometro_start      -    $cronometro_stop      -  $tempo_gasto_formatado  " >>"/u/sist/logs/infos_extras.log"
     echo "--------------------------------------------------------------------------------" >>"/u/sist/logs/infos_extras.log"
-    echo "$avanco"
+    echo -e "$avanco"
     sleep 2
 }
 ### Funções extras
@@ -1807,7 +1722,7 @@ parametros() {
             ;;
         3)
             clear
-            excluir_parametros
+            rm -rf $arquivo_parametros
             ;;
         4)
             clear
@@ -1847,7 +1762,7 @@ parametros() {
                 ;;
             e)
                 clear
-                excluir_parametros
+                rm -rf $arquivo_parametros
                 ;;
             d)
                 clear
@@ -1909,6 +1824,7 @@ carregar_parametros() {
         avisar_extras=$(grep -oP '^AVISAR EXTRAS - \K\S+' "$arquivo_parametros")
         baixar_automaticamente=$(grep -oP '^BAIXAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
         instalar_automaticamente=$(grep -oP '^INSTALAR AUTOMATICAMENTE - \K\S+' "$arquivo_parametros")
+        permitir_pos18=$(grep -oP '^PERMITIR ATUALIZAR APOS 18H - \K\S+' "$arquivo_parametros")
         todos_autorizados=$(grep -oP '^TODOS AUTORIZADOS - \K\S+' "$arquivo_parametros")
         autorizados=$(grep -oP '^AUTORIZADOS - \K.*' "$arquivo_parametros")
     elif [[ -f $arquivo_parametros ]]; then
@@ -1983,6 +1899,7 @@ alterar_parametros() {
         echo "AVISAR EXTRAS - $avisar_extras" >>$arquivo_parametros
         echo "BAIXAR AUTOMATICAMENTE - $baixar_automaticamente" >>$arquivo_parametros
         echo "INSTALAR AUTOMATICAMENTE - $instalar_automaticamente" >>$arquivo_parametros
+        echo "PERMITIR ATUALIZAR APOS 18H - N" >>$arquivo_parametros
         echo "TODOS AUTORIZADOS - $todos_autorizados" >>$arquivo_parametros
         echo "AUTORIZADOS - $autorizados" >>$arquivo_parametros
 
@@ -1996,10 +1913,6 @@ alterar_parametros() {
     fi
 }
 
-excluir_parametros() {
-    rm -rf $arquivo_parametros
-    echo "Parametros excluidos."
-}
 
 default_parametros() {
     echo "DESLOGAR USUARIOS - N" >$arquivo_parametros
@@ -2008,8 +1921,9 @@ default_parametros() {
     echo "AVISAR EXTRAS - N" >>$arquivo_parametros
     echo "BAIXAR AUTOMATICAMENTE - N" >>$arquivo_parametros
     echo "INSTALAR AUTOMATICAMENTE - N" >>$arquivo_parametros
-    echo "TODOS AUTORIZADOS - S" >>$arquivo_parametros
-    echo "AUTORIZADOS - TODOS" >>$arquivo_parametros
+    echo "PERMITIR ATUALIZAR APOS 18H - N" >>$arquivo_parametros
+    echo "TODOS AUTORIZADOS - N" >>$arquivo_parametros
+    echo "AUTORIZADOS - avanco" >>$arquivo_parametros
     echo "Parametros definidos para os valores padrao."
 }
 
@@ -3018,7 +2932,6 @@ chamar_atualizacao() {
     iniciar
     ler_arquivo_texto
     limpa_exec
-    seguranca
     atualizar
     ler_arquivo_texto >/dev/null 2>&1
     gravando_atualizacoes
@@ -3316,7 +3229,6 @@ baixar_extras() {
             # Usando o link raw para baixar o binário corretamente
             echo "CONFIGURANDO XMLSTARTLET"
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
-            #chown avanco:sist /u/bats/xmlstarlet
             chmod +x /u/bats/xmlstarlet
         fi
     elif [ "$distro_nome" = "Slackware" ]; then
@@ -3324,7 +3236,6 @@ baixar_extras() {
             echo "CONFIGURANDO XMLSTARTLET"
             # Usando o link raw para baixar o binário corretamente
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
-            #chown avanco:sist /u/bats/xmlstarlet
             chmod +x /u/bats/xmlstarlet
         fi
     else
@@ -3334,8 +3245,13 @@ baixar_extras() {
     if [ ! -f "/u/bats/gera-xml-por-tag.sh" ]; then
         echo "CONFIGURANDO GERA-XML"
         curl -# -o "/u/bats/gera-xml-por-tag.sh" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gera-xml-por-tag.sh"
-        #chown avanco:sist /u/bats/gera-xml-por-tag.sh
         chmod +x /u/bats/gera-xml-por-tag.sh
+    fi
+
+    if [ ! -f "/u/bats/verificar-processo" ]; then
+        echo
+        curl -# -o "/u/bats/verificar-processo" https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo
+        chmod 777 "/u/bats/verificar-processo"
     fi
     echo
 }
@@ -3514,7 +3430,6 @@ case "$1" in
 esac
 
 # Chamandos as funcoes na ordem
-testar_cores
 verificar_dia
 carregar_parametros
 usuario_permitido
@@ -3522,7 +3437,6 @@ checar_internet
 verifica_atualizacao
 iniciar
 limpa_exec
-seguranca
 ler_arquivo_texto >/dev/null 2>&1
 atualizar
 gravando_atualizacoes
