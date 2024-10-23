@@ -3,7 +3,7 @@
 ################################################################################
 # configurarAtualizador.sh - realizar a configuracao basica do atualizador
 #
-# DATA: 03/07/2024 09:53 - Versao 2.5
+# DATA: 03/07/2024 09:53 - Versao 2.6
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
@@ -21,6 +21,7 @@
 # Versão 2.4: Ativa recurso de conceder permissoes pelo root toda madrugada na
 #             pasta /u/sist/exec
 # Versão 2.5: Configurado opção para baixar o compilado corretamente
+# Versão 2.6: Novos ajustes de configuração
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar o uso do atualizador.
 ###############################
@@ -57,20 +58,19 @@ LOG_DIR="/u/sist/logs"
 versaoCobol=""
 statusOnline="status-online.gnt"
 script_atualizador="atualizador"
-script_baixar_atualizacao="baixarAtualizacao"
 manual_atualizador="atualizador.1.gz"
 url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador"
 url_manual_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Manuais/atualizador.1.gz"
 url_base_status_online_gnt="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/gnt/"
 buscaStatusOnline=""
 url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"
-pacoteConfiguracao="https://github.com/ketteiGustavo/atualizador/raw/main/Atual/PacoteAtualizador.rar"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 distro_versao=$(grep '^VERSION_ID=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | tr -d '.')
 url_xmlStarlet_Debian="https://github.com/ketteiGustavo/atualizador/blob/main/extras/xmlstarlet.Debian"
 url_xmlStarlet_Slackware="https://github.com/ketteiGustavo/atualizador/blob/main/extras/xmlstarlet.Slackware"
-
+ulr_verifica_processo="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo"
 url_gera_xml="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gera-xml-por-tag.sh"
+url_conv_xml_cte="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/conv-xml-cte.sh"
 
 clear
 echo "SERVIDOR UTILIZA: $distro_nome"
@@ -120,6 +120,18 @@ verifica_cobol() {
     fi
 }
 
+if [ ! -d "/u/sist/controle" ]; then
+    mkdir -p "/u/sist/controle"
+    chmod 777 -R "/u/sist/controle"
+    chown avanco.sist "/u/sist/controle"
+fi
+
+if [ ! -d "/u/sist/logs" ]; then
+    mkdir -p "/u/sist/logs"
+    chmod 777 -R "/u/sist/logs"
+    chown avanco.sist "/u/sist/logs"
+fi
+
 # Testa se o usuario e root.
 if [ "$(id -u)" -ne 0 ]; then
     #clear
@@ -166,7 +178,6 @@ configurar_online() {
     if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
         echo ""
         echo "INSTALANDO O ATUALIZADOR"
-        echo ""
         curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
         tudo_ok=0
         echo ""
@@ -180,29 +191,27 @@ configurar_online() {
         tudo_ok=1
     fi
 
+    echo
+    echo "REALIZANDO ATIVACOES NECESSARIAS DOS DEMAIS SCRIPTS... AGUARDE!"
+    echo
     if [ "$distro_nome" = "Debian" ]; then
         if [ ! -f "$BATS/xmlstarlet" ]; then
-            # Usando o link raw para baixar o binário corretamente
-            echo ""
             echo "ATIVANDO O XMLSTARLET"
             echo ""
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
             chown avanco:sist /u/bats/xmlstarlet
             chmod +x /u/bats/xmlstarlet
-            echo ""
             tudo_ok=0
         fi
 
     elif [ "$distro_nome" = "Slackware" ]; then
         if [ ! -f "$BATS/xmlstarlet" ]; then
             # Usando o link raw para baixar o binário corretamente
-            echo ""
             echo "ATIVANDO O XMLSTARLET"
             echo ""
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
             chown avanco:sist /u/bats/xmlstarlet
             chmod +x /u/bats/xmlstarlet
-            echo ""
             tudo_ok=0
         fi
     else
@@ -212,11 +221,9 @@ configurar_online() {
 
     if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
         if curl -k --output /dev/null --silent --head --fail "$url_gera_xml"; then
-            echo ""
             echo "ATIVANDO O GERA-XML-POR-TAG"
             echo ""
             curl -k -# -o "/u/bats/gera-xml-por-tag.sh" "$url_gera_xml"
-            echo ""
             sleep 1
             chown avanco:sist /u/bats/gera-xml-por-tag.sh
             chmod +x /u/bats/gera-xml-por-tag.sh
@@ -226,7 +233,36 @@ configurar_online() {
             tudo_ok=1
         fi
     fi
-    echo
+
+    if [ ! -f "/u/bats/verificar-processo" ]; then
+        if curl -k --output /dev/null --silent --head --fail "$ulr_verifica_processo"; then
+            echo "ATIVANDO O VERIFICA PROCESSO"
+            echo
+            curl -# -o "/u/bats/verificar-processo" "$ulr_verifica_processo"
+            chmod 777 "/u/bats/verificar-processo"
+            sleep 1
+            tudo_ok=0
+        else
+            echo "NAO FOI POSSIVEL ACESSAR BAIXAR e INSTALAR O 'verificar-processo'"
+            tudo_ok=1
+        fi
+    fi
+
+    if [ ! -f "/u/bats/conv-xml-cte.sh" ]; then
+        if curl -k --output /dev/null --silent --head --fail "$url_conv_xml_cte"; then
+            echo "ATIVANDO O 'conv-xml-cte.sh'"
+            echo
+            curl -# -o "/u/bats/conv-xml-cte.sh" "$url_conv_xml_cte"
+            chmod 777 "/u/bats/conv-xml-cte.sh"
+            chown avanco.sist "/u/bats/conv-xml-cte.sh"
+            sleep 1
+            tudo_ok=0
+        else
+            echo "NAO FOI POSSIVEL ACESSAR BAIXAR e INSTALAR O 'conv-xml-cte.sh'"
+            tudo_ok=1
+        fi
+    fi
+
 
     if [ ! -f "$EXEC/status-online.gnt" ]; then
         if curl -k --output /dev/null --silent --head --fail "$novo_URL"; then
@@ -248,7 +284,7 @@ configurar_online() {
 
     if [ "$tudo_ok" = 0 ]; then
         echo
-        echo "ATIVANDO ATUALIZADOR! AGUARDE"
+        echo "FINALIZANDO CONFIGURACAO DO ATUALIZADOR! AGUARDE"
         echo
         echo "CONFIGURACAO REALIZADA!!!"
         echo "LOGUE COMO 'avanco' PARA ATUALIZAR!!!"
@@ -258,7 +294,6 @@ configurar_online() {
         echo "NAO FOI POSSIVEL FAZER A CONFIGURACAO"
         log_erro "Configuracao falhou."
     fi
-    echo
     echo
 }
 
