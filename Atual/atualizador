@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.1
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -32,6 +32,9 @@
 # Versão 0.3.6: Remoção de função de verificar programas no sist/exec, já esta
 #               rodando no cron toda madrugada com a função permissoes
 # Versão 0.4: Inicio de Refatoração de código
+# Versão 0.4.0.1 : Colocado opção rar a -ep para não incluir todos os subdire-
+#                  torios dentro do backup em sist/exec-a, gravando apenas os
+#                  programas .gnt
 #
 # -------------------------------------------------------------------------------
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
@@ -40,7 +43,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4"
+versaoPrograma="0.4.0.1"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -742,7 +745,7 @@ fazer_bkp() {
         total_bkp_files=$(find $local_gnt -type f -name "*.gnt" | wc -l)
         contagem_arquivo=0
         # Verifica se o comando anterior foi executado com sucesso
-        if rar a "$bkp_destino/BKPTOTAL_$date" $local_gnt/*gnt | while read -r line; do
+        if rar a -ep "$bkp_destino/BKPTOTAL_$date" $local_gnt/*gnt | while read -r line; do
             ((contagem_arquivo++))
             porcentagem_bkp=$((contagem_arquivo * 100 / total_bkp_files))
             barra_progresso $porcentagem_bkp
