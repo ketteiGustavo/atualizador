@@ -73,3 +73,5 @@
 # Versão 0.4.0.1 : Colocado opção rar a -ep para não incluir todos os subdire-
 #                  torios dentro do backup em sist/exec-a, gravando apenas os
 #                  programas .gnt
+# v0.4.0.2 - 06/11/2024 - Luiz Gustavo;
+#          - Alteracoes em voltar o integral.gnt após atualizar
