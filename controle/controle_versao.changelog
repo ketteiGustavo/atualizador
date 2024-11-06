@@ -75,3 +75,5 @@
 #                  programas .gnt
 # v0.4.0.2 - 06/11/2024 - Luiz Gustavo;
 #          - Alteracoes em voltar o integral.gnt após atualizar
+# v0.4.0.2a - 06/11/2024 - Luiz Gustavo;
+#          - colocando -f em teste de se o programa integral.gnt foi renomeado
