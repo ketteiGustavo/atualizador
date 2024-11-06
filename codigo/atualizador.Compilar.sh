@@ -3,30 +3,12 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.1
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.2
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
-# Versão 0.2.12: Novas opções dentro do menu: Testar internet e alterar status
-#                onlide de vendas
-# Versão 0.2.13: Desabilitando recursos do menu que ainda não estão disponíveis
-# Versão 0.2.14: Função para baixar a versão a ser compilada.
-# Versão 0.2.15: Correções dentro da busca dos pacotes na pasta
-# Versão 0.2.16: Correções de logs e testes de gravação de logs
-# Versão 0.3.0: Ajuste para utilizar o comando cobrun versao-release.gnt
-#               e trava de horario, após às 18h01 não liberar atualizar
-# Versão 0.3.1: Ajuste na função 'limpa-exec' para deixa-la mais rapida e fazer
-#               o backup em segundo plano.
-#               ajustes de disparar para segundo plano.
-# Versão 0.3.2: Nova função para testar se o Integral foi atualizado manualmente
-#               garantindo ao atualizador a possibilidade de registrar as alte-
-#               rações
-# Versão 0.3.3: Ajuste para atualizar quando existir somente versao total
-# Versão 0.3.3a: Ajuste para validar está atualizado corrigido
-# Versão 0.3.3b: correção no if de teste
-# Versão 0.3.4: Ajuste para liberar atualizar com condição pós horário atiava.
-# Versão 0.3.4a: Correção de mostrar o nome do usuário durante tentativa de atu-
-#                alizar se ele não estiver permitido.
+# Controle de Versão:
+#
 # Versão 0.3.5: Ajustes de novas cores e condições de cores
 # Versão 0.3.5a: Apontando o Help para dev/null
 # Versão 0.3.6: Remoção de função de verificar programas no sist/exec, já esta
@@ -35,21 +17,27 @@
 # Versão 0.4.0.1 : Colocado opção rar a -ep para não incluir todos os subdire-
 #                  torios dentro do backup em sist/exec-a, gravando apenas os
 #                  programas .gnt
+# v0.4.0.2 - 06/11/2024 - Luiz Gustavo;
+#          - Alteracoes em voltar o integral.gnt após atualizar
 #
 # -------------------------------------------------------------------------------
+# Testado em:
+#   bash 4.3.25 - slackware
+#   bash 5.1.4(1) - Debian
+# ---------------------------------------------------------------------------- #
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
 # instalando versao e a release mais recentes. Apos isso ira executar o atu-help
 # manual e dar permissao em /u/sist/exec/*gnt.
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.1"
+versaoPrograma="0.4.0.2"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
 
 --------------------------------------------------------------------------------
-                              [OPCOES DISPONIVEIS]                              
+                              [OPCOES DISPONIVEIS]
 
 OPCOES NA LINHA DE COMANDO:
     -h,  --help         Mostrar esta tela de ajuda
@@ -69,7 +57,7 @@ OPCOES NA LINHA DE COMANDO:
     -l,  --log          Visualizar principais logs do Atualizador
     -P                  Parametrizacao (somente para usuario 'avanco')
     --cron              Ativar no cron (somente para usuario 'avanco')
-    --permissoes        Conceder permissao total no 'sist/exec' (somente para 
+    --permissoes        Conceder permissao total no 'sist/exec' (somente para
                         usuario 'avanco')
     --testar-internet   Verifica se o servidor tem conexao com a Internet
     --online            Exibe e/ou altera o Online do vendas. Necessario infor-
@@ -278,26 +266,26 @@ testar_cores() {
 testar_cores
 
 avanco="
-                                                          ${NEGRITO}${AZUL}##${PADRAO}                    
-                                                        ${NEGRITO}${AZUL}####${PADRAO}                    
-                                                      ${NEGRITO}${AZUL}######${PADRAO}                    
-                                                    ${NEGRITO}${AZUL}########${PADRAO}                    
-                        ${NEGRITO}${VERDE}------------${PADRAO}              ${NEGRITO}${AZUL}##########${PADRAO}                    
-                      ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}############${PADRAO}                    
-                    ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}##############${PADRAO}                    
-                     ${NEGRITO}${VERDE}-----${PADRAO}                  ${NEGRITO}${AZUL}################${PADRAO}                    
-                      ${NEGRITO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}########  ########${PADRAO}                    
-                        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}########    ########${PADRAO}                    
-                          ${NEGRITO}${VERDE}----${PADRAO}       ${NEGRITO}${AZUL}#########      ########${PADRAO}                    
-                            ${NEGRITO}${VERDE}--${PADRAO}    ${NEGRITO}${AZUL}########          ########${PADRAO}                    
-                              ${NEGRITO}${VERDE}--${PADRAO}${NEGRITO}${AZUL}########            ########${PADRAO}                    
-                              ${NEGRITO}${AZUL}##${PADRAO}${VERDE}----${PADRAO}                  ${NEGRITO}${AZUL}######${PADRAO}                    
-                            ${NEGRITO}${AZUL}######${PADRAO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}######${PADRAO}                    
-                          ${NEGRITO}${AZUL}####${PADRAO}        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}######${PADRAO}                    
-                        ${NEGRITO}${AZUL}####${PADRAO}              ${NEGRITO}${VERDE}--${PADRAO}                                    
-                      ${NEGRITO}${AZUL}####${PADRAO}                    ${NEGRITO}${VERDE}--${PADRAO}                                
-                    ${NEGRITO}${AZUL}##${PADRAO}                            ${NEGRITO}${VERDE}--${PADRAO}                            
-                  ${NEGRITO}${AZUL}##${PADRAO}                                    ${NEGRITO}${VERDE}--${PADRAO}                      
+                                                          ${NEGRITO}${AZUL}##${PADRAO}
+                                                        ${NEGRITO}${AZUL}####${PADRAO}
+                                                      ${NEGRITO}${AZUL}######${PADRAO}
+                                                    ${NEGRITO}${AZUL}########${PADRAO}
+                        ${NEGRITO}${VERDE}------------${PADRAO}              ${NEGRITO}${AZUL}##########${PADRAO}
+                      ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}############${PADRAO}
+                    ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}##############${PADRAO}
+                     ${NEGRITO}${VERDE}-----${PADRAO}                  ${NEGRITO}${AZUL}################${PADRAO}
+                      ${NEGRITO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}########  ########${PADRAO}
+                        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}########    ########${PADRAO}
+                          ${NEGRITO}${VERDE}----${PADRAO}       ${NEGRITO}${AZUL}#########      ########${PADRAO}
+                            ${NEGRITO}${VERDE}--${PADRAO}    ${NEGRITO}${AZUL}########          ########${PADRAO}
+                              ${NEGRITO}${VERDE}--${PADRAO}${NEGRITO}${AZUL}########            ########${PADRAO}
+                              ${NEGRITO}${AZUL}##${PADRAO}${VERDE}----${PADRAO}                  ${NEGRITO}${AZUL}######${PADRAO}
+                            ${NEGRITO}${AZUL}######${PADRAO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}######${PADRAO}
+                          ${NEGRITO}${AZUL}####${PADRAO}        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}######${PADRAO}
+                        ${NEGRITO}${AZUL}####${PADRAO}              ${NEGRITO}${VERDE}--${PADRAO}
+                      ${NEGRITO}${AZUL}####${PADRAO}                    ${NEGRITO}${VERDE}--${PADRAO}
+                    ${NEGRITO}${AZUL}##${PADRAO}                            ${NEGRITO}${VERDE}--${PADRAO}
+                  ${NEGRITO}${AZUL}##${PADRAO}                                    ${NEGRITO}${VERDE}--${PADRAO}
                                                                                 
                                                                                 
                                                                                 
@@ -1434,6 +1422,11 @@ atualizar() {
     rm -rf "$controle_flag/controle_flag.txt"
     local_abortado="Func. Atualizar: Fim"
     fim_atualizacao=true
+    if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
+        if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
+            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+        fi
+    fi
 }
 # Funcao que gravara a versao e release apos a atualizacao
 gravando_atualizacoes() {
@@ -3252,8 +3245,8 @@ baixar_extras() {
     fi
 
     if [ ! -f "/u/bats/verificar-processo" ]; then
-        echo
-        curl -# -o "/u/bats/verificar-processo" https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo
+        echo "CONFIGURANDO VERIFICA PROCESSO"
+        curl -# -o "/u/bats/verificar-processo" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo"
         chmod 777 "/u/bats/verificar-processo"
     fi
     echo
