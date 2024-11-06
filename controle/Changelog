@@ -1,25 +1,8 @@
 ### HISTORICO DE VERSAO DO ATUALIZADOR ###
 
-# Versão 0.3.1: Ajuste na função 'limpa-exec' para deixa-la mais rapida e fazer
-#               o backup em segundo plano.
-#               ajustes de disparar para segundo plano.
-# Versão 0.3.2: Nova função para testar se o Integral foi atualizado manualmente
-#               garantindo ao atualizador a possibilidade de registrar as alte-
-#               rações
-# Versão 0.3.3: Ajuste para atualizar quando existir somente versao total
-# Versão 0.3.3a: Ajuste para validar está atualizado corrigido
-# Versão 0.3.3b: correção no if de teste
-# Versão 0.3.4: Ajuste para liberar atualizar com condição pós horário atiava.
-# Versão 0.3.4a: Correção de mostrar o nome do usuário durante tentativa de atu-
-#                alizar se ele não estiver permitido.
-# Versão 0.3.5: Ajustes de novas cores e condições de cores
-# Versão 0.3.5a: Apontando o Help para dev/null
-# Versão 0.3.6: Remoção de função de verificar programas no sist/exec, já esta
-#               rodando no cron toda madrugada com a função permissoes
-
-
-
 ## Detalhes da versão
+v0.4.0.2 - 06/11/2024 - Luiz Gustavo
+    - Alteracoes em voltar o integral.gnt após atualizar
 Versão 0.4.0.1 - segunda-feira, 04 de novembro de 2024, 11:40
     -Ajuste na opção do backup para ser realizada usando o argumento -ep
 
