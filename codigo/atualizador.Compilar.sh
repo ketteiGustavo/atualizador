@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.2
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.2a
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -19,6 +19,8 @@
 #                  programas .gnt
 # v0.4.0.2 - 06/11/2024 - Luiz Gustavo;
 #          - Alteracoes em voltar o integral.gnt após atualizar
+# v0.4.0.2a - 06/11/2024 - Luiz Gustavo;
+#          - colocando -f em teste de se o programa integral.gnt foi renomeado
 #
 # -------------------------------------------------------------------------------
 # Testado em:
@@ -31,7 +33,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.2"
+versaoPrograma="0.4.0.2a"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1454,7 +1456,9 @@ gravando_atualizacoes() {
         ativar_desativar_online
 
         if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
-            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+            if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
+                mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+            fi
         fi
 
         echo
