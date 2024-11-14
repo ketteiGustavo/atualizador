@@ -1590,12 +1590,13 @@ nova_versao() {
         echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
         if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
             curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
-            chmod 777 "/u/bats/atualizador"
             echo ""
             echo "EXECUTE O ATUALIZADOR NOVAMENTE!"
             if [ -f "/u/bats/baixarAtualizacao" ]; then
                 rm -f "/u/bats/baixarAtualizacao"
             fi
+            sleep 1
+            chmod 777 "/u/bats/atualizador"
             exit 0
         else
             echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
