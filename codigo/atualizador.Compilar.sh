@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.2c
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.2d
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -34,6 +34,9 @@
 #           - Mensagem para exibir onde foi gravado o log do atu-help
 #           - Exibir mensagem de chamar ajuda ao errar argumento.
 #
+# v0.4.0.2d - 14/11/2024 - Luiz Gustavo;
+#           - removido condição de permissão ao atualizar o atualizador
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -45,7 +48,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.2c"
+versaoPrograma="0.4.0.2d"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1587,9 +1590,7 @@ nova_versao() {
         echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
         if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
             curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
-            if [[ "$USER" = "avanco" ]]; then
-                chmod 777 "/u/bats/atualizador"
-            fi
+            chmod 777 "/u/bats/atualizador"
             echo ""
             echo "EXECUTE O ATUALIZADOR NOVAMENTE!"
             if [ -f "/u/bats/baixarAtualizacao" ]; then
