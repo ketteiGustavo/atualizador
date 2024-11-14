@@ -1607,7 +1607,6 @@ nova_versao() {
         echo
         echo "-Versao: $versaoPrograma"
         echo
-        rm -rf "/tmp/versao_remota.txt"
         exit 0
     fi
 }
@@ -3240,7 +3239,7 @@ testar_online() {
 
 # Função para ser baixado e configurado scripts e programas extras
 baixar_extras() {
-
+    echo
     if [ "$distro_nome" = "Debian" ]; then
         if [ ! -f "/u/bats/xmlstarlet" ]; then
             # Usando o link raw para baixar o binário corretamente
