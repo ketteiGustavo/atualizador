@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.2d
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.2e
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -37,6 +37,9 @@
 # v0.4.0.2d - 14/11/2024 - Luiz Gustavo;
 #           - removido condição de permissão ao atualizar o atualizador
 #
+# v0.4.0.2e - 14/11/2024 - Luiz Gustavo;
+#           - alterado para pacote.rar o atualizador
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -48,7 +51,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.2d"
+versaoPrograma="0.4.0.2e"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1573,7 +1576,7 @@ mostrar_ajuda() {
 # Funcao para atualizar o script sempre para a versao mais recente
 nova_versao() {
     local url_teste_versao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/controle/versao-atualizador.txt"
-    local url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador"
+    local url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.rar"
 
     clear
     if curl -k --output /dev/null --silent --head --fail "$url_teste_versao"; then
@@ -1589,8 +1592,16 @@ nova_versao() {
         cp "/u/bats/atualizador" "/u/bats/atualizadorOLD"
         echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
         if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
+            curl -k -L -# -o "/u/bats/atualizador.rar" "$url_atualizador"
             echo ""
+            rar e -o+ -idq "/u/bats/atualizador.rar" "/u/bats"
+            if [ $? -eq 0 ]; then
+                rm -rf /u/bats/atualizador.rar
+            else
+                echo -e "[ERRO] - Falha ao extrair o arquivo."
+                cp "/u/bats/atualizadorOLD" "/u/bats/atualizador"
+                exit 1
+            fi
             echo "EXECUTE O ATUALIZADOR NOVAMENTE!"
             if [ -f "/u/bats/baixarAtualizacao" ]; then
                 rm -f "/u/bats/baixarAtualizacao"
