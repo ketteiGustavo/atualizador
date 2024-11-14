@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.2b
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.2c
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -28,6 +28,11 @@
 #           - Correções no ativar/desativar online, deixando o online conforme
 #             foi iniciado, se ativo, liga o após terminar atualizacao, se desa-
 #             tivado, nao faz alteracao no online
+# v0.4.0.2c - 14/11/2024 - Luiz Gustavo;
+#           - Opção no menu extras para baixar recursos extras
+#           - Correção ortografica em nomes exibidos no log
+#           - Mensagem para exibir onde foi gravado o log do atu-help
+#           - Exibir mensagem de chamar ajuda ao errar argumento.
 #
 # -------------------------------------------------------------------------------
 # Testado em:
@@ -40,7 +45,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.2b"
+versaoPrograma="0.4.0.2c"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -80,8 +85,8 @@ OPCOES NA LINHA DE COMANDO:
 MODO DE USAR:
 Digite o nome do programa e a opcao desejada.
   Exemplo:
-  atualizador --help
-  'Exibir tela de ajuda.'
+  $ atualizador --help
+    'Exibir tela de ajuda.'
 
 --------------------------------------------------------------------------------
 "
@@ -1255,9 +1260,9 @@ chamar_atu_help() {
     sleep 1
     echo
     echo "Aguarde... Atualizando o 'Help'..."
-    echo "LOG ATUALIZACAO DO HELP - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUAARIO: $USER " >$log_atu_help
+    echo "LOG ATUALIZACAO DO HELP - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUARIO: $USER " >$log_atu_help
     echo >>$log_atu_help
-    echo "LOG ATUALIZACAO DO HELP ERROR - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUAARIO: $USER " >$err_atu_help
+    echo "LOG ATUALIZACAO DO HELP ERROR - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUARIO: $USER " >$err_atu_help
     echo >>$err_atu_help
     echo
     test $ch_normal_atu_help -eq 1 && atu-help manual >>$log_atu_help 2>>$err_atu_help
@@ -1266,6 +1271,9 @@ chamar_atu_help() {
         echo "Erro ao executar 'atu-help manual'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
     elif [ $? -eq 1 ]; then
         echo -e "${VERDE}${NEGRITO}[INFO]${PADRAO} - Help Atualizado"
+        echo
+        echo -e "  Se desejar, consulte o log e log.erro do 'Help' em: "
+        echo -e "  /u/sist/logs/ --> nomes: ${SUBLINHADO}atu-help.log${PADRAO} e ${SUBLINHADO}atu-help.err${PADRAO}"
     fi
     local_abortado="Func. Atualizar: Atu-help finalizado"
 }
@@ -2333,10 +2341,12 @@ menu_6() {
         tput cup 13 22
         echo " 6  -  AVISAR ATUALIZACAO"
         tput cup 14 22
-        echo " 9  -  MENU PRINCIPAL"
+        echo " 7  -  Baixar Extras"
         tput cup 15 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 16 22
         echo "99  -  SAIR"
-        tput cup 17 26
+        tput cup 18 26
         echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
@@ -2377,6 +2387,10 @@ menu_6() {
             #yellow_msg "!!!ATENCAO!!!"
             #yellow_msg "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
             #yellow_msg "QUE O INTEGRAL SERA ATUALIZADO EM INSTANTES!!!"
+            ;;
+        7)
+            clear
+            baixar_extras
             ;;
         9)
             menu_principal
@@ -3427,6 +3441,7 @@ case "$1" in
     clear
     if test -n "$1"; then
         echo OPCAO INVALIDA: $1
+        echo -e "Utilize a opcao -h ou --help para obter ajuda"
         exit 1
     fi
     ;;
