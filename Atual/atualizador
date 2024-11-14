@@ -3,30 +3,12 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.1
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.2d
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
-# Versão 0.2.12: Novas opções dentro do menu: Testar internet e alterar status
-#                onlide de vendas
-# Versão 0.2.13: Desabilitando recursos do menu que ainda não estão disponíveis
-# Versão 0.2.14: Função para baixar a versão a ser compilada.
-# Versão 0.2.15: Correções dentro da busca dos pacotes na pasta
-# Versão 0.2.16: Correções de logs e testes de gravação de logs
-# Versão 0.3.0: Ajuste para utilizar o comando cobrun versao-release.gnt
-#               e trava de horario, após às 18h01 não liberar atualizar
-# Versão 0.3.1: Ajuste na função 'limpa-exec' para deixa-la mais rapida e fazer
-#               o backup em segundo plano.
-#               ajustes de disparar para segundo plano.
-# Versão 0.3.2: Nova função para testar se o Integral foi atualizado manualmente
-#               garantindo ao atualizador a possibilidade de registrar as alte-
-#               rações
-# Versão 0.3.3: Ajuste para atualizar quando existir somente versao total
-# Versão 0.3.3a: Ajuste para validar está atualizado corrigido
-# Versão 0.3.3b: correção no if de teste
-# Versão 0.3.4: Ajuste para liberar atualizar com condição pós horário atiava.
-# Versão 0.3.4a: Correção de mostrar o nome do usuário durante tentativa de atu-
-#                alizar se ele não estiver permitido.
+# Controle de Versão:
+#
 # Versão 0.3.5: Ajustes de novas cores e condições de cores
 # Versão 0.3.5a: Apontando o Help para dev/null
 # Versão 0.3.6: Remoção de função de verificar programas no sist/exec, já esta
@@ -35,21 +17,44 @@
 # Versão 0.4.0.1 : Colocado opção rar a -ep para não incluir todos os subdire-
 #                  torios dentro do backup em sist/exec-a, gravando apenas os
 #                  programas .gnt
+# v0.4.0.2 - 06/11/2024 - Luiz Gustavo;
+#          - Alteracoes em voltar o integral.gnt após atualizar
+# v0.4.0.2a - 06/11/2024 - Luiz Gustavo;
+#          - colocando -f em teste de se o programa integral.gnt foi renomeado
+# v0.4.0.2b - 14/11/2024 - Luiz Gustavo;
+#           - Funcão para criar diretorios somente se for avanco
+#           - Alteracoes para executar chmod somente como avanco ou root
+#           - Pequenas correções em mensagens de erros e avisos.
+#           - Correções no ativar/desativar online, deixando o online conforme
+#             foi iniciado, se ativo, liga o após terminar atualizacao, se desa-
+#             tivado, nao faz alteracao no online
+# v0.4.0.2c - 14/11/2024 - Luiz Gustavo;
+#           - Opção no menu extras para baixar recursos extras
+#           - Correção ortografica em nomes exibidos no log
+#           - Mensagem para exibir onde foi gravado o log do atu-help
+#           - Exibir mensagem de chamar ajuda ao errar argumento.
+#
+# v0.4.0.2d - 14/11/2024 - Luiz Gustavo;
+#           - removido condição de permissão ao atualizar o atualizador
 #
 # -------------------------------------------------------------------------------
+# Testado em:
+#   bash 4.3.25 - slackware
+#   bash 5.1.4(1) - Debian
+# ---------------------------------------------------------------------------- #
 # Este programa ira atualizar o Sistema Integral respeitando a versao do cobol e
 # instalando versao e a release mais recentes. Apos isso ira executar o atu-help
 # manual e dar permissao em /u/sist/exec/*gnt.
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.1"
+versaoPrograma="0.4.0.2d"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
 
 --------------------------------------------------------------------------------
-                              [OPCOES DISPONIVEIS]                              
+                              [OPCOES DISPONIVEIS]
 
 OPCOES NA LINHA DE COMANDO:
     -h,  --help         Mostrar esta tela de ajuda
@@ -69,7 +74,7 @@ OPCOES NA LINHA DE COMANDO:
     -l,  --log          Visualizar principais logs do Atualizador
     -P                  Parametrizacao (somente para usuario 'avanco')
     --cron              Ativar no cron (somente para usuario 'avanco')
-    --permissoes        Conceder permissao total no 'sist/exec' (somente para 
+    --permissoes        Conceder permissao total no 'sist/exec' (somente para
                         usuario 'avanco')
     --testar-internet   Verifica se o servidor tem conexao com a Internet
     --online            Exibe e/ou altera o Online do vendas. Necessario infor-
@@ -83,8 +88,8 @@ OPCOES NA LINHA DE COMANDO:
 MODO DE USAR:
 Digite o nome do programa e a opcao desejada.
   Exemplo:
-  atualizador --help
-  'Exibir tela de ajuda.'
+  $ atualizador --help
+    'Exibir tela de ajuda.'
 
 --------------------------------------------------------------------------------
 "
@@ -278,26 +283,26 @@ testar_cores() {
 testar_cores
 
 avanco="
-                                                          ${NEGRITO}${AZUL}##${PADRAO}                    
-                                                        ${NEGRITO}${AZUL}####${PADRAO}                    
-                                                      ${NEGRITO}${AZUL}######${PADRAO}                    
-                                                    ${NEGRITO}${AZUL}########${PADRAO}                    
-                        ${NEGRITO}${VERDE}------------${PADRAO}              ${NEGRITO}${AZUL}##########${PADRAO}                    
-                      ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}############${PADRAO}                    
-                    ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}##############${PADRAO}                    
-                     ${NEGRITO}${VERDE}-----${PADRAO}                  ${NEGRITO}${AZUL}################${PADRAO}                    
-                      ${NEGRITO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}########  ########${PADRAO}                    
-                        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}########    ########${PADRAO}                    
-                          ${NEGRITO}${VERDE}----${PADRAO}       ${NEGRITO}${AZUL}#########      ########${PADRAO}                    
-                            ${NEGRITO}${VERDE}--${PADRAO}    ${NEGRITO}${AZUL}########          ########${PADRAO}                    
-                              ${NEGRITO}${VERDE}--${PADRAO}${NEGRITO}${AZUL}########            ########${PADRAO}                    
-                              ${NEGRITO}${AZUL}##${PADRAO}${VERDE}----${PADRAO}                  ${NEGRITO}${AZUL}######${PADRAO}                    
-                            ${NEGRITO}${AZUL}######${PADRAO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}######${PADRAO}                    
-                          ${NEGRITO}${AZUL}####${PADRAO}        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}######${PADRAO}                    
-                        ${NEGRITO}${AZUL}####${PADRAO}              ${NEGRITO}${VERDE}--${PADRAO}                                    
-                      ${NEGRITO}${AZUL}####${PADRAO}                    ${NEGRITO}${VERDE}--${PADRAO}                                
-                    ${NEGRITO}${AZUL}##${PADRAO}                            ${NEGRITO}${VERDE}--${PADRAO}                            
-                  ${NEGRITO}${AZUL}##${PADRAO}                                    ${NEGRITO}${VERDE}--${PADRAO}                      
+                                                          ${NEGRITO}${AZUL}##${PADRAO}
+                                                        ${NEGRITO}${AZUL}####${PADRAO}
+                                                      ${NEGRITO}${AZUL}######${PADRAO}
+                                                    ${NEGRITO}${AZUL}########${PADRAO}
+                        ${NEGRITO}${VERDE}------------${PADRAO}              ${NEGRITO}${AZUL}##########${PADRAO}
+                      ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}############${PADRAO}
+                    ${NEGRITO}${VERDE}------${PADRAO}                    ${NEGRITO}${AZUL}##############${PADRAO}
+                     ${NEGRITO}${VERDE}-----${PADRAO}                  ${NEGRITO}${AZUL}################${PADRAO}
+                      ${NEGRITO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}########  ########${PADRAO}
+                        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}########    ########${PADRAO}
+                          ${NEGRITO}${VERDE}----${PADRAO}       ${NEGRITO}${AZUL}#########      ########${PADRAO}
+                            ${NEGRITO}${VERDE}--${PADRAO}    ${NEGRITO}${AZUL}########          ########${PADRAO}
+                              ${NEGRITO}${VERDE}--${PADRAO}${NEGRITO}${AZUL}########            ########${PADRAO}
+                              ${NEGRITO}${AZUL}##${PADRAO}${VERDE}----${PADRAO}                  ${NEGRITO}${AZUL}######${PADRAO}
+                            ${NEGRITO}${AZUL}######${PADRAO}${VERDE}----${PADRAO}                ${NEGRITO}${AZUL}######${PADRAO}
+                          ${NEGRITO}${AZUL}####${PADRAO}        ${NEGRITO}${VERDE}----${PADRAO}            ${NEGRITO}${AZUL}######${PADRAO}
+                        ${NEGRITO}${AZUL}####${PADRAO}              ${NEGRITO}${VERDE}--${PADRAO}
+                      ${NEGRITO}${AZUL}####${PADRAO}                    ${NEGRITO}${VERDE}--${PADRAO}
+                    ${NEGRITO}${AZUL}##${PADRAO}                            ${NEGRITO}${VERDE}--${PADRAO}
+                  ${NEGRITO}${AZUL}##${PADRAO}                                    ${NEGRITO}${VERDE}--${PADRAO}
                                                                                 
                                                                                 
                                                                                 
@@ -541,7 +546,7 @@ verificar_dia() {
         exit 1
     fi
 
-    if [[ "$permitir_pos18" = "S" ]] ; then
+    if [[ "$permitir_pos18" = "S" ]]; then
         return
     else
         if [ $hora_lida -ge 18 ]; then
@@ -603,27 +608,20 @@ ativar_desativar_online() {
     fi
 }
 
-# Criando diretorio de logs e atualizacoes
-if [ ! -d "/u/rede/avanco/atualizacoes" ]; then
-    mkdir -p "/u/rede/avanco/atualizacoes"
-    chmod 777 -R "/u/rede/avanco/atualizacoes"
-fi
+# funcao para criar diretorio
+criar_diretorio() {
+    local dir=$1
+    if [ ! -d "$dir" ] && [[ "$USER" = "avanco" ]]; then
+        mkdir -p "$dir"
+        chmod 777 -R "$dir"
+    fi
+}
 
-# Criando diretorio de logs e atualizacoes
-if [ ! -d "$removidos" ]; then
-    mkdir -p "$removidos"
-    chmod 777 -R "$removidos"
-fi
-
-if [ ! -d "/u/sist/controle" ]; then
-    mkdir -p "/u/sist/controle"
-    chmod 777 -R "/u/sist/controle"
-fi
-
-if [ ! -d "/u/sist/logs" ]; then
-    mkdir -p "/u/sist/logs"
-    chmod 777 -R "/u/sist/logs"
-fi
+# diretorios a serem criados/verificados
+criar_diretorio "/u/rede/avanco/atualizacoes"
+criar_diretorio "$removidos"
+criar_diretorio "/u/sist/controle"
+criar_diretorio "/u/sist/logs"
 
 if [ ! -f "/u/sist/logs/log-de-remocao.log" ]; then
     echo "                          Controle de Backups Removidos                         " >/u/sist/logs/log-de-remocao.log
@@ -649,7 +647,6 @@ fi
 
 rm -rf /u/rede/avanco/atualizacoes/versao*
 rm -rf /u/rede/avanco/atualizacoes/release*
-
 
 # Funcao para limpar qualquer arquivo ou pasta que esteja errado no sist/exec
 limpa_exec() {
@@ -1026,7 +1023,7 @@ log_info() {
 
     # Verifica se o arquivo foi criado com sucesso
     if [ $? -ne 0 ]; then
-        echo "Erro ao escrever no arquivo de log." >&2
+        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - Erro ao escrever no arquivo de log." >&2
         exit 1
     fi
 }
@@ -1089,7 +1086,7 @@ baixar_versao() {
         URL_BUSCAR_VERSAO="$URL_BASE_VERSAO41"
         cobolBusca="41"
     else
-        echo "VERSAO DO COBOL INVALIDA."
+        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - VERSAO DO COBOL INVALIDA."
         exit 1
     fi
 
@@ -1143,7 +1140,7 @@ baixar_release() {
         cobolBusca="41"
         releaseBusca=$buscarV41
     else
-        echo "VERSAO DO COBOL INVALIDA."
+        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - VERSAO DO COBOL INVALIDA."
         exit 1
     fi
 
@@ -1208,6 +1205,9 @@ definirPacote_por_cobol() {
 
 # Funcao para baixar arquivo atualizado
 baixar_controle() {
+    if [[ -f "/u/sist/controle/versao_release.txt" ]]; then
+        rm -rf "/u/sist/controle/versao_release.txt"
+    fi
     local_abortado="Baixando controle de versao/release"
     echo "OBTENDO DETALHES DA VERSAO E RELEASE"
     if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
@@ -1236,19 +1236,19 @@ baixar_controle() {
                 alerta_msg "Somente a versao sera considerada nessa atualizacao."
                 echo
             else
-                
+
                 data_tratada_dt_release=$(tratar_datas "$data_release")
                 echo "RELEASE ATUAL: $data_tratada_dt_release - $letraRelease"
                 echo ""
                 ch_release_existe=true
             fi
-            
+
         else
             echo "ERRO AO OBTER VERSAO E RELEASE RECENTES!"
             rm -f /u/sist/controle/versao_release.txt
         fi
     else
-        echo "ERROR: NAO FOI POSSIVEL OBTER AS INFORMACOES DE VERSAO E RELEASE."
+        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - NAO FOI POSSIVEL OBTER AS INFORMACOES DE VERSAO E RELEASE."
         rm -f /u/sist/controle/versao_release.txt
     fi
 }
@@ -1263,9 +1263,9 @@ chamar_atu_help() {
     sleep 1
     echo
     echo "Aguarde... Atualizando o 'Help'..."
-    echo "LOG ATUALIZACAO DO HELP - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUAARIO: $USER " >$log_atu_help
+    echo "LOG ATUALIZACAO DO HELP - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUARIO: $USER " >$log_atu_help
     echo >>$log_atu_help
-    echo "LOG ATUALIZACAO DO HELP ERROR - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUAARIO: $USER " >$err_atu_help
+    echo "LOG ATUALIZACAO DO HELP ERROR - $(date +'%d/%m/%Y') - $(date +'%H:%M') - USUARIO: $USER " >$err_atu_help
     echo >>$err_atu_help
     echo
     test $ch_normal_atu_help -eq 1 && atu-help manual >>$log_atu_help 2>>$err_atu_help
@@ -1274,6 +1274,9 @@ chamar_atu_help() {
         echo "Erro ao executar 'atu-help manual'! $(date +'%d/%m/%Y') - $(date +"%H:%M:%S")" >>$erro_log_file
     elif [ $? -eq 1 ]; then
         echo -e "${VERDE}${NEGRITO}[INFO]${PADRAO} - Help Atualizado"
+        echo
+        echo -e "  Se desejar, consulte o log e log.erro do 'Help' em: "
+        echo -e "  /u/sist/logs/ --> nomes: ${SUBLINHADO}atu-help.log${PADRAO} e ${SUBLINHADO}atu-help.err${PADRAO}"
     fi
     local_abortado="Func. Atualizar: Atu-help finalizado"
 }
@@ -1329,7 +1332,7 @@ atualizar() {
                 rm -rf "$arquivo_versao_atual"
                 info_msg "VERSAO ATUALIZADA PARA: '$novoPortal'"
                 sleep 1
-                if [[ "$ch_release_existe" =  false ]]; then
+                if [[ "$ch_release_existe" = false ]]; then
                     # se for false, condições para serem gravadas
                     flag_pacote_descompactado=true
                     inf_releaseLoja=""
@@ -1376,7 +1379,7 @@ atualizar() {
             fi
         fi
     elif [ "$inf_versaoLoja" == "$novoPortal" ]; then
-        if [[ "$ch_release_existe" =  false ]]; then
+        if [[ "$ch_release_existe" = false ]]; then
             echo "INTEGRAL ATUALIZADO!"
             flag_pacote_descompactado=true
             inf_releaseLoja=""
@@ -1434,12 +1437,16 @@ atualizar() {
     rm -rf "$controle_flag/controle_flag.txt"
     local_abortado="Func. Atualizar: Fim"
     fim_atualizacao=true
+    ativar_desativar_online
+    if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
+        mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+    fi
 }
+
 # Funcao que gravara a versao e release apos a atualizacao
 gravando_atualizacoes() {
     local_abortado="Gravando informacoes pos atualizado"
     if [[ "$flag_pacote_descompactado" = true ]]; then
-
         inf_versaoLoja="$novoPortal"
         data_configuracao=$(date +'%d/%m/%Y')
         data_exibir=$(tratar_datas "$inf_versaoLoja")
@@ -1457,19 +1464,19 @@ gravando_atualizacoes() {
         echo "VERSAO INTEGRAL: $inf_versaoLoja" >>"$info_loja_txt"
         echo "RELEASE: $inf_releaseLoja" >>"$info_loja_txt"
         echo "DATA RELEASE: $data_release" >>"$info_loja_txt"
-        fim_atualizacao=true
-        ativar_desativar_online
 
         if [ "$flag_load_parametros" = true ] && [[ "$logar_atualizando" == "N" ]]; then
-            mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+            if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
+                mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+            fi
         fi
 
         echo
         echo "INFORMACOES GRAVADAS COM SUCESSO!"
         echo
         echo "SISTEMA ATUALIZADO EM $data_configuracao"
-        cobrun status-online.gnt "A" >/dev/null
     else
+        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - NAO FOI POSSIVEL GRAVAR AS INFORMACOES. $(date +"%d/%m/%Y") - $(date +"%H:%M")"
         echo "NAO FOI POSSIVEL GRAVAR AS INFORMACOES. $(date +"%d/%m/%Y") - $(date +"%H:%M")" >>$erro_log_file
     fi
 
@@ -1591,7 +1598,7 @@ nova_versao() {
             fi
             exit 0
         else
-            echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
+            echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
             rm -f "/u/bats/atualizador"
             mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
             exit 1
@@ -1601,7 +1608,6 @@ nova_versao() {
         echo
         echo "-Versao: $versaoPrograma"
         echo
-        rm -f "/tmp/versao_remota.txt"
         exit 0
     fi
 }
@@ -1619,11 +1625,16 @@ adicionar_cron_avanco() {
     local comentario="# ATUALIZADOR AUTOMATICO - TESTAR SE FOI ATUALIZADO MANUALMENTE - NAO REMOVER"
 
     # backup do cron antes da modificação
-    echo "NAO REMOVER E NAO ALTERAR" > /u/sist/controle/bkp-cron-avanco.txt
-    crontab -u avanco -l >> /u/sist/controle/bkp-cron-avanco.txt
+    echo "NAO REMOVER E NAO ALTERAR" >/u/sist/controle/bkp-cron-avanco.txt
+    crontab -u avanco -l >>/u/sist/controle/bkp-cron-avanco.txt
 
     if ! crontab -u avanco -l | grep -q "/u/bats/atualizador --testar-atualizado"; then
-        (crontab -u avanco -l; echo ""; echo "$comentario"; echo "$cron_job") | crontab -u avanco -
+        (
+            crontab -u avanco -l
+            echo ""
+            echo "$comentario"
+            echo "$cron_job"
+        ) | crontab -u avanco -
     fi
 }
 
@@ -1632,7 +1643,7 @@ testar_atualizado() {
     baixar_controle >/dev/null 2>&1
 
     if [ ! -f "/u/sist/exec/versao-release.gnt" ]; then
-        echo "PROGRAMA 'versao-release.gnt' NAO ENCONTRADO!" >> $erro_log_file
+        echo "PROGRAMA 'versao-release.gnt' NAO ENCONTRADO!" >>$erro_log_file
         return 1
     fi
 
@@ -1646,7 +1657,7 @@ testar_atualizado() {
     # lendo o que é gerado através do versao-release.gnt
     local versaoLoja_testado=$(cobrun versao-release.gnt | grep -oP '\d{2}/\d{2}/\d{2}' | tr -d '/')
     local releaseLoja_testado=$(cobrun versao-release.gnt | grep -oP '[a-zA-Z]$')
-    
+
     # datas tratadas para comparacao em formato YYYYMMDD
     local versaoLoja_gravada_ttd=$(converter_datas "$versaoLoja_gravada")
     local versaoLoja_testado_ttd=$(converter_datas "$versaoLoja_testado")
@@ -1669,13 +1680,13 @@ testar_atualizado() {
         echo "- DATA: $possivel_dia/$possivel_mes/$possivel_ano - HORA: $possivel_hora"
         echo "" >>$log_file
         echo "- VERSAO COBOL: $cobol_gravado" >>$log_file
-        echo "- DATA DA ULTIMA ATUALIZACAO EXECUTADA PELO ATUALIZADOR: $data_atualizacao_gravada">>$log_file
-        echo "- POSSIVEL VERSAO INTEGRAL ANTES: $versaoLoja_gravada">>$log_file
-        echo "- POSSIVEL RELEASE INTEGRAL ANTES: $releaseLoja_gravada">>$log_file
+        echo "- DATA DA ULTIMA ATUALIZACAO EXECUTADA PELO ATUALIZADOR: $data_atualizacao_gravada" >>$log_file
+        echo "- POSSIVEL VERSAO INTEGRAL ANTES: $versaoLoja_gravada" >>$log_file
+        echo "- POSSIVEL RELEASE INTEGRAL ANTES: $releaseLoja_gravada" >>$log_file
         echo "" >>$log_file
-        echo "- POSSIVEL VERSAO INSTALADA: $versaoLoja_testado">>$log_file
+        echo "- POSSIVEL VERSAO INSTALADA: $versaoLoja_testado" >>$log_file
         echo "- POSSIVEL RELEASE INSTALADA: $data_release_testado - $releaseLoja_testado" >>$log_file
-        echo "################################################################################">>$log_file
+        echo "################################################################################" >>$log_file
     else
         if [ "$releaseLoja_gravada" != "$releaseLoja_testado" ]; then
             echo "################################################################################" >>$log_file
@@ -1685,12 +1696,12 @@ testar_atualizado() {
             echo "- DATA: $possivel_dia/$possivel_mes/$possivel_ano - HORA: $possivel_hora" >>$log_file
             echo "" >>$log_file
             echo "- VERSAO COBOL: $cobol_gravado" >>$log_file
-            echo "- POSSIVEL VERSAO INTEGRAL ANTES: $versaoLoja_gravada">>$log_file
-            echo "- POSSIVEL RELEASE INTEGRAL ANTES: $releaseLoja_gravada">>$log_file
+            echo "- POSSIVEL VERSAO INTEGRAL ANTES: $versaoLoja_gravada" >>$log_file
+            echo "- POSSIVEL RELEASE INTEGRAL ANTES: $releaseLoja_gravada" >>$log_file
             echo "" >>$log_file
-            echo "- POSSIVEL VERSAO INSTALADA: $versaoLoja_testado">>$log_file
+            echo "- POSSIVEL VERSAO INSTALADA: $versaoLoja_testado" >>$log_file
             echo "- POSSIVEL RELEASE INSTALADA: $data_release_testado - $releaseLoja_testado" >>$log_file
-            echo "################################################################################">>$log_file
+            echo "################################################################################" >>$log_file
         fi
     fi
 }
@@ -1915,7 +1926,6 @@ alterar_parametros() {
         echo "Opcao invalida. Use S ou N"
     fi
 }
-
 
 default_parametros() {
     echo "DESLOGAR USUARIOS - N" >$arquivo_parametros
@@ -2331,10 +2341,12 @@ menu_6() {
         tput cup 13 22
         echo " 6  -  AVISAR ATUALIZACAO"
         tput cup 14 22
-        echo " 9  -  MENU PRINCIPAL"
+        echo " 7  -  Baixar Extras"
         tput cup 15 22
+        echo " 9  -  MENU PRINCIPAL"
+        tput cup 16 22
         echo "99  -  SAIR"
-        tput cup 17 26
+        tput cup 18 26
         echo -ne "\e[1;32mOPCAO: \e[0m"
         read opcao_menu
         case "$opcao_menu" in
@@ -2375,6 +2387,10 @@ menu_6() {
             #yellow_msg "!!!ATENCAO!!!"
             #yellow_msg "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
             #yellow_msg "QUE O INTEGRAL SERA ATUALIZADO EM INSTANTES!!!"
+            ;;
+        7)
+            clear
+            baixar_extras
             ;;
         9)
             menu_principal
@@ -2920,7 +2936,6 @@ ativar_no_cron() {
         echo ""
     ) | crontab -
 
-
 }
 
 # Função para chamar opção de atualização na ordem
@@ -2938,8 +2953,7 @@ chamar_atualizacao() {
     atualizar
     ler_arquivo_texto >/dev/null 2>&1
     gravando_atualizacoes
-    cobrun status-online.gnt "A" >/dev/null
-    #
+    ativar_desativar_online
 }
 
 # Função para verificar a senha do usuário atual
@@ -3226,7 +3240,7 @@ testar_online() {
 
 # Função para ser baixado e configurado scripts e programas extras
 baixar_extras() {
-
+    echo
     if [ "$distro_nome" = "Debian" ]; then
         if [ ! -f "/u/bats/xmlstarlet" ]; then
             # Usando o link raw para baixar o binário corretamente
@@ -3252,8 +3266,8 @@ baixar_extras() {
     fi
 
     if [ ! -f "/u/bats/verificar-processo" ]; then
-        echo
-        curl -# -o "/u/bats/verificar-processo" https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo
+        echo "CONFIGURANDO VERIFICA PROCESSO"
+        curl -# -o "/u/bats/verificar-processo" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo"
         chmod 777 "/u/bats/verificar-processo"
     fi
     echo
@@ -3427,6 +3441,7 @@ case "$1" in
     clear
     if test -n "$1"; then
         echo OPCAO INVALIDA: $1
+        echo -e "Utilize a opcao -h ou --help para obter ajuda"
         exit 1
     fi
     ;;
@@ -3443,6 +3458,5 @@ limpa_exec
 ler_arquivo_texto >/dev/null 2>&1
 atualizar
 gravando_atualizacoes
-cobrun status-online.gnt "A" >/dev/null
 nova_versao >/dev/null
 exit 0
