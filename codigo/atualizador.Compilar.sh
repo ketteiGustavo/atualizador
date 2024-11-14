@@ -1610,7 +1610,6 @@ nova_versao() {
                 rm -f "/u/bats/baixarAtualizacao"
             fi
             sleep 1
-            chmod 777 "/u/bats/atualizador"
             exit 0
         else
             echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
@@ -3473,5 +3472,5 @@ limpa_exec
 ler_arquivo_texto >/dev/null 2>&1
 atualizar
 gravando_atualizacoes
-nova_versao >/dev/null
+nova_versao >/dev/null 2>&1
 exit 0
