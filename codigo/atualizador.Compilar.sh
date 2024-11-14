@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.2e
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.2f
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -40,6 +40,9 @@
 # v0.4.0.2e - 14/11/2024 - Luiz Gustavo;
 #           - alterado para pacote.rar o atualizador
 #
+# v0.4.0.2f - 14/11/2024 - Luiz Gustavo;
+#           - Melhoria na funcao nova_versao do atualizador
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -51,7 +54,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.2e"
+versaoPrograma="0.4.0.2f"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
