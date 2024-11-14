@@ -1586,7 +1586,7 @@ nova_versao() {
 
     # comparando versoes do atualizador
     if [ $versaoPrograma != $versao_do_atualizador ]; then
-        mv "/u/bats/atualizador" "/u/bats/atualizadorOLD"
+        cp "/u/bats/atualizador" "/u/bats/atualizadorOLD"
         echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
         if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
             curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
@@ -1601,7 +1601,7 @@ nova_versao() {
         else
             echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
             rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
+            cp "/u/bats/atualizadorOLD" "/u/bats/atualizador"
             exit 1
         fi
     else
