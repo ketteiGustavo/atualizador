@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.3
+# DATA: 13/04/2024 11:27 - Versao 0.4.1.0
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -48,6 +48,15 @@
 #           - validação de usuário root para conceder permissão
 #           - Correção para baixar xmlstarlet apenas para slackware
 #
+# v0.4.0.3a - 03/12/2024 - Luiz Gustavo;
+#           - Correcao da funcao de permissao
+#           - nova opção para linha de comando -c e --corrigir
+#           - Organização no menu de ajuda
+#           - Ajuste na função para gerar compilado
+#
+# v0.4.1.0  - 03/12/2024 - Luiz Gustavo;
+#           - Remoção de funções não usadas no atualizador
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -59,7 +68,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.3"
+versaoPrograma="0.4.1.0"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -68,22 +77,23 @@ Programa: $(basename "$0")
                               [OPCOES DISPONIVEIS]
 
 OPCOES NA LINHA DE COMANDO:
-    -h,  --help         Mostrar esta tela de ajuda
     -a,  --ajuda        Mostrar esta tela de ajuda
-    -V,  --version      Mostrar a versao do Atualizador
-    --versao            Mostrar a versao do Atualizador
-    -i,  --info         Mostrar a versao e release no servidor
-    -d,  --download     Baixar Versao e Release
-    --baixar-versao     Baixar somente o pacote da Versao atual
-    --baixar-release    Baixar somente o pacote da Release atual
     -b,  --backup       Realizar o backup do 'sist/exec'
+    -c,  --corrigir     Libera o acesso ao Integral
+    -d,  --download     Baixar Versao e Release
+    -h,  --help         Mostrar esta tela de ajuda
+    -i,  --info         Mostrar a versao e release no servidor
+    -l,  --log          Visualizar principais logs do Atualizador
     -m,  --menu         Menu de opcoes do Atualizador
-    -up, --update       Realizar update do Atualizador
-    --man               Manual tecnico do Atualizador (em construcao)
     -o,  --obter        Obter detalhes de Versao e Release disponiveis no portal
                         Avanco
-    -l,  --log          Visualizar principais logs do Atualizador
     -P                  Parametrizacao (somente para usuario 'avanco')
+    -V,  --version      Mostrar a versao do Atualizador
+    --versao            Mostrar a versao do Atualizador
+    --baixar-versao     Baixar somente o pacote da Versao atual
+    --baixar-release    Baixar somente o pacote da Release atual
+    -up, --update       Realizar update do Atualizador
+    --man               Manual tecnico do Atualizador (em construcao)
     --cron              Ativar no cron (somente para usuario 'avanco')
     --permissoes        Conceder permissao total no 'sist/exec' (somente para
                         usuario 'avanco')
@@ -93,8 +103,6 @@ OPCOES NA LINHA DE COMANDO:
                          '-L' - Para mostrar o status
                          '-A' - Para ativar o Online
                          '-D' - Para Desativar
-    
-    
 
 MODO DE USAR:
 Digite o nome do programa e a opcao desejada.
@@ -420,7 +428,7 @@ interromper() {
 trap 'interromper' SIGINT SIGTERM SIGHUP
 ### Controle de acesso
 verificar_usuario() {
-    if [[ "$USER" != "avanco" && "$USER" != "root" ]]; then
+    if [[ "$USER" != "avanco" ]] || [[ "$USER" != "root" ]]; then
         echo "Favor acionar o Suporte Avanco para realizar a configuracao"
         echo "" >>"$auditoria"
         echo "================================================================================" >>"$auditoria"
@@ -1530,56 +1538,6 @@ barra_progresso() {
     echo -ne "\rPROGRESSO: [$barra] $progresso%"
 }
 
-# Função para baixar ajuda rapida atualizada
-mostrar_ajuda() {
-    TMP_ajuda=$(mktemp /tmp/ajuda-atualizador.XXXXXX)
-    TMP_manual=$(mktemp /tmp/manual-atualizador.XXXXXX)
-    local $1
-    $url_ajuda
-    $url_manual
-    clear
-    if [ $1 = 1 ]; then
-        echo
-        if curl -k --output /dev/null --silent --head --fail "$url_ajuda"; then
-            curl -k -# -o "$TMP_ajuda" "$url_ajuda"
-            if [ $? -eq 0 ]; then
-                chmod 444 "$TMP_ajuda"
-                cat "$TMP_ajuda"
-            else
-                echo "ERRO AO LER MANUAL DE AJUDA."
-                rm -f "$TMP_ajuda"
-                exit 1
-            fi
-        else
-            echo "ERRO: A URL DO MANUAL NAO ESTA ACESSIVEL."
-            rm -f "$TMP_ajuda"
-            exit 1
-        fi
-    elif [ $1 = 2 ]; then
-        echo
-        if curl -k --output /dev/null --silent --head --fail "$url_manual"; then
-            curl -k -# -o "$TMP_manual" "$url_manual"
-            if [ $? -eq 0 ]; then
-                chmod 444 "$TMP_manual"
-                cat "$TMP_manual"
-            else
-                echo "ERRO AO LER MANUAL DE AJUDA."
-                rm -f "$TMP_manual"
-                exit 1
-            fi
-        else
-            echo "ERRO: A URL DO MANUAL NAO ESTA ACESSIVEL."
-            rm -f "$TMP_manual"
-            exit 1
-        fi
-    else
-        echo "OPCAO INVALIDA"
-    fi
-
-    rm -rf /tmp/manual-atualizador.*
-    rm -rf /tmp/ajuda-atualizador.*
-}
-
 # Funcao para atualizar o script sempre para a versao mais recente
 nova_versao() {
     local url_teste_versao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/controle/versao-atualizador.txt"
@@ -1634,10 +1592,10 @@ nova_versao() {
 somente_permissao() {
     chmod 777 /u/sist/exec/*.gnt
     chown avanco:sist /u/sist/exec/*
-    chown avanco.sist /u/sist/logs/*
-    chown avanco.sist /u/sist/controle/*
-    chmod 777 -R /u/sist/logs/*
-    chmod 777 -R /u/sist/controle/*
+    chown avanco.sist -R /u/sist/logs/
+    chown avanco.sist -R /u/sist/controle/
+    chmod 777 -R /u/sist/logs/
+    chmod 777 -R /u/sist/controle/
     adicionar_cron_avanco
 }
 
@@ -2038,15 +1996,6 @@ menu_principal() {
                 exit
             fi
             ;;
-        "r" | "R")
-            clear
-            alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
-            menu_principal
-            return 1
-            #clear
-            #echo "REVERTER ATUALIZACAO"
-            #menu_restaura
-            ;;
         99)
             clear
             mensagem_saida
@@ -2399,7 +2348,7 @@ menu_6() {
             ;;
         5)
             clear
-            testar_online
+            cobrun status-online.gnt "L"
             ;;
         6)
             clear
@@ -2663,9 +2612,13 @@ preparar_compilado() {
         curl -L -o /u/login-suporte/luizgustavo/atualizador.Compilar https://raw.githubusercontent.com/ketteiGustavo/atualizador/refs/heads/main/codigo/atualizador.Compilar.sh
         if [ $? -eq 0 ]; then
             cd /u/login-suporte/luizgustavo/shc-master/src/
-            ./shc -f "/u/login-suporte/luizgustavo/atualizador.Compilar" -ro "/u/login-suporte/luizgustavo/atualizador.Compilado"
-            ls -lh /u/login-suporte/luizgustavo/atualizador.Compilado
-            rm -rf /u/login-suporte/luizgustavo/atualizador.Compilar
+            ./shc -f "/u/login-suporte/luizgustavo/atualizador.Compilar" -ro "/u/login-suporte/luizgustavo/atualizador" && chmod 777 /u/login-suporte/luizgustavo/atualizador
+            ls -lh /u/login-suporte/luizgustavo/atualizador
+            if [ -f /u/login-suporte/luizgustavo/atualizador.rar ]; then
+                rm -rf /u/login-suporte/luizgustavo/atualizador.rar
+                echo -e "PACOTE ANTIGO REMOVIDO"
+            fi
+            rar a -ep atualizador.rar atualizador && echo -e "NOVO PACOTE RAR CRIADO!"
         else
             echo "NAO FOI POSSIVEL BAIXAR O ATUALIZADOR PARA COMPILAR"
         fi
@@ -3001,75 +2954,6 @@ verificar_senha() {
     return 1
 }
 
-# funcao para controlar a restauracao.
-menu_restaura() {
-    local_abortado="Restaurando backup"
-    usuario_permitido
-
-    if ! verificar_senha; then
-        echo "Falha na autenticacao. Encerrando o atualizador."
-        exit 1
-    fi
-
-    echo "BACKUPS DISPONIVEIS:                             (9) para menu ou (99) para sair"
-    echo ""
-    backups=$(ls ${bkp_destino}/BKPTOTAL_* | sort)
-    select backup in ${backups}; do
-        if [ "$REPLY" = "99" ]; then
-            exit 0
-        elif [ "$REPLY" = "9" ]; then
-            menu_principal
-        fi
-        if [[ -n $backup ]]; then
-            echo "SERA RESTAURADO O BACKUP: $backup"
-            rar e -o+ "$backup" "$local_gnt"
-            clear
-            break
-        else
-            echo "OPCAO ESCOLHIDA INVALIDA. TENTE NOVAMENTE."
-        fi
-    done
-
-    data_bkp=$(basename $backup | sed 's/^BKPTOTAL_//')
-    arquivo_log="${local_log}/log_$(date +'%m%y').log"
-
-    if [[ ! -f $arquivo_log ]]; then
-        echo "ARQUIVO DE LOG NAO ENCONTRADO: $arquivo_log"
-        exit 1
-    fi
-
-    entrada_log=$(awk -v RS="################################################################################" -v date="$data_bkp" '$0 ~ date {print}' $arquivo_log)
-
-    if [[ -z $entrada_log ]]; then
-        erro_msg "NAO FOI POSSIVEL ENCONTRAR AS INFORMACOES DO BACKUP NO ARQUIVO DE LOG."
-        echo "NAO FOI POSSIVEL ENCONTRAR AS INFORMACOES DO BACKUP NO ARQUIVO DE LOG." >>$erro_log_file
-        exit 1
-    fi
-
-    versao_cobol_antes=$(echo "$entrada_log" | grep -oP '(?<=- VERSAO COBOL: )\S+')
-    versao_integral_antes=$(echo "$entrada_log" | grep -oP '(?<=- VERSAO INTEGRAL ANTES: )\S+')
-    release_integral_antes=$(echo "$entrada_log" | grep -oP '(?<=- RELEASE INTEGRAL ANTES: )\S+')
-
-    echo "DATA: $(date +'%d/%m/%Y')" >$info_loja_txt
-    echo "VERSAO COBOL: $versao_cobol_antes" >>$info_loja_txt
-    echo "VERSAO INTEGRAL: $versao_integral_antes" >>$info_loja_txt
-    echo "RELEASE: $release_integral_antes" >>$info_loja_txt
-    echo "DATA RELEASE: " >>$info_loja_txt
-
-    echo "BACKUP FOI RESTAURADO PARA A VERSAO ABAIXO"
-    echo
-    echo "DATA: $(date +'%d/%m/%Y')"
-    echo "VERSAO COBOL: $versao_cobol_antes"
-    echo "VERSAO INTEGRAL: $versao_integral_antes"
-    echo "RELEASE: $release_integral_antes"
-    echo "DATA RELEASE: "
-    echo
-    echo "BACKUP RESTAURADO COM SUCESSO."
-    echo "" >>$log_file
-    echo "BACKUP RESTAURADO COM SUCESSO NO DIA $(date +'%d/%m/%Y') as $(date +'%H:%M:%S')" >>$log_file
-
-}
-
 # Funcao para extrair e exibir a versao do programa
 mostrar_versao() {
     echo -n "-Programa: $(basename "$0")"
@@ -3168,98 +3052,6 @@ visualizar_logs() {
     fi
 }
 
-# Função para alterar o status do online pela linha de comando
-testar_online() {
-    echo
-    local teste_status_online
-    local opcao
-    if [[ -z "$1" ]]; then
-        clear
-        tput cup 2 21
-        echo "OPCAO PARA VERIFICAR/ALTERAR O ONLINE"
-        tput cup 5 24
-        echo " 1  -  ATIVAR O ONLINE"
-        tput cup 6 24
-        echo " 2  -  DESATIVAR O ONLINE"
-        tput cup 7 24
-        echo " 3  -  VISUALIZAR O ONLINE"
-        tput cup 8 24
-        echo " 9  -  VOLTAR AO MENU PRINCIPAL"
-        tput cup 9 24
-        echo "99  -  SAIR"
-        tput cup 11 26
-        echo -n "OPCAO: "
-        read opcao
-        case $opcao in
-        1)
-            clear
-            cobrun status-online.gnt "A" 2>&1
-            echo "ONLINE DE VENDAS ATIVADO!"
-            ;;
-        2)
-            clear
-            cobrun status-online.gnt "D" 2>&1
-            echo "ONLINE DE VENDAS DESATIVADO!"
-            ;;
-        3)
-            clear
-            teste_status_online=$(cobrun status-online.gnt "L")
-            if [ $teste_status_online = "ATIVADO" ]; then
-                echo "ONLINE DE VENDAS ATIVADO!"
-            else
-                echo "ONLINE DE VENDAS DESATIVADO!"
-            fi
-            ;;
-        9)
-            menu_principal
-            return 1
-            ;;
-
-        99)
-            clear
-            mensagem_saida
-            echo
-            sleep 1
-            exit 0
-            ;;
-        esac
-    else
-        while getopts ":Lade" opt; do
-            case ${opt} in
-            L)
-                clear
-                teste_status_online=$(cobrun status-online.gnt "L")
-                if [ $teste_status_online = "ATIVADO" ]; then
-                    echo "ONLINE DE VENDAS ATIVADO!"
-                else
-                    echo "ONLINE DE VENDAS DESATIVADO!"
-                fi
-                exit 0
-                ;;
-            A)
-                clear
-                cobrun status-online.gnt "A" 2>&1
-                echo "ONLINE DE VENDAS ATIVADO!"
-                exit 0
-                ;;
-            D)
-                clear
-                cobrun status-online.gnt "D" 2>&1
-                echo "ONLINE DE VENDAS DESATIVADO!"
-                exit 0
-                ;;
-            *)
-                clear
-                echo "OPCAOO INVALIDA."
-                echo "USE '-L' PARA VISUALIZAR O STATUS DO ONLINE DE VENDAS."
-                echo "USE '-A' PARA ATIVAR O ONLINE DE VENDAS."
-                echo "USE '-D' PARA DESATIVAR O ONLINE DE VENDAS."
-                ;;
-            esac
-        done
-    fi
-}
-
 # Função para ser baixado e configurado scripts e programas extras
 baixar_extras() {
     echo
@@ -3305,6 +3097,15 @@ case "$1" in
     clear
     mostrar_versao
     exit 0
+    ;;
+-c | --corrigir)
+    if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
+        clear
+        mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
+        echo -e "use: cobrun integral"
+        echo -e "para acessar o Integral"
+        exit 0
+    fi
     ;;
 -i | --info)
     clear
@@ -3372,19 +3173,6 @@ case "$1" in
     checar_internet
     # Busca no servidor a versao e release atualizada e exibi no terminal
     baixar_controle
-    exit 0
-    ;;
---online)
-    clear
-    shift
-    testar_online "$@"
-    exit 0
-    ;;
--r | --restore)
-    clear
-    alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
-    #echo "OPCAO DE RESTAURACAO"
-    #menu_restaura
     exit 0
     ;;
 -l | --log)
