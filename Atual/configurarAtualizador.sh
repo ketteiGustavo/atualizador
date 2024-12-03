@@ -3,7 +3,7 @@
 ################################################################################
 # configurarAtualizador.sh - realizar a configuracao basica do atualizador
 #
-# DATA: 03/07/2024 09:53 - Versao 2.6
+# DATA: 03/07/2024 09:53 - Versao 2.8
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
@@ -22,10 +22,18 @@
 #             pasta /u/sist/exec
 # Versão 2.5: Configurado opção para baixar o compilado corretamente
 # Versão 2.6: Novos ajustes de configuração
+#
+# v2.7 - 19/11/2024 - Luiz Gustavo;
+#      - alteracoes na instalação do 'xmlstarlet'
+#
+# v2.8 - 03/12/2024 - Luiz Gustavo;
+#      - Alteracoes de permissao ao criar diretorio /u/sist/logs e /u/sist/controle
+#
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar o uso do atualizador.
 ###############################
 
+versao=2.8
 MENSAGEM_USO="
 Programa: $(basename "$0")
 
@@ -43,10 +51,8 @@ MODO DE USAR:
 
 # Funcao para extrair e exibir a versao do programa
 mostrar_versao() {
-    local versao=$(grep '^# DATA:' "$0" | head -1 | cut -d '-' -f 2 | sed 's/Versao //')
-    echo -n "- Programa: $(basename "$0")"
-    echo
-    echo "- Versao: $versao"
+    echo -e "- Programa: $(basename "$0")"
+    echo -e "- Versao..: $versao"
 }
 
 ###############################
@@ -124,10 +130,16 @@ if [ ! -d "/u/sist/controle" ]; then
     mkdir -p "/u/sist/controle"
     chmod 777 -R "/u/sist/controle"
     chown avanco.sist "/u/sist/controle"
+else
+    chmod 777 -R "/u/sist/controle"
+    chown avanco.sist "/u/sist/controle"
 fi
 
 if [ ! -d "/u/sist/logs" ]; then
     mkdir -p "/u/sist/logs"
+    chmod 777 -R "/u/sist/logs"
+    chown avanco.sist "/u/sist/logs"
+else
     chmod 777 -R "/u/sist/logs"
     chown avanco.sist "/u/sist/logs"
 fi
@@ -153,6 +165,7 @@ fi
 configurar_online() {
     local novo_URL
     local tudo_ok=1
+    local verifica_xmlstarlet=$(which xmlstarlet 2>/dev/null)
     verifica_cobol
 
     cd "$EXEC" || {
@@ -194,29 +207,29 @@ configurar_online() {
     echo
     echo "REALIZANDO ATIVACOES NECESSARIAS DOS DEMAIS SCRIPTS... AGUARDE!"
     echo
-    if [ "$distro_nome" = "Debian" ]; then
-        if [ ! -f "$BATS/xmlstarlet" ]; then
-            echo "ATIVANDO O XMLSTARLET"
-            echo ""
-            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
-            chown avanco:sist /u/bats/xmlstarlet
-            chmod +x /u/bats/xmlstarlet
+    if [ -z "$verifica_xmlstarlet" ] || [ "$verifica_xmlstarlet" == "/u/bats"* ]; then
+        if [ "$distro_nome" = "Debian" ]; then
+            apt install xmlstarlet -y >/dev/null 2>&1 && echo -e "ATIVADO e CONFIGURADO O XMLSTARLET"
+            if [ -f "$BATS/xmlstarlet" ]; then
+                rm -rf /u/bats/xmlstarlet >/dev/null
+            fi
             tudo_ok=0
-        fi
-
-    elif [ "$distro_nome" = "Slackware" ]; then
-        if [ ! -f "$BATS/xmlstarlet" ]; then
-            # Usando o link raw para baixar o binário corretamente
-            echo "ATIVANDO O XMLSTARLET"
-            echo ""
-            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
-            chown avanco:sist /u/bats/xmlstarlet
-            chmod +x /u/bats/xmlstarlet
-            tudo_ok=0
+        elif [ "$distro_nome" = "Slackware" ]; then
+            if [ ! -f "$BATS/xmlstarlet" ]; then
+                # Usando o link raw para baixar o binário corretamente
+                echo "ATIVANDO O XMLSTARLET"
+                echo ""
+                curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
+                chown avanco:sist /u/bats/xmlstarlet
+                chmod +x /u/bats/xmlstarlet
+                tudo_ok=0
+            fi
+        else
+            echo "VERSAO DE DISTRIBUICAO DESCONHECIDA!!!"
+            log_erro "Distribuicao desconhecida: $distro_nome."
         fi
     else
-        echo "VERSAO DE DISTRIBUICAO DESCONHECIDA!!!"
-        log_erro "Distribuicao desconhecida: $distro_nome."
+        echo -e "XMLSTARLET ja esta configurado e ativo!"
     fi
 
     if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
@@ -301,7 +314,7 @@ ativar_permissao() {
     if [ ! -f /u/sist/controle/bkp_cron.config ]; then
         echo "# BACKUP DO CRONTAB DO ROOT - NAO APAGAR - NAO ALTERAR" >>/u/sist/controle/bkp_cron.config
         crontab -l >>/u/sist/controle/bkp_cron.config
-        chmod 444 /u/sist/controle/bkp_cron.config
+        chmod 666 /u/sist/controle/bkp_cron.config
         cp /u/sist/controle/bkp_cron.config /u/bats
     fi
 

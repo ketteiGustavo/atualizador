@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.2d
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.3
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -37,6 +37,17 @@
 # v0.4.0.2d - 14/11/2024 - Luiz Gustavo;
 #           - removido condição de permissão ao atualizar o atualizador
 #
+# v0.4.0.2e - 14/11/2024 - Luiz Gustavo;
+#           - alterado para pacote.rar o atualizador
+#
+# v0.4.0.2f - 14/11/2024 - Luiz Gustavo;
+#           - Melhoria na funcao nova_versao do atualizador
+#
+# v0.4.0.3  - 03/12/2024 - Luiz Gustavo;
+#           - Correção em exit 1, ao não gravar log
+#           - validação de usuário root para conceder permissão
+#           - Correção para baixar xmlstarlet apenas para slackware
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -48,7 +59,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.2d"
+versaoPrograma="0.4.0.3"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1023,8 +1034,7 @@ log_info() {
 
     # Verifica se o arquivo foi criado com sucesso
     if [ $? -ne 0 ]; then
-        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - Erro ao escrever no arquivo de log." >&2
-        exit 1
+        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - Erro ao escrever no arquivo de log." >>"$erro_log_file"
     fi
 }
 
@@ -1433,7 +1443,6 @@ atualizar() {
     chamar_atu_help
     baixar_extras
     info_msg "ATUALIZACAO REALIZADA COM SUCESSO!"
-    log_info "ATUALIZACAO REALIZADA PELO ATUALIZADOR"
     rm -rf "$controle_flag/controle_flag.txt"
     local_abortado="Func. Atualizar: Fim"
     fim_atualizacao=true
@@ -1441,6 +1450,7 @@ atualizar() {
     if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
         mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
     fi
+    log_info "ATUALIZACAO REALIZADA PELO ATUALIZADOR"
 }
 
 # Funcao que gravara a versao e release apos a atualizacao
@@ -1573,7 +1583,7 @@ mostrar_ajuda() {
 # Funcao para atualizar o script sempre para a versao mais recente
 nova_versao() {
     local url_teste_versao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/controle/versao-atualizador.txt"
-    local url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador"
+    local url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.rar"
 
     clear
     if curl -k --output /dev/null --silent --head --fail "$url_teste_versao"; then
@@ -1586,21 +1596,29 @@ nova_versao() {
 
     # comparando versoes do atualizador
     if [ $versaoPrograma != $versao_do_atualizador ]; then
-        mv "/u/bats/atualizador" "/u/bats/atualizadorOLD"
+        cp "/u/bats/atualizador" "/u/bats/atualizadorOLD"
         echo "BAIXANDO VERSAO MAIS RECENTE DO ATUALIZADOR"
         if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
-            chmod 777 "/u/bats/atualizador"
+            curl -k -L -# -o "/u/bats/atualizador.rar" "$url_atualizador"
             echo ""
+            rar e -o+ -idq "/u/bats/atualizador.rar" "/u/bats"
+            if [ $? -eq 0 ]; then
+                rm -rf /u/bats/atualizador.rar
+            else
+                echo -e "[ERRO] - Falha ao extrair o arquivo."
+                cp "/u/bats/atualizadorOLD" "/u/bats/atualizador"
+                exit 1
+            fi
             echo "EXECUTE O ATUALIZADOR NOVAMENTE!"
             if [ -f "/u/bats/baixarAtualizacao" ]; then
                 rm -f "/u/bats/baixarAtualizacao"
             fi
+            sleep 1
             exit 0
         else
             echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
             rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
+            cp "/u/bats/atualizadorOLD" "/u/bats/atualizador"
             exit 1
         fi
     else
@@ -1616,6 +1634,10 @@ nova_versao() {
 somente_permissao() {
     chmod 777 /u/sist/exec/*.gnt
     chown avanco:sist /u/sist/exec/*
+    chown avanco.sist /u/sist/logs/*
+    chown avanco.sist /u/sist/controle/*
+    chmod 777 -R /u/sist/logs/*
+    chmod 777 -R /u/sist/controle/*
     adicionar_cron_avanco
 }
 
@@ -2507,7 +2529,7 @@ menu_correcoes() {
         2)
             clear
             echo "CONCEDENDO PERMISSAO TOTAL AO INTEGRAL"
-            if [ $USER = avanco ] || [ $USER = root ]; then
+            if [ "$(id -u)" -ne 0 ] || [ $USER = avanco ] || [ $USER = root ]; then
                 somente_permissao
             else
                 yellow_msg "FAVOR ACIONAR O SUPORTE AVANCO PARA CONCEDER AS PERMISSOES"
@@ -2994,7 +3016,7 @@ menu_restaura() {
     backups=$(ls ${bkp_destino}/BKPTOTAL_* | sort)
     select backup in ${backups}; do
         if [ "$REPLY" = "99" ]; then
-            exit 1
+            exit 0
         elif [ "$REPLY" = "9" ]; then
             menu_principal
         fi
@@ -3242,11 +3264,8 @@ testar_online() {
 baixar_extras() {
     echo
     if [ "$distro_nome" = "Debian" ]; then
-        if [ ! -f "/u/bats/xmlstarlet" ]; then
-            # Usando o link raw para baixar o binário corretamente
-            echo "CONFIGURANDO XMLSTARTLET"
-            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
-            chmod +x /u/bats/xmlstarlet
+        if [ -f "/u/bats/xmlstarlet" ]; then
+            rm -rf /u/bats/xmlstarlet
         fi
     elif [ "$distro_nome" = "Slackware" ]; then
         if [ ! -f "/u/bats/xmlstarlet" ]; then
@@ -3255,8 +3274,6 @@ baixar_extras() {
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
             chmod +x /u/bats/xmlstarlet
         fi
-    else
-        echo "NECESSARIO CONFIGURAR EXTRAS MANUALMENTE!!!"
     fi
     echo
     if [ ! -f "/u/bats/gera-xml-por-tag.sh" ]; then
@@ -3458,5 +3475,5 @@ limpa_exec
 ler_arquivo_texto >/dev/null 2>&1
 atualizar
 gravando_atualizacoes
-nova_versao >/dev/null
+nova_versao >/dev/null 2>&1
 exit 0

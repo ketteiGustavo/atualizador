@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.0.2f
+# DATA: 13/04/2024 11:27 - Versao 0.4.0.3
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -43,6 +43,11 @@
 # v0.4.0.2f - 14/11/2024 - Luiz Gustavo;
 #           - Melhoria na funcao nova_versao do atualizador
 #
+# v0.4.0.3  - 03/12/2024 - Luiz Gustavo;
+#           - Correção em exit 1, ao não gravar log
+#           - validação de usuário root para conceder permissão
+#           - Correção para baixar xmlstarlet apenas para slackware
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -54,7 +59,7 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.0.2f"
+versaoPrograma="0.4.0.3"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1029,8 +1034,7 @@ log_info() {
 
     # Verifica se o arquivo foi criado com sucesso
     if [ $? -ne 0 ]; then
-        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - Erro ao escrever no arquivo de log." >&2
-        exit 1
+        echo -e "${VERMELHO}${NEGRITO}[ERROR]${PADRAO} - Erro ao escrever no arquivo de log." >>"$erro_log_file"
     fi
 }
 
@@ -1439,7 +1443,6 @@ atualizar() {
     chamar_atu_help
     baixar_extras
     info_msg "ATUALIZACAO REALIZADA COM SUCESSO!"
-    log_info "ATUALIZACAO REALIZADA PELO ATUALIZADOR"
     rm -rf "$controle_flag/controle_flag.txt"
     local_abortado="Func. Atualizar: Fim"
     fim_atualizacao=true
@@ -1447,6 +1450,7 @@ atualizar() {
     if [ -f /u/sist/exec/cogumeloAzul.gnt ]; then
         mv /u/sist/exec/cogumeloAzul.gnt /u/sist/exec/integral.gnt
     fi
+    log_info "ATUALIZACAO REALIZADA PELO ATUALIZADOR"
 }
 
 # Funcao que gravara a versao e release apos a atualizacao
@@ -1630,6 +1634,10 @@ nova_versao() {
 somente_permissao() {
     chmod 777 /u/sist/exec/*.gnt
     chown avanco:sist /u/sist/exec/*
+    chown avanco.sist /u/sist/logs/*
+    chown avanco.sist /u/sist/controle/*
+    chmod 777 -R /u/sist/logs/*
+    chmod 777 -R /u/sist/controle/*
     adicionar_cron_avanco
 }
 
@@ -2521,7 +2529,7 @@ menu_correcoes() {
         2)
             clear
             echo "CONCEDENDO PERMISSAO TOTAL AO INTEGRAL"
-            if [ $USER = avanco ] || [ $USER = root ]; then
+            if [ "$(id -u)" -ne 0 ] || [ $USER = avanco ] || [ $USER = root ]; then
                 somente_permissao
             else
                 yellow_msg "FAVOR ACIONAR O SUPORTE AVANCO PARA CONCEDER AS PERMISSOES"
@@ -3008,7 +3016,7 @@ menu_restaura() {
     backups=$(ls ${bkp_destino}/BKPTOTAL_* | sort)
     select backup in ${backups}; do
         if [ "$REPLY" = "99" ]; then
-            exit 1
+            exit 0
         elif [ "$REPLY" = "9" ]; then
             menu_principal
         fi
@@ -3256,11 +3264,8 @@ testar_online() {
 baixar_extras() {
     echo
     if [ "$distro_nome" = "Debian" ]; then
-        if [ ! -f "/u/bats/xmlstarlet" ]; then
-            # Usando o link raw para baixar o binário corretamente
-            echo "CONFIGURANDO XMLSTARTLET"
-            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
-            chmod +x /u/bats/xmlstarlet
+        if [ -f "/u/bats/xmlstarlet" ]; then
+            rm -rf /u/bats/xmlstarlet
         fi
     elif [ "$distro_nome" = "Slackware" ]; then
         if [ ! -f "/u/bats/xmlstarlet" ]; then
@@ -3269,8 +3274,6 @@ baixar_extras() {
             curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
             chmod +x /u/bats/xmlstarlet
         fi
-    else
-        echo "NECESSARIO CONFIGURAR EXTRAS MANUALMENTE!!!"
     fi
     echo
     if [ ! -f "/u/bats/gera-xml-por-tag.sh" ]; then
