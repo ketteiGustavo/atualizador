@@ -3,50 +3,11 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 13/04/2024 11:27 - Versao 0.4.1.0
+# DATA: 28/01/2025 21:40 - Versao 0.4.2.0
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
 # Controle de Versão:
-#
-# Versão 0.3.5: Ajustes de novas cores e condições de cores
-# Versão 0.3.5a: Apontando o Help para dev/null
-# Versão 0.3.6: Remoção de função de verificar programas no sist/exec, já esta
-#               rodando no cron toda madrugada com a função permissoes
-# Versão 0.4: Inicio de Refatoração de código
-# Versão 0.4.0.1 : Colocado opção rar a -ep para não incluir todos os subdire-
-#                  torios dentro do backup em sist/exec-a, gravando apenas os
-#                  programas .gnt
-# v0.4.0.2 - 06/11/2024 - Luiz Gustavo;
-#          - Alteracoes em voltar o integral.gnt após atualizar
-# v0.4.0.2a - 06/11/2024 - Luiz Gustavo;
-#          - colocando -f em teste de se o programa integral.gnt foi renomeado
-# v0.4.0.2b - 14/11/2024 - Luiz Gustavo;
-#           - Funcão para criar diretorios somente se for avanco
-#           - Alteracoes para executar chmod somente como avanco ou root
-#           - Pequenas correções em mensagens de erros e avisos.
-#           - Correções no ativar/desativar online, deixando o online conforme
-#             foi iniciado, se ativo, liga o após terminar atualizacao, se desa-
-#             tivado, nao faz alteracao no online
-# v0.4.0.2c - 14/11/2024 - Luiz Gustavo;
-#           - Opção no menu extras para baixar recursos extras
-#           - Correção ortografica em nomes exibidos no log
-#           - Mensagem para exibir onde foi gravado o log do atu-help
-#           - Exibir mensagem de chamar ajuda ao errar argumento.
-#
-# v0.4.0.2d - 14/11/2024 - Luiz Gustavo;
-#           - removido condição de permissão ao atualizar o atualizador
-#
-# v0.4.0.2e - 14/11/2024 - Luiz Gustavo;
-#           - alterado para pacote.rar o atualizador
-#
-# v0.4.0.2f - 14/11/2024 - Luiz Gustavo;
-#           - Melhoria na funcao nova_versao do atualizador
-#
-# v0.4.0.3  - 03/12/2024 - Luiz Gustavo;
-#           - Correção em exit 1, ao não gravar log
-#           - validação de usuário root para conceder permissão
-#           - Correção para baixar xmlstarlet apenas para slackware
 #
 # v0.4.0.3a - 03/12/2024 - Luiz Gustavo;
 #           - Correcao da funcao de permissao
@@ -56,6 +17,17 @@
 #
 # v0.4.1.0  - 03/12/2024 - Luiz Gustavo;
 #           - Remoção de funções não usadas no atualizador
+#
+# v0.4.2.0  - 28/01/2025 - Luiz Gustavo:
+#           - Limpeza do controle de versao muito antigo
+#           - Ajustes no script para compilar
+#           - Limpeza dentro do código:
+#             - removido funcao verificar_senha
+#             - removido funcao ativar_no_cron
+#             - removido funcao verificar_pacote
+#             - removido funcao instalar_pacotes
+#             - removido funcao de exibir manuais (manuais em construcao)
+#             - removido funcao manter_log_erro_atual e manter_log_atual
 #
 # -------------------------------------------------------------------------------
 # Testado em:
@@ -68,7 +40,8 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="0.4.1.0"
+versaoPrograma="0.4.2.0"
+DATA_VERSAO="28/01/2025"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -115,21 +88,9 @@ Digite o nome do programa e a opcao desejada.
 
 ### Configuração do Programa atualizador
 CONFIG_ATUALIZADOR="/u/sist/controle/atualizador.config" # Parametrização do atualizador usando 0 e 1
-### Use 0 (zero) para desligar as opções e 1 (um) para ligar
-### Use 0 (zero) para não e 1 (um) para sim
-### O padrão é o como mostrado abaixo
 #
-USAR_CORES=1      # mostrar cores nas mensagens?
-NIVEL_MENSAGENS=2 # 0(zero) Nenhuma informação é exibida.
-#                         1(um) Exibe o mínino necessário, apenas mensagens essencias
-#                         2(dois) Exibe todas as informações.
-ALERTA_SONORO=0 # habilita alerta sonoro em ações executadas?
-#
-### Chaves de teste
-### As chaves abaixo são usadas para os testes do atualizador, definindo o que
-### deverá ser feito
-### Elas iniciarão quase todas por padrão 0, para ser testado as condições
-### O padrão usado é com ch (chave) e o nome da chave
+USAR_CORES=1 # mostrar cores nas mensagens?
+
 ch_versao_atualizada=0         # verifica se a versão está atualizada
 ch_release_atualizada=0        # verifica se a release está atualizada
 ch_esta_atualizado=0           # utilizado para validar o "info_loja"
@@ -266,6 +227,7 @@ local_abortado=""
 abortado_controle=""
 
 resultado="" # armazena a saida do comando cobrun, para separar somente a versao 4.0 ou 4.1
+online_antes=$(cobrun status-online.gnt "L") >/dev/null 2>&1
 
 ################################################################################
 ### Inicio das Funções - serão dividas em blocos
@@ -322,9 +284,9 @@ avanco="
                       ${NEGRITO}${AZUL}####${PADRAO}                    ${NEGRITO}${VERDE}--${PADRAO}
                     ${NEGRITO}${AZUL}##${PADRAO}                            ${NEGRITO}${VERDE}--${PADRAO}
                   ${NEGRITO}${AZUL}##${PADRAO}                                    ${NEGRITO}${VERDE}--${PADRAO}
-                                                                                
-                                                                                
-                                                                                
+
+
+
      ${NEGRITO}##         ##  ##         ##         ##    ##        #####        #####
    ##  ##       ##  ##       ##  ##       ####  ##       ##          ##    ##
    ##  ##       ##  ##       ##  ##       ##  ####       ##          ##    ##
@@ -625,6 +587,14 @@ ativar_desativar_online() {
     if [[ "$fim_atualizacao" = "true" ]] && [[ "$olhar_online" = "true" ]]; then
         cobrun status-online.gnt "A" >/dev/null
     fi
+
+    if [[ "$online_antes" == "ATIVADO" ]]; then
+        cobrun status-online.gnt "A" >/dev/null
+    fi
+
+    if [[ "$online_antes" == "DESATIVADO" ]]; then
+        cobrun status-online.gnt "D" >/dev/null
+    fi
 }
 
 # funcao para criar diretorio
@@ -662,6 +632,19 @@ fi
 if [ ! -f "/u/sist/logs/infos_extras.log" ]; then
     echo "               CONTROLE DE DESEMPENHO DO ATUALIZADOR NO SERVIDOR                " >"/u/sist/logs/infos_extras.log"
     echo " DIA DA ATUALIZACAO -    HORA INICIAL    -    HORA FINAL    -    TEMPO GASTO    " >>"/u/sist/logs/infos_extras.log"
+fi
+
+if find "$local_log" -type f -name "*.log" -size 0 -delete | grep -q .; then
+    if [[ $ch_debug == "SIM" ]]; then
+        echo -e "LOGS VAZIOS REMOVIDOS"
+    fi
+fi
+
+# Remove logs antigos
+if find "$local_log" -type f -name "*.log" -mtime +30 -exec rm -f {} + | grep -q .; then
+    if [[ $ch_debug == "SIM" ]]; then
+        echo -e "LOGS ANTIGOS REMOVIDOS"
+    fi
 fi
 
 rm -rf /u/rede/avanco/atualizacoes/versao*
@@ -986,54 +969,8 @@ arquivo_versao_release_atual() {
 # -----------------------------------------------------------------------------
 # Funcoes de log
 
-# Funcao para controlar registro de logs
-manter_log_atual() {
-
-    log_atual=$ano_atual$mes_atual
-    log_anterior=$ano_anterior$mes_anterior
-    log_remover=$mes_anterior$ano_anterior
-
-    if [ ! -e "$local_log/log_$mes_ano.log" ]; then
-        touch "$local_log/log_$mes_ano.log"
-    fi
-
-    if [ "$log_atual" != "$log_anterior" ]; then
-        if [ -e "$local_log/log_$log_remover.log" ]; then
-            rm "$local_log/log_$log_remover.log"
-        fi
-    fi
-
-    for arquivo in "$local_log"/log_*.log; do
-        if [ "$arquivo" != "$local_log/log_$mes_ano.log" ] && [ "$arquivo" != "$local_log/log_erro_$mes_ano.log" ]; then
-            rm "$arquivo"
-        fi
-    done
-
-    #echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/log_$MES_ANO.log"
-    echo "" >>"$local_log/log_$mes_ano.log"
-}
-# Funcao para controlar registro de logs
-manter_log_erro_atual() {
-    log_erro_atual=$ano_atual$mes_atual
-    log_erro_anterior=$ano_anterior$mes_anterior
-    log_erro_remover=$mes_anterior$ano_anterior
-
-    if [ ! -e "$local_log/erro_$mes_ano.log" ]; then
-        touch "$local_log/erro_$mes_ano.log"
-    fi
-
-    if [ "$log_erro_atual" != "$log_erro_anterior" ]; then
-        if [ -e "$local_log/erro_$log_erro_remover.log" ]; then
-            rm "$local_log/erro_$log_erro_remover.log"
-        fi
-    fi
-
-    #echo "$(date +'%d/%m/%Y - %H:%M:%S')" >> "$LOCAL_LOG/erro_$MES_ANO.log"
-    echo "" >>"$local_log/erro_$mes_ano.log"
-}
 # Funcao para criar e ou atualizar o arquivo de log com as informacoes padroes
 log_info() {
-    manter_log_atual
     local info="$1"
     local log_msg="\n################################################################################\n[$(date '+%d/%m/%Y - %H:%M:%S')] \n- $info \n- VERSAO COBOL: $versaoCobol \n- VERSAO INTEGRAL ANTES: $inf_versaoLoja \n- RELEASE INTEGRAL ANTES: $inf_releaseLojaAntes \n- VERSAO INSTALADA: $novoPortal \n- RELEASE INSTALADA: $data_release - $letraRelease \n- BACKUP realizado no dia $(date +"%d/%m/%Y") as $(date +"%H:%M:%S") \n- LOCAL DO BACKUP: $bkp_destino/BKPTOTAL_$date.rar \n- USUARIO UTILIZADO: $USER\n################################################################################"
 
@@ -1048,7 +985,6 @@ log_info() {
 
 # Funcao para criar e ou atualizar o arquivo de logERRO com as informacoes padroes
 log_error() {
-    manter_log_erro_atual
     local error="$1"
     echo "$(date '+%d/%m/%Y %H:%M:%S') - $error" >>"$erro_log_file"
 }
@@ -1592,16 +1528,16 @@ nova_versao() {
 somente_permissao() {
     chmod 777 /u/sist/exec/*.gnt
     chown avanco:sist /u/sist/exec/*
-    chown avanco.sist -R /u/sist/logs/
-    chown avanco.sist -R /u/sist/controle/
-    chmod 777 -R /u/sist/logs/
-    chmod 777 -R /u/sist/controle/
+    chown avanco.sist -R /u/sist/logs
+    chown avanco.sist -R /u/sist/controle
+    chmod 777 -R /u/sist/logs
+    chmod 777 -R /u/sist/controle
     adicionar_cron_avanco
 }
 
 # Função para criar rotina no crontab da avanco
 adicionar_cron_avanco() {
-    local cron_job="0 6,20 * * * . /etc/profile ; /u/bats/atualizador --testar-atualizado >/dev/null 2>&1"
+    local cron_job="00 6,20 * * * . /etc/profile ; /u/bats/atualizador --testar-atualizado >/dev/null 2>&1"
     local comentario="# ATUALIZADOR AUTOMATICO - TESTAR SE FOI ATUALIZADO MANUALMENTE - NAO REMOVER"
 
     # backup do cron antes da modificação
@@ -1974,7 +1910,7 @@ menu_principal() {
             ;;
         7)
             clear
-            menu_7
+            alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
             ;;
         1188)
             clear
@@ -2108,35 +2044,11 @@ menu_2() {
             sleep 1
             clear
             ;;
-        2)
+        2 | 3 | 4)
             clear
             alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
             menu_principal
             return 1
-            #clear
-            #tput cup 4 29
-            #echo "INFORME O ID DO PACOTE"
-            #informar_pacote
-            ;;
-        3)
-            clear
-            alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
-            menu_principal
-            return 1
-            #clear
-            #tput cup 4 27
-            #echo "LISTAR PACOTE DISPONIVEIS"
-            #verificar_pacote
-            ;;
-        4)
-            clear
-            alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
-            menu_principal
-            return 1
-            #clear
-            #tput cup 4 29
-            #echo "INSIRA O LINK ABAIXO: "
-            #baixar_via_link
             ;;
         9)
             menu_principal
@@ -2355,9 +2267,6 @@ menu_6() {
             alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
             menu_principal
             return 1
-            #yellow_msg "!!!ATENCAO!!!"
-            #yellow_msg "SERA ENVIADO UMA MENSAGEM PARA OS USUARIOS LOGADOS"
-            #yellow_msg "QUE O INTEGRAL SERA ATUALIZADO EM INSTANTES!!!"
             ;;
         7)
             clear
@@ -2383,65 +2292,6 @@ menu_6() {
         esac
         sleep 3
         tput cup 14 18
-        read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
-        clear
-    done
-}
-# sub-menu opção 6
-menu_7() {
-    local opcao_menu
-    clear
-    while true; do
-        tput cup 5 29
-        echo -ne "\e[1;36mMANUAIS DO ATUALIZADOR\e[0m"
-        tput cup 8 22
-        echo " 1  -  LER AJUDA RAPIDA"
-        tput cup 9 22
-        echo " 2  -  MANUAL COMPLETO"
-        tput cup 10 22
-        echo " 9  -  MENU PRINCIPAL"
-        tput cup 11 22
-        echo "99  -  SAIR"
-        tput cup 14 31
-        echo -ne "\e[1;32mOPCAO: \e[0m"
-        read opcao_menu
-        case "$opcao_menu" in
-        1)
-            clear
-            #mostrar_ajuda 1
-            echo "$manual_uso"
-            ;;
-        2)
-            #clear
-            #mostrar_ajuda 2
-            clear
-            alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
-            menu_principal
-            return 1
-            ;;
-        9)
-            menu_principal
-            return 1
-            ;;
-
-        99)
-            clear
-            mensagem_saida
-            echo
-            sleep 1
-            exit 0
-            rm -rf "$TMP_manual"
-            rm -rf "$TMP_ajuda"
-            ;;
-        *)
-            clear
-            tput cup 8 32
-            echo -ne "\e[1;31mOPCAO INVALIDA!\e[0m"
-            ;;
-        esac
-        sleep 3
-        #tput clear
-        tput cup 24 18
         read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
     done
@@ -2522,80 +2372,6 @@ menu_correcoes() {
         tput cup 14 18
         read -p "PRESSIONE QUALQUER TECLA PARA CONTINUAR... " -n 1
         clear
-    done
-}
-
-# Função para verificar pacotes disponiveis na pasta /u/rede/avanco/atualizacoes/pacotes
-verificar_pacote() {
-    local testar_existe
-
-    if [ ! -d "/u/rede/avanco/atualizacoes/pacotes" ]; then
-        mkdir -p /u/rede/avanco/atualizacoes/pacotes
-    fi
-
-    testar_existe=$(ls /u/rede/avanco/atualizacoes/pacotes | wc -l)
-
-    if [ "$testar_existe" -eq 0 ]; then
-        yellow_msg "NAO EXISTE NENHUM PACOTE DISPONIVEL NA PASTA CORRETA!"
-        echo "FAVOR COLOCAR O PACOTE EM: "
-        echo "/u/rede/avanco/atualizacoes/pacotes"
-    else
-        instalar_pacotes
-    fi
-}
-
-# Função para instalar os pacotes verificados
-instalar_pacotes() {
-    clear
-    local pacote_disponivel
-    echo "EXISTEM OS SEGUINTES PACOTES: "
-    tput cup 0 62
-    echo "[M]enu ou [S]air"
-    pacote_disponivel=$(ls -p /u/rede/avanco/atualizacoes/pacotes | grep -v /)
-    select pacote in ${pacote_disponivel}; do
-        if [ "$REPLY" = "S" ] || [ "$REPLY" = "s" ]; then
-            exit 0
-        elif [ "$REPLY" = "M" ] || [ "$REPLY" = "m" ]; then
-            menu_principal
-        fi
-
-        if [[ -n $pacote ]]; then
-            echo "SERA INSTALADO O PACOTE: $pacote"
-
-            rar lb /u/rede/avanco/atualizacoes/pacotes/$pacote >/tmp/gnt-pacote-$pacote.txt
-
-            echo "REALIZANDO BACKUP DO(S) PROGRAMA(S)... AGUARDE"
-            while read -r arquivo; do
-                if [ -f "/u/sist/exec/$arquivo" ]; then
-                    rar a /u/sist/exec-a/bkpADP$pacote "/u/sist/exec/$arquivo"
-                else
-                    echo "O '$arquivo' NAO EXISTE NO '/u/sist/exec'."
-                fi
-            done </tmp/gnt-pacote-$pacote.txt
-
-            echo "DESCOMPACTANDO O PACOTE '$pacote'... AGUARDE"
-            rar e -o+ /u/rede/avanco/atualizacoes/pacotes/$pacote /u/sist/exec
-            # Remover o arquivo temporário após o backup e extração
-            rm -f /tmp/gnt-pacote-$pacote.txt
-            echo
-            echo "PACOTE $pacote INSTALADO COM SUCESSO!!!"
-            echo
-            read -p "DESEJA REMOVER O PACOTE INSTALADO? [S/n]" confirma_remocao
-            case $confirma_remocao in
-            "S" | "s" | "")
-                rm -f /u/rede/avanco/atualizacoes/pacotes/$pacote
-                ;;
-            "N" | "n")
-                return 1
-                ;;
-            *)
-                clear
-                echo "OPCAO INVALIDA!"
-                ;;
-            esac
-        else
-            echo "OPCAO ESCOLHIDA INVALIDA. TENTE NOVAMENTE."
-        fi
     done
 }
 
@@ -2900,18 +2676,6 @@ atualizar_pelo_cron() {
         exit 0
     fi
 }
-# funcao em testes
-ativar_no_cron() {
-    (
-        crontab -l
-        echo ""
-        echo "# ATUALIZADOR AUTOMATICO - RECURSOS EXTRAS - NAO REMOVER #"
-        echo "0 9,11,14,16 * * 1-4 /u/bats/atualizador --extras-atualizador >/dev/null 2>> /u/sist/logs/.erro-cron.log"
-        echo "30 9,14 * * 1-4 /u/bats/atualizador --extras-atualizador >/dev/null 2>> /u/sist/logs/.erro-cron.log"
-        echo ""
-    ) | crontab -
-
-}
 
 # Função para chamar opção de atualização na ordem
 chamar_atualizacao() {
@@ -2931,34 +2695,13 @@ chamar_atualizacao() {
     ativar_desativar_online
 }
 
-# Função para verificar a senha do usuário atual
-verificar_senha() {
-    tentativas=3
-    while [ $tentativas -gt 0 ]; do
-        echo -n "Digite sua senha: "
-        read -s senha
-        echo
-
-        # Verifica a senha usando 'sudo' com o comando ':'
-        echo "$senha" | su -c true $USER >/dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            clear
-            return 0
-        else
-            clear
-            echo "Senha incorreta."
-            ((tentativas--))
-            echo "Tentativas restantes: $tentativas"
-        fi
-    done
-    return 1
-}
-
 # Funcao para extrair e exibir a versao do programa
 mostrar_versao() {
-    echo -n "-Programa: $(basename "$0")"
     echo
-    echo "-Versao  : $versaoPrograma"
+    echo -e " -Programa......: $(basename "$0")"
+    echo -e " -Versao........: $versaoPrograma"
+    echo -e " -Data da versao: $DATA_VERSAO"
+    echo
 }
 
 # Funcao para visualizar logs
@@ -3063,20 +2806,20 @@ baixar_extras() {
         if [ ! -f "/u/bats/xmlstarlet" ]; then
             echo "CONFIGURANDO XMLSTARTLET"
             # Usando o link raw para baixar o binário corretamente
-            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
+            curl -k -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
             chmod +x /u/bats/xmlstarlet
         fi
     fi
     echo
     if [ ! -f "/u/bats/gera-xml-por-tag.sh" ]; then
         echo "CONFIGURANDO GERA-XML"
-        curl -# -o "/u/bats/gera-xml-por-tag.sh" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gera-xml-por-tag.sh"
+        curl -k -L -# -o "/u/bats/gera-xml-por-tag.sh" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gera-xml-por-tag.sh"
         chmod +x /u/bats/gera-xml-por-tag.sh
     fi
 
     if [ ! -f "/u/bats/verificar-processo" ]; then
         echo "CONFIGURANDO VERIFICA PROCESSO"
-        curl -# -o "/u/bats/verificar-processo" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo"
+        curl -k -L -# -o "/u/bats/verificar-processo" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo"
         chmod 777 "/u/bats/verificar-processo"
     fi
     echo
@@ -3155,8 +2898,6 @@ case "$1" in
 --man)
     clear
     alerta_msg "ESSE RECURSO ESTARA DISPONIVEL EM BREVE!!!"
-    #checar_internet
-    #man atualizador
     exit 0
     ;;
 --testar-internet)

@@ -3,7 +3,7 @@
 ################################################################################
 # configurarAtualizador.sh - realizar a configuracao basica do atualizador
 #
-# DATA: 03/07/2024 09:53 - Versao 2.8
+# DATA: 03/07/2024 09:53 - Versao 2.8.1
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
@@ -29,11 +29,14 @@
 # v2.8 - 03/12/2024 - Luiz Gustavo;
 #      - Alteracoes de permissao ao criar diretorio /u/sist/logs e /u/sist/controle
 #
+# v2.8.1 - 15/01/2025 - Luiz Gustavo;
+#        - Corrigido linha no código do comando que é salvo no cron
+#
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar o uso do atualizador.
 ###############################
 
-versao=2.8
+versao=2.8.1
 MENSAGEM_USO="
 Programa: $(basename "$0")
 
@@ -323,7 +326,7 @@ ativar_permissao() {
             crontab -l
             echo ""
             echo "# ATUALIZADOR AUTOMATICO - CONCEDER PERMISSOES NO SIST/EXEC - NAO REMOVER"
-            echo "0 4 * * * /u/bats/atualizador --permissoes 2>> /u/sist/logs/.cron-erro.log"
+            echo "00 04 * * * /u/bats/atualizador --permissoes 2>> /u/sist/logs/.cron-erro.log"
             echo ""
         ) | crontab -
     fi

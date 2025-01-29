@@ -77,3 +77,30 @@
 #          - Alteracoes em voltar o integral.gnt após atualizar
 # v0.4.0.2a - 06/11/2024 - Luiz Gustavo;
 #          - colocando -f em teste de se o programa integral.gnt foi renomeado
+#
+# v0.4.0.2b - 14/11/2024 - Luiz Gustavo;
+#           - Funcão para criar diretorios somente se for avanco
+#           - Alteracoes para executar chmod somente como avanco ou root
+#           - Pequenas correções em mensagens de erros e avisos.
+#           - Correções no ativar/desativar online, deixando o online conforme
+#             foi iniciado, se ativo, liga o após terminar atualizacao, se desa-
+#             tivado, nao faz alteracao no online
+# v0.4.0.2c - 14/11/2024 - Luiz Gustavo;
+#           - Opção no menu extras para baixar recursos extras
+#           - Correção ortografica em nomes exibidos no log
+#           - Mensagem para exibir onde foi gravado o log do atu-help
+#           - Exibir mensagem de chamar ajuda ao errar argumento.
+#
+# v0.4.0.2d - 14/11/2024 - Luiz Gustavo;
+#           - removido condição de permissão ao atualizar o atualizador
+#
+# v0.4.0.2e - 14/11/2024 - Luiz Gustavo;
+#           - alterado para pacote.rar o atualizador
+#
+# v0.4.0.2f - 14/11/2024 - Luiz Gustavo;
+#           - Melhoria na funcao nova_versao do atualizador
+#
+# v0.4.0.3  - 03/12/2024 - Luiz Gustavo;
+#           - Correção em exit 1, ao não gravar log
+#           - validação de usuário root para conceder permissão
+#           - Correção para baixar xmlstarlet apenas para slackware
