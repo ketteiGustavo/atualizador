@@ -3,7 +3,7 @@
 ################################################################################
 # configurarAtualizador.sh - realizar a configuracao basica do atualizador
 #
-# DATA: 03/07/2024 09:53 - Versao 2.4
+# DATA: 03/07/2024 09:53 - Versao 2.8
 #
 # ------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
@@ -20,10 +20,20 @@
 # Versão 2.3: Melhoras visuais na configuração.
 # Versão 2.4: Ativa recurso de conceder permissoes pelo root toda madrugada na
 #             pasta /u/sist/exec
+# Versão 2.5: Configurado opção para baixar o compilado corretamente
+# Versão 2.6: Novos ajustes de configuração
+#
+# v2.7 - 19/11/2024 - Luiz Gustavo;
+#      - alteracoes na instalação do 'xmlstarlet'
+#
+# v2.8 - 03/12/2024 - Luiz Gustavo;
+#      - Alteracoes de permissao ao criar diretorio /u/sist/logs e /u/sist/controle
+#
 # ------------------------------------------------------------------------------
 # Objetivo: facilitar o uso do atualizador.
 ###############################
 
+versao=2.8
 MENSAGEM_USO="
 Programa: $(basename "$0")
 
@@ -34,17 +44,15 @@ OPCOES NA LINHA DE COMANDO:
     -h, --help      Mostra esta tela de ajuda e sai
     -V, --version   Mostra a versao do programa e sai
 MODO DE USAR:
-    (em construção - AGUARDE
+    (em construção - AGUARDE)
 
 --------------------------------------------------------------------------------
 "
 
 # Funcao para extrair e exibir a versao do programa
 mostrar_versao() {
-    local versao=$(grep '^# DATA:' "$0" | head -1 | cut -d '-' -f 2 | sed 's/Versao //')
-    echo -n "- Programa: $(basename "$0")"
-    echo
-    echo "- Versao: $versao"
+    echo -e "- Programa: $(basename "$0")"
+    echo -e "- Versao..: $versao"
 }
 
 ###############################
@@ -56,25 +64,24 @@ LOG_DIR="/u/sist/logs"
 versaoCobol=""
 statusOnline="status-online.gnt"
 script_atualizador="atualizador"
-script_baixar_atualizacao="baixarAtualizacao"
 manual_atualizador="atualizador.1.gz"
-url_baixarAtualizacao="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/baixarAtualizacao"
-url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/atualizador"
+url_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador"
 url_manual_atualizador="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Manuais/atualizador.1.gz"
 url_base_status_online_gnt="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/gnt/"
 buscaStatusOnline=""
 url_versao_release="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/Atual/versao_release.txt"
-pacoteConfiguracao="https://github.com/ketteiGustavo/atualizador/raw/main/Atual/PacoteAtualizador.rar"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 distro_versao=$(grep '^VERSION_ID=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | tr -d '.')
 url_xmlStarlet_Debian="https://github.com/ketteiGustavo/atualizador/blob/main/extras/xmlstarlet.Debian"
 url_xmlStarlet_Slackware="https://github.com/ketteiGustavo/atualizador/blob/main/extras/xmlstarlet.Slackware"
-
+ulr_verifica_processo="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo"
 url_gera_xml="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gera-xml-por-tag.sh"
+url_conv_xml_cte="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/conv-xml-cte.sh"
 
 clear
 echo "SERVIDOR UTILIZA: $distro_nome"
-echo
+tput cup 0 59; echo "$(date +"%d/%m/%Y - %H:%M")"
+
 # Funcao para log de erros
 log_erro() {
     echo "[ERRO] $(date +'%d/%m/%Y %H:%M') - $1" >>"$LOG_DIR/registroConfiguracao.log"
@@ -119,6 +126,24 @@ verifica_cobol() {
     fi
 }
 
+if [ ! -d "/u/sist/controle" ]; then
+    mkdir -p "/u/sist/controle"
+    chmod 777 -R "/u/sist/controle"
+    chown avanco.sist "/u/sist/controle"
+else
+    chmod 777 -R "/u/sist/controle"
+    chown avanco.sist "/u/sist/controle"
+fi
+
+if [ ! -d "/u/sist/logs" ]; then
+    mkdir -p "/u/sist/logs"
+    chmod 777 -R "/u/sist/logs"
+    chown avanco.sist "/u/sist/logs"
+else
+    chmod 777 -R "/u/sist/logs"
+    chown avanco.sist "/u/sist/logs"
+fi
+
 # Testa se o usuario e root.
 if [ "$(id -u)" -ne 0 ]; then
     #clear
@@ -140,11 +165,8 @@ fi
 configurar_online() {
     local novo_URL
     local tudo_ok=1
+    local verifica_xmlstarlet=$(which xmlstarlet 2>/dev/null)
     verifica_cobol
-
-    local url_atualizador_debian="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Debian"
-    local url_atualizador_slackware_141="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Slackware14.1"
-    local url_atualizador_slackware_142="https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/programa/atualizador.Slackware14.2"
 
     cd "$EXEC" || {
         echo "Falha ao acessar diretorio $EXEC"
@@ -166,94 +188,94 @@ configurar_online() {
     echo "AGUARDE!"
     echo
 
-    if [ "$distro_nome" = "Debian" ]; then
-        if curl -k --output /dev/null --silent --head --fail "$url_atualizador_debian"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_debian"
-            chmod 777 "/u/bats/atualizador"
-            tudo_ok=0
-            echo ""
-        else
-            echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
-            log_erro "URL inacessivel: $url_atualizador_debian."
-            rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
-            tudo_ok=1
-        fi
-
-        if [ ! -f "$BATS/xmlstarlet" ]; then
-            # Usando o link raw para baixar o binário corretamente
-            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Debian"
-            chown avanco:sist /u/bats/xmlstarlet
-            chmod +x /u/bats/xmlstarlet
-            echo ""
-            tudo_ok=0
-        fi
-
-        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
-            if curl -k --output /dev/null --silent --head --fail "$url_gera_xml"; then
-                curl -k -# -o "/u/bats/gera-xml-por-tag.sh" "$url_gera_xml"
-                tudo_ok=0
-                echo ""
-                sleep 1
-            else
-                echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'gera-xml-por-tag'"
-                tudo_ok=1
-            fi
-
-            chown avanco:sist /u/bats/gera-xml-por-tag.sh
-            chmod +x /u/bats/gera-xml-por-tag.sh
-            tudo_ok=0
-        fi
-        echo
-
-    elif [ "$distro_nome" = "Slackware" ]; then
-        if [ "$distro_versao" = "141" ]; then
-            url_atualizador_slackware=$url_atualizador_slackware_141
-        elif [ "$distro_versao" = "142" ]; then
-            url_atualizador_slackware=$url_atualizador_slackware_142
-        else
-            echo "VERSAO DO SLACKWARE NAO SUPORTADA!"
-            log_erro "Versao Slackware nao suportada: $distro_versao."
-            exit 1
-        fi
-
-        if curl -k --output /dev/null --silent --head --fail "$url_atualizador_slackware"; then
-            curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador_slackware"
-            chmod 777 "/u/bats/atualizador"
-            tudo_ok=0
-            echo ""
-        else
-            echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
-            log_erro "URL inacessivel: $url_atualizador_slackware."
-            rm -f "/u/bats/atualizador"
-            mv "/u/bats/atualizadorOLD" "/u/bats/atualizador"
-            tudo_ok=1
-        fi
-
-        if [ ! -f "$BATS/xmlstarlet" ]; then
-            # Usando o link raw para baixar o binário corretamente
-            curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
-            chown avanco:sist /u/bats/xmlstarlet
-            chmod +x /u/bats/xmlstarlet
-            echo ""
-            tudo_ok=0
-        fi
-
-        if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
-            curl -L -# -o "/u/bats/gera-xml-por-tag.sh" "https://github.com/ketteiGustavo/atualizador/raw/main/extras/gera-xml-por-tag.sh"
-            chown avanco:sist /u/bats/gera-xml-por-tag.sh
-            chmod +x /u/bats/gera-xml-por-tag.sh
-            echo ""
-            tudo_ok=0
-        else
-            echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'gera-xml-por-tag'"
-            tudo_ok=1
-        fi
-        echo
+    if curl -k --output /dev/null --silent --head --fail "$url_atualizador"; then
+        echo ""
+        echo "INSTALANDO O ATUALIZADOR"
+        curl -k -L -# -o "/u/bats/atualizador" "$url_atualizador"
+        tudo_ok=0
+        echo ""
+        chown avanco:sist /u/bats/atualizador
+        chmod 777 /u/bats/atualizador
+        echo "ATUALIZADOR INSTALADO"
+        echo ""
     else
-        echo "VERSAO DE DISTRIBUICAO DESCONHECIDA!!!"
-        log_erro "Distribuicao desconhecida: $distro_nome."
+        echo "ERRO: A URL DO ATUALIZADOR NAO ESTA ACESSIVEL."
+        log_erro "URL inacessivel: $url_atualizador."
+        tudo_ok=1
     fi
+
+    echo
+    echo "REALIZANDO ATIVACOES NECESSARIAS DOS DEMAIS SCRIPTS... AGUARDE!"
+    echo
+    if [ -z "$verifica_xmlstarlet" ] || [ "$verifica_xmlstarlet" == "/u/bats"* ]; then
+        if [ "$distro_nome" = "Debian" ]; then
+            apt install xmlstarlet -y >/dev/null 2>&1 && echo -e "ATIVADO e CONFIGURADO O XMLSTARLET"
+            if [ -f "$BATS/xmlstarlet" ]; then
+                rm -rf /u/bats/xmlstarlet >/dev/null
+            fi
+            tudo_ok=0
+        elif [ "$distro_nome" = "Slackware" ]; then
+            if [ ! -f "$BATS/xmlstarlet" ]; then
+                # Usando o link raw para baixar o binário corretamente
+                echo "ATIVANDO O XMLSTARLET"
+                echo ""
+                curl -L -# -o "/u/bats/xmlstarlet" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/xmlstarlet.Slackware"
+                chown avanco:sist /u/bats/xmlstarlet
+                chmod +x /u/bats/xmlstarlet
+                tudo_ok=0
+            fi
+        else
+            echo "VERSAO DE DISTRIBUICAO DESCONHECIDA!!!"
+            log_erro "Distribuicao desconhecida: $distro_nome."
+        fi
+    else
+        echo -e "XMLSTARLET ja esta configurado e ativo!"
+    fi
+
+    if [ ! -f "$BATS/gera-xml-por-tag.sh" ]; then
+        if curl -k --output /dev/null --silent --head --fail "$url_gera_xml"; then
+            echo "ATIVANDO O GERA-XML-POR-TAG"
+            echo ""
+            curl -k -# -o "/u/bats/gera-xml-por-tag.sh" "$url_gera_xml"
+            sleep 1
+            chown avanco:sist /u/bats/gera-xml-por-tag.sh
+            chmod +x /u/bats/gera-xml-por-tag.sh
+            tudo_ok=0
+        else
+            echo "NAO FOI POSSIVEL ACESSAR BAIXAR e INSTALAR O 'gera-xml-por-tag'"
+            tudo_ok=1
+        fi
+    fi
+
+    if [ ! -f "/u/bats/verificar-processo" ]; then
+        if curl -k --output /dev/null --silent --head --fail "$ulr_verifica_processo"; then
+            echo "ATIVANDO O VERIFICA PROCESSO"
+            echo
+            curl -# -o "/u/bats/verificar-processo" "$ulr_verifica_processo"
+            chmod 777 "/u/bats/verificar-processo"
+            sleep 1
+            tudo_ok=0
+        else
+            echo "NAO FOI POSSIVEL ACESSAR BAIXAR e INSTALAR O 'verificar-processo'"
+            tudo_ok=1
+        fi
+    fi
+
+    if [ ! -f "/u/bats/conv-xml-cte.sh" ]; then
+        if curl -k --output /dev/null --silent --head --fail "$url_conv_xml_cte"; then
+            echo "ATIVANDO O 'conv-xml-cte.sh'"
+            echo
+            curl -# -o "/u/bats/conv-xml-cte.sh" "$url_conv_xml_cte"
+            chmod 777 "/u/bats/conv-xml-cte.sh"
+            chown avanco.sist "/u/bats/conv-xml-cte.sh"
+            sleep 1
+            tudo_ok=0
+        else
+            echo "NAO FOI POSSIVEL ACESSAR BAIXAR e INSTALAR O 'conv-xml-cte.sh'"
+            tudo_ok=1
+        fi
+    fi
+
 
     if [ ! -f "$EXEC/status-online.gnt" ]; then
         if curl -k --output /dev/null --silent --head --fail "$novo_URL"; then
@@ -263,21 +285,20 @@ configurar_online() {
             echo ""
             sleep 1
         else
-            echo "NAO FOI POSSIVEL ACESSAR BAIXAR/INSTALAR O 'status-online'"
+            echo "NAO FOI POSSIVEL BAIXAR e INSTALAR O 'status-online.gnt'"
             tudo_ok=1
         fi
         echo
     fi
 
     echo
-    echo "ATIVANDO ATUALIZADOR! AGUARDE"
-    echo
-
-    echo
     chown avanco:sist /u/sist/exec/*
     chmod 777 /u/sist/exec/*
 
     if [ "$tudo_ok" = 0 ]; then
+        echo
+        echo "FINALIZANDO CONFIGURACAO DO ATUALIZADOR! AGUARDE"
+        echo
         echo "CONFIGURACAO REALIZADA!!!"
         echo "LOGUE COMO 'avanco' PARA ATUALIZAR!!!"
         ativar_permissao
@@ -287,14 +308,13 @@ configurar_online() {
         log_erro "Configuracao falhou."
     fi
     echo
-    echo
 }
 
 ativar_permissao() {
     if [ ! -f /u/sist/controle/bkp_cron.config ]; then
         echo "# BACKUP DO CRONTAB DO ROOT - NAO APAGAR - NAO ALTERAR" >>/u/sist/controle/bkp_cron.config
         crontab -l >>/u/sist/controle/bkp_cron.config
-        chmod 444 /u/sist/controle/bkp_cron.config
+        chmod 666 /u/sist/controle/bkp_cron.config
         cp /u/sist/controle/bkp_cron.config /u/bats
     fi
 
