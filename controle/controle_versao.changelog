@@ -85,6 +85,7 @@
 #           - Correções no ativar/desativar online, deixando o online conforme
 #             foi iniciado, se ativo, liga o após terminar atualizacao, se desa-
 #             tivado, nao faz alteracao no online
+#
 # v0.4.0.2c - 14/11/2024 - Luiz Gustavo;
 #           - Opção no menu extras para baixar recursos extras
 #           - Correção ortografica em nomes exibidos no log
@@ -104,3 +105,23 @@
 #           - Correção em exit 1, ao não gravar log
 #           - validação de usuário root para conceder permissão
 #           - Correção para baixar xmlstarlet apenas para slackware
+#
+# v0.4.0.3a - 03/12/2024 - Luiz Gustavo;
+#           - Correcao da funcao de permissao
+#           - nova opção para linha de comando -c e --corrigir
+#           - Organização no menu de ajuda
+#           - Ajuste na função para gerar compilado
+#
+# v0.4.1.0  - 03/12/2024 - Luiz Gustavo;
+#           - Remoção de funções não usadas no atualizador
+#
+# v0.4.2.0  - 28/01/2025 - Luiz Gustavo:
+#           - Limpeza do controle de versao muito antigo
+#           - Ajustes no script para compilar
+#           - Limpeza dentro do código:
+#             - removido funcao verificar_senha
+#             - removido funcao ativar_no_cron
+#             - removido funcao verificar_pacote
+#             - removido funcao instalar_pacotes
+#             - removido funcao de exibir manuais (manuais em construcao)
+#             - removido funcao manter_log_erro_atual e manter_log_atual

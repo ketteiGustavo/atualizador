@@ -1,6 +1,51 @@
 ### HISTORICO DE VERSAO DO ATUALIZADOR ###
 
 ## Detalhes da versão
+v0.4.2.0  - 28/01/2025 - Luiz Gustavo:
+        - Limpeza do controle de versao muito antigo
+        - Ajustes no script para compilar
+        - Limpeza dentro do código:
+            - removido funcao verificar_senha
+            - removido funcao ativar_no_cron
+            - removido funcao verificar_pacote
+            - removido funcao instalar_pacotes
+            - removido funcao de exibir manuais (manuais em construcao)
+            - removido funcao manter_log_erro_atual e manter_log_atual
+
+v0.4.1.0  - 03/12/2024 - Luiz Gustavo;
+        - Remoção de funções não usadas no atualizador
+
+v0.4.0.3a - 03/12/2024 - Luiz Gustavo;
+        - Correcao da funcao de permissao
+        - nova opção para linha de comando -c e --corrigir
+        - Organização no menu de ajuda
+        - Ajuste na função para gerar compilado
+
+v0.4.0.3  - 03/12/2024 - Luiz Gustavo;
+        - Correção em exit 1, ao não gravar log
+        - validação de usuário root para conceder permissão
+        - Correção para baixar xmlstarlet apenas para slackware
+
+v0.4.0.2f - 14/11/2024 - Luiz Gustavo;
+        - Melhoria na funcao nova_versao do atualizador
+
+v0.4.0.2e - 14/11/2024 - Luiz Gustavo;
+        - alterado para pacote.rar o atualizador
+
+v0.4.0.2d - 14/11/2024 - Luiz Gustavo;
+        - removido condição de permissão ao atualizar o atualizador
+
+v0.4.0.2c - 14/11/2024 - Luiz Gustavo;
+        - Opção no menu extras para baixar recursos extras
+        - Correção ortografica em nomes exibidos no log
+        - Mensagem para exibir onde foi gravado o log do atu-help
+        - Exibir mensagem de chamar ajuda ao errar argumento.
+
+v0.4.0.2b - 14/11/2024 - Luiz Gustavo;
+        - Funcão para criar diretorios somente se for avanco
+        - Alteracoes para executar chmod somente como avanco ou root
+        - Pequenas correções em mensagens de erros e avisos.
+        - Correções no ativar/desativar online, deixando o online conforme foi iniciado, se ativo, liga o após terminar atualizacao, se desativado, nao faz alteracao no online
 
 v0.4.0.2a - 06/11/2024 - Luiz Gustavo;
     - colocando -f em teste de se o programa integral.gnt foi renomeado
