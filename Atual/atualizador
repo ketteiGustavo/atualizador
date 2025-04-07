@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 28/01/2025 21:40 - Versao 5.0.0.1
+# DATA: 28/01/2025 21:40 - Versao 5.0.0.2
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -19,6 +19,10 @@
 #             atualizacao, e caso o online estiver desativado sera exibido no
 #             terminal uma opcao para o usuario ativa-lo novamente.
 #
+# v5.0.0.2  - 07/04/2025 - Luiz Gustavo:
+#           - melhoria na função de auditoria, agora ela gera um hash para cada
+#             log, evitando que usuarios mal intencionados alterem os logs.
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -30,8 +34,8 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="5.0.0.1"
-DATA_VERSAO="04/04/2025"
+versaoPrograma="5.0.0.2"
+DATA_VERSAO="07/04/2025"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -844,6 +848,10 @@ auditoria() {
     local data_hora=$(date +'%d/%m/%Y - %H:%M')
     local msg_limite="${local_chamada:0:26}"
 
+    local raw_hash
+    raw_hash=$(echo "$nivel $local_chamada $mensagem $data_hora" | sha256sum | awk '{print $1}')
+    local hash_mascara="${raw_hash:0:6}-${raw_hash: -6}"
+
     {
         echo
         echo "================================================================================"
@@ -852,6 +860,8 @@ auditoria() {
         echo " $mensagem"
         echo "--------------------------------------------------------------------------------"
         echo " USUARIO: $usuario"
+        echo "--------------------------------------------------------------------------------"
+        echo " AUTH: $hash_mascara"
         echo "================================================================================"
         echo
     } >>"$arquivo_destino"
