@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 28/01/2025 21:40 - Versao 5.0.0.2
+# DATA: 28/01/2025 21:40 - Versao 5.0.0.3
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -23,6 +23,11 @@
 #           - melhoria na função de auditoria, agora ela gera um hash para cada
 #             log, evitando que usuarios mal intencionados alterem os logs.
 #
+# v5.0.0.3  - 06/05/2025 - Luiz Gustavo:
+#           - ajuste na funcao 'baixar_extras' para realizar atualizacao de .gnt
+#             e .sh necessarios vindos pelo ATU-HELP
+#           - nova opcao de argumento --extras
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -34,8 +39,8 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="5.0.0.2"
-DATA_VERSAO="07/04/2025"
+versaoPrograma="5.0.0.3"
+DATA_VERSAO="06/05/2025"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -48,6 +53,7 @@ OPCOES NA LINHA DE COMANDO:
     -b,  --backup       Realizar o backup do 'sist/exec'
     -c,  --corrigir     Libera o acesso ao Integral
     -d,  --download     Baixar Versao e Release
+    -e,  --extras       Baixar arquivos extras
     -h,  --help         Mostrar esta tela de ajuda
     -i,  --info         Mostrar a versao e release no servidor
     -l,  --log          Visualizar principais logs do Atualizador
@@ -2602,6 +2608,44 @@ baixar_extras() {
         chmod 777 "/u/bats/verificar-processo"
     fi
     echo
+
+    # === Novo recurso, baixar .sh e .gnt ===
+    local help_dir="/u/rede/arqp"
+    local bats_dir="/u/bats"
+
+    # busca .sh
+    for arq in "$help_dir"/*.sh; do
+        [ -e "$arq" ] || continue
+        nome_arq=$(basename "$arq")
+
+        if [ -f "$bats_dir/$nome_arq" ]; then
+            data_bkp=$(date +%d%m%Y)
+            echo "  Backup de $nome_arq em $bats_dir/$nome_arq.$data_bkp"
+            mv "$bats_dir/$nome_arq" "$bats_dir/$nome_arq.$data_bkp"
+        fi
+
+        echo "   Atualizando $nome_arq --> $bats_dir/$nome_arq"
+        mv "$arq" "$bats_dir/$nome_arq"
+        chmod 777 "$bats_dir/$nome_arq"
+    done
+
+    # busca .gnt
+    for pgr_gnt in "$help_dir"/*.gnt; do
+        [ -e "$pgr_gnt" ] || continue
+        nome_arq=$(basename "$pgr_gnt")
+        base_arq="${nome_arq%.gnt}"
+
+        if [ -f "$local_gnt/$nome_arq" ]; then
+            data_bkp=$(date +%d%m%Y)
+            echo "  Backup de $nome_arq em $bkp_destino/$base_arq.rar"
+            rar a -ep "$bkp_destino/$base_arq.rar" "$local_gnt/$nome_arq"
+        fi
+
+        echo "   Atualizando $nome_arq --> $local_gnt/$nome_arq"
+        mv "$pgr_gnt" "$local_gnt/$nome_arq"
+        chmod 777 "$local_gnt/$nome_arq"
+    done
+    echo
 }
 
 # Tratamento das opcoes que serao responsaveis por controlar na linha de comando
@@ -2630,6 +2674,12 @@ case "$1" in
     clear
     echo "OBTER INFORMACOES DO ATUAIS DO INTEGRAL"
     more "/u/sist/controle/info_loja.txt"
+    exit 0
+    ;;
+-e | --extras)
+    clear
+    echo "BAIXAR EXTRAS DO ATUALIZADOR"
+    baixar_extras
     exit 0
     ;;
 -d | --download)
