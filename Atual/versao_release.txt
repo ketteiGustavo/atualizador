@@ -1,2 +1,2 @@
 Versao atual: 220725
-Release atual: C 070825
+Release atual: D 120825
