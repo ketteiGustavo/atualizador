@@ -2,8 +2,8 @@ name: Atualizar versao_release.txt (COBOL 4.0)
 
 on:
   schedule:
-    # Seg–Qui às 10h, 14h e 16h (BRT) = 13h, 17h, 19h UTC
-    - cron: "0 13,17,19 * * 1-4"
+    # Seg–Qui às 10h, 11h, 14h, 15h e 16h (BRT) = 13h, 14h, 17h, 18h, 19h UTC
+    - cron: "0 13,14,17,18,19 * * 1-4"
   workflow_dispatch: {}
 
 permissions:
@@ -43,33 +43,63 @@ jobs:
           git push
 
       # Interpretar o resultado em variáveis simples (tipo/from/to)
-      - name: Interpretar resultado
-        if: contains(steps.runcheck.outputs.result, 'CHANGED|')
+      - name: Interpretar resultado (sempre)
         id: interp
         shell: bash
         run: |
           res="${{ steps.runcheck.outputs.result }}"
-          # Formatos:
+          # Formatos esperados:
           #   CHANGED|RELEASE|<old_rel>|<new_rel>
           #   CHANGED|VERSION|<old_ver>|<new_ver>
-          kind="$(echo "$res" | awk -F'|' '{print $2}')"
-          from="$(echo "$res" | awk -F'|' '{print $3}')"
-          to="$(echo "$res"   | awk -F'|' '{print $4}')"
+          #   NOCHANGE|RELEASE_ALREADY_SET
+          #   NOCHANGE|NOTHING_FOUND
+          status="$(echo "$res" | awk -F'|' '{print $1}')"
+          kind_raw="$(echo "$res" | awk -F'|' '{print $2}')"
+          from_val="$(echo "$res" | awk -F'|' '{print $3}')"
+          to_val="$(echo "$res"   | awk -F'|' '{print $4}')"
 
-          # Mapear para assunto amigável
-          if [[ "$kind" == "VERSION" ]]; then
-            kind_human="VERSÃO"
+          # Mapeia tipo humano e assunto base
+          subject=""
+          case "$kind_raw" in
+            VERSION) kind_human="VERSÃO" ;;
+            RELEASE) kind_human="RELEASE" ;;
+            RELEASE_ALREADY_SET) kind_human="SEM ALTERAÇÃO (release já registrada)" ;;
+            NOTHING_FOUND)       kind_human="SEM ALTERAÇÃO (nenhum release hoje / versão nova não encontrada)" ;;
+            *)                   kind_human="$kind_raw" ;;
+          esac
+
+          if [[ "$status" == "CHANGED" ]]; then
+            subject="Atualização de ${kind_human} no repositório"
           else
-            kind_human="RELEASE"
+            # Ajusta assunto amigável para NOCHANGE
+            case "$kind_raw" in
+              RELEASE_ALREADY_SET) subject="Verificação: release do dia já registrada" ;;
+              NOTHING_FOUND)       subject="Verificação: sem release hoje e sem nova versão" ;;
+              *)                   subject="Verificação: nenhuma atualização encontrada" ;;
+            esac
           fi
 
-          echo "kind=${kind_human}" >> "$GITHUB_OUTPUT"
-          echo "from=${from}"        >> "$GITHUB_OUTPUT"
-          echo "to=${to}"            >> "$GITHUB_OUTPUT"
+          # Motivo detalhado para NOCHANGE
+          reason=""
+          if [[ "$status" == "NOCHANGE" ]]; then
+            if [[ "$kind_raw" == "RELEASE_ALREADY_SET" ]]; then
+              reason="Release do dia já estava registrada no arquivo."
+            elif [[ "$kind_raw" == "NOTHING_FOUND" ]]; then
+              reason="Nenhum release encontrado hoje e nenhuma nova versão encontrada na janela de 21 dias."
+            else
+              reason="$kind_raw"
+            fi
+          fi
 
-      # (Opcional) Ler conteúdo atual do arquivo para inserir no e-mail
+          echo "status=${status}"   >> "$GITHUB_OUTPUT"
+          echo "kind=${kind_human}" >> "$GITHUB_OUTPUT"
+          echo "from=${from_val}"   >> "$GITHUB_OUTPUT"
+          echo "to=${to_val}"       >> "$GITHUB_OUTPUT"
+          echo "subject=${subject}" >> "$GITHUB_OUTPUT"
+          echo "reason=${reason}"   >> "$GITHUB_OUTPUT"
+
+      # Lê SEMPRE o conteúdo atual do arquivo (para incluir no e-mail)
       - name: Ler arquivo versao_release.txt
-        if: contains(steps.runcheck.outputs.result, 'CHANGED|')
         id: file
         shell: bash
         run: |
@@ -77,9 +107,10 @@ jobs:
           cat "${PATH_VERSAO_FILE}" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
-      # Enviar e-mail
-      - name: "Enviar e-mail (conteúdo: de → para)"
+      # Envia e-mail quando houve alteração
+      - name: "Enviar e-mail (conteúdo de/para)"
         if: contains(steps.runcheck.outputs.result, 'CHANGED|')
+        continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
@@ -89,17 +120,39 @@ jobs:
           to:             ${{ secrets.TO_EMAIL }}
           from:           ${{ secrets.FROM_EMAIL }}
           secure:         true
-          subject: >
-            Atualização de ${{ steps.interp.outputs.kind }} no repositório
+          subject: ${{ steps.interp.outputs.subject }}
           body: |
-            Houve uma atualização automática em **Atual/versao_release.txt**.
+            Execução do workflow de atualização do arquivo **Atual/versao_release.txt**.
 
-            Tipo: ${{ steps.interp.outputs.kind }}
-
+            Status: ${{ steps.interp.outputs.status }}
+            Tipo:   ${{ steps.interp.outputs.kind }}
 
             Alteração:
             De → ${{ steps.interp.outputs.from }}
             Para → ${{ steps.interp.outputs.to }}
+
+            Conteúdo atual do arquivo:
+            ${{ steps.file.outputs.content }}
+
+      # Envia e-mail quando NÃO houve alteração
+      - name: "Enviar e-mail (sem alterações)"
+        if: contains(steps.runcheck.outputs.result, 'NOCHANGE|')
+        continue-on-error: true
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port:    ${{ secrets.SMTP_PORT }}
+          username:       ${{ secrets.SMTP_USERNAME }}
+          password:       ${{ secrets.SMTP_PASSWORD }}
+          to:             ${{ secrets.TO_EMAIL }}
+          from:           ${{ secrets.FROM_EMAIL }}
+          secure:         true
+          subject: ${{ steps.interp.outputs.subject }}
+          body: |
+            Execução do workflow de atualização do arquivo **Atual/versao_release.txt**.
+
+            Status: ${{ steps.interp.outputs.status }}
+            Motivo: ${{ steps.interp.outputs.reason }}
 
             Conteúdo atual do arquivo:
             ${{ steps.file.outputs.content }}
