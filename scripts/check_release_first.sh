@@ -61,6 +61,22 @@ find_new_version () {
   echo ""
 }
 
+check_release_for_date () {
+  # Recebe DDMMYY da release, monta a URL e verifica se existe
+  local ddmmyy="$1"
+  local ver_ddmm="${CUR_VER:0:4}"
+  local ddmm="${ddmmyy:0:4}"
+  local url="${URL_BASE_RELEASE40}${ver_ddmm}-a-${ddmm}.rar"
+
+  [[ "$DEBUG_URLS" == "true" ]] && echo "[DEBUG] Verificando RELEASE atual no portal: $url (data=$ddmmyy)" >&2
+
+  if exists_url "$url"; then
+    echo "AVAILABLE"
+  else
+    echo "MISSING"
+  fi
+}
+
 update_file () {
   local new_ver="$1"; local new_rel="$2"
   local v_line="Versao atual: ${CUR_VER}"
@@ -73,6 +89,12 @@ update_file () {
 main () {
   read_current
   echo >&2 "[INFO] Versao atual: $CUR_VER | Release atual: ${CUR_REL_LINE:-VAZIO}"
+
+  # DEBUG: validar se a release registrada no arquivo ainda está disponível no portal
+  if [[ -n "${CUR_REL_DATE:-}" ]]; then
+    rel_now_status="$(check_release_for_date "$CUR_REL_DATE")"
+    echo >&2 "[DEBUG] Release registrada ($CUR_REL_LET $CUR_REL_DATE): $rel_now_status no portal."
+  fi
 
   rel_status="$(check_release_today)"
   if [[ "$rel_status" == FOUND_RELEASE* ]]; then
