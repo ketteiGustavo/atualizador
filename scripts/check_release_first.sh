@@ -32,14 +32,18 @@ next_letter () {
 check_release_today () {
   local ver_ddmm="${CUR_VER:0:4}"
   local today_ddmm="$(date +%d%m)"
+  local today_ddmmyy="$(date +%d%m%y)"
   local url="${URL_BASE_RELEASE40}${ver_ddmm}-a-${today_ddmm}.rar"
 
   [[ "$DEBUG_URLS" == "true" ]] && echo "[DEBUG] Testando RELEASE URL: $url" >&2
 
   if exists_url "$url"; then
-    local letter="$(next_letter "$CUR_REL_LET")"
-    local today_ddmmyy="$(date +%d%m%y)"
-    echo "FOUND_RELEASE|${letter} ${today_ddmmyy}"
+    if [[ "${CUR_REL_DATE:-}" == "$today_ddmmyy" ]]; then
+      echo "ALREADY_TODAY|${CUR_REL_LET} ${CUR_REL_DATE}"
+    else
+      local letter="$(next_letter "$CUR_REL_LET")"
+      echo "FOUND_RELEASE|${letter} ${today_ddmmyy}"
+    fi
   else
     echo "NO_RELEASE"
   fi
@@ -97,16 +101,21 @@ main () {
   fi
 
   rel_status="$(check_release_today)"
-  if [[ "$rel_status" == FOUND_RELEASE* ]]; then
-    new_rel="${rel_status#FOUND_RELEASE|}"
-    if [[ "$CUR_REL_LINE" != "$new_rel" ]]; then
-      update_file "" "$new_rel"
-      echo "CHANGED|RELEASE|$CUR_REL_LINE|$new_rel"
-      exit 0
-    else
+  case "$rel_status" in
+    FOUND_RELEASE*)
+      new_rel="${rel_status#FOUND_RELEASE|}"
+      if [[ "$CUR_REL_LINE" != "$new_rel" ]]; then
+        update_file "" "$new_rel"
+        echo "CHANGED|RELEASE|$CUR_REL_LINE|$new_rel"
+        exit 0
+      else
+        echo "NOCHANGE|RELEASE_ALREADY_SET"; exit 0
+      fi
+      ;;
+    ALREADY_TODAY*)
       echo "NOCHANGE|RELEASE_ALREADY_SET"; exit 0
-    fi
-  fi
+      ;;
+  esac
 
   if is_letter_lmn "$CUR_REL_LET"; then
     echo >&2 "[INFO] Letra ${CUR_REL_LET} em L/M/N. Forcando checagem de NOVA VERSAO."
