@@ -28,6 +28,7 @@ jobs:
       - name: Executar verificação
         id: runcheck
         run: |
+          export DEBUG_URLS=true
           out="$(./scripts/check_release_first.sh)"
           echo "$out"
           echo "result=$out" >> "$GITHUB_OUTPUT"
@@ -119,7 +120,7 @@ jobs:
           password:       ${{ secrets.SMTP_PASSWORD }}
           to:             ${{ secrets.TO_EMAIL }}
           from:           ${{ secrets.FROM_EMAIL }}
-          secure:         true
+          secure:         false
           subject: ${{ steps.interp.outputs.subject }}
           body: |
             Execução do workflow de atualização do arquivo **Atual/versao_release.txt**.
@@ -146,7 +147,7 @@ jobs:
           password:       ${{ secrets.SMTP_PASSWORD }}
           to:             ${{ secrets.TO_EMAIL }}
           from:           ${{ secrets.FROM_EMAIL }}
-          secure:         true
+          secure:         false
           subject: ${{ steps.interp.outputs.subject }}
           body: |
             Execução do workflow de atualização do arquivo **Atual/versao_release.txt**.

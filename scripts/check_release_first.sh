@@ -5,8 +5,9 @@ VERSAO_FILE="${PATH_VERSAO_FILE:-Atual/versao_release.txt}"
 URL_BASE_VERSAO40="${URL_BASE_VERSAO40}"
 URL_BASE_RELEASE40="${URL_BASE_RELEASE40}"
 LOOKBACK_DAYS_VERSION=21
+DEBUG_URLS="${DEBUG_URLS:-false}"
 
-exists_url () { curl -k -sS -I --fail "$1" >/dev/null; }
+exists_url () { curl -k -sS -I --fail "$1" >/dev/null 2>&1; }
 
 read_current () {
   CUR_VER="$(grep -E '^Versao atual:' "$VERSAO_FILE" | awk -F': ' '{print $2}' | tr -d '[:space:]')"
@@ -32,6 +33,9 @@ check_release_today () {
   local ver_ddmm="${CUR_VER:0:4}"
   local today_ddmm="$(date +%d%m)"
   local url="${URL_BASE_RELEASE40}${ver_ddmm}-a-${today_ddmm}.rar"
+
+  [[ "$DEBUG_URLS" == "true" ]] && echo "[DEBUG] Testando RELEASE URL: $url" >&2
+
   if exists_url "$url"; then
     local letter="$(next_letter "$CUR_REL_LET")"
     local today_ddmmyy="$(date +%d%m%y)"
@@ -45,7 +49,14 @@ find_new_version () {
   for ((i=0;i<=LOOKBACK_DAYS_VERSION;i++)); do
     local d=$(date -d "-$i day" +%d%m%y)
     local url="${URL_BASE_VERSAO40}${d}.rar"
-    if exists_url "$url"; then echo "$d"; return 0; fi
+
+    [[ "$DEBUG_URLS" == "true" ]] && echo "[DEBUG] Testando VERSAO URL: $url (data=$d)" >&2
+
+    if exists_url "$url"; then
+      [[ "$DEBUG_URLS" == "true" ]] && echo "[DEBUG] ✔ Encontrada VERSAO: $d" >&2
+      echo "$d"
+      return 0
+    fi
   done
   echo ""
 }
