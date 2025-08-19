@@ -1,0 +1,70 @@
+name: Atualizar versao_release.txt (COBOL 4.0)
+
+on:
+  schedule:
+    # Seg–Qui às 10h, 14h e 16h (BRT) = 13h, 17h, 19h UTC
+    - cron: "0 13,17,19 * * 1-4"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+env:
+  TZ: America/Sao_Paulo
+  PATH_VERSAO_FILE: "Atual/versao_release.txt"
+  URL_BASE_VERSAO40:  "https://s3.amazonaws.com/avancoprogramas/integral/versao40-"
+  URL_BASE_RELEASE40: "https://s3.amazonaws.com/avancoprogramas/integral/release40-"
+
+jobs:
+  auto-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # (Opcional) garantir permissão de execução caso o bit não esteja versionado
+      - name: Ensure exec permission
+        run: chmod +x scripts/check_release_first.sh
+
+      - name: Executar verificação
+        id: runcheck
+        run: |
+          out="$(./scripts/check_release_first.sh)"
+          echo "$out"
+          echo "result=$out" >> "$GITHUB_OUTPUT"
+
+      - name: Commit & Push se mudou (direto na main)
+        if: contains(steps.runcheck.outputs.result, 'CHANGED|')
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${PATH_VERSAO_FILE}"
+          git commit -m "chore: atualizar versao_release.txt (auto)"
+          git push
+
+      - name: Enviar e-mail (conteúdo: de → para)
+        if: contains(steps.runcheck.outputs.result, 'CHANGED|')
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port:    ${{ secrets.SMTP_PORT }}
+          username:       ${{ secrets.SMTP_USERNAME }}
+          password:       ${{ secrets.SMTP_PASSWORD }}
+          to:             ${{ secrets.TO_EMAIL }}
+          from:           ${{ secrets.FROM_EMAIL }}
+          secure:         true
+          subject: >
+            Atualização de ${{ contains(steps.runcheck.outputs.result, 'VERSION') && 'VERSÃO' || 'RELEASE' }} no repositório
+          body: |
+            Houve uma atualização automática em **Atual/versao_release.txt**.
+
+            Tipo: ${{ contains(steps.runcheck.outputs.result, 'VERSION') && 'VERSÃO' || 'RELEASE' }}
+
+            Alteração:
+            De → ${{ fromJSON('["' + steps.runcheck.outputs.result + '"]')[0].split('|')[2] }}
+            Para → ${{ fromJSON('["' + steps.runcheck.outputs.result + '"]')[0].split('|')[3] }}
+
+            Conteúdo atual do arquivo:
+            ```
+            $(cat ${{ env.PATH_VERSAO_FILE }})
+            ```
