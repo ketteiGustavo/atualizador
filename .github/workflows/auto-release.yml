@@ -78,7 +78,7 @@ jobs:
           echo 'EOF' >> $GITHUB_OUTPUT
 
       # Enviar e-mail
-      - name: Enviar e-mail (conteúdo: de → para)
+      - name: "Enviar e-mail (conteúdo: de → para)"
         if: contains(steps.runcheck.outputs.result, 'CHANGED|')
         uses: dawidd6/action-send-mail@v3
         with:
