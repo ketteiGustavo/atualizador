@@ -96,6 +96,7 @@ jobs:
 
             Tipo: ${{ steps.interp.outputs.kind }}
 
+
             Alteração:
             De → ${{ steps.interp.outputs.from }}
             Para → ${{ steps.interp.outputs.to }}
