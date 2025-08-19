@@ -61,7 +61,7 @@ update_file () {
 
 main () {
   read_current
-  echo "[INFO] Versao atual: $CUR_VER | Release atual: ${CUR_REL_LINE:-VAZIO}"
+  echo >&2 "[INFO] Versao atual: $CUR_VER | Release atual: ${CUR_REL_LINE:-VAZIO}"
 
   rel_status="$(check_release_today)"
   if [[ "$rel_status" == FOUND_RELEASE* ]]; then
@@ -76,9 +76,9 @@ main () {
   fi
 
   if is_letter_lmn "$CUR_REL_LET"; then
-    echo "[INFO] Letra ${CUR_REL_LET} em L/M/N. Forcando checagem de NOVA VERSAO."
+    echo >&2 "[INFO] Letra ${CUR_REL_LET} em L/M/N. Forcando checagem de NOVA VERSAO."
   else
-    echo "[INFO] Sem release hoje. Checando NOVA VERSAO."
+    echo >&2 "[INFO] Sem release hoje. Checando NOVA VERSAO."
   fi
 
   new_ver="$(find_new_version)"

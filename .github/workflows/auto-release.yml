@@ -22,8 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # (Opcional) garantir permissão de execução caso o bit não esteja versionado
-      - name: Ensure exec permission
+      - name: Garantir permissão de execução do script
         run: chmod +x scripts/check_release_first.sh
 
       - name: Executar verificação
@@ -33,6 +32,7 @@ jobs:
           echo "$out"
           echo "result=$out" >> "$GITHUB_OUTPUT"
 
+      # Se houve alteração, commita direto na main
       - name: Commit & Push se mudou (direto na main)
         if: contains(steps.runcheck.outputs.result, 'CHANGED|')
         run: |
@@ -42,6 +42,42 @@ jobs:
           git commit -m "chore: atualizar versao_release.txt (auto)"
           git push
 
+      # Interpretar o resultado em variáveis simples (tipo/from/to)
+      - name: Interpretar resultado
+        if: contains(steps.runcheck.outputs.result, 'CHANGED|')
+        id: interp
+        shell: bash
+        run: |
+          res="${{ steps.runcheck.outputs.result }}"
+          # Formatos:
+          #   CHANGED|RELEASE|<old_rel>|<new_rel>
+          #   CHANGED|VERSION|<old_ver>|<new_ver>
+          kind="$(echo "$res" | awk -F'|' '{print $2}')"
+          from="$(echo "$res" | awk -F'|' '{print $3}')"
+          to="$(echo "$res"   | awk -F'|' '{print $4}')"
+
+          # Mapear para assunto amigável
+          if [[ "$kind" == "VERSION" ]]; then
+            kind_human="VERSÃO"
+          else
+            kind_human="RELEASE"
+          fi
+
+          echo "kind=${kind_human}" >> "$GITHUB_OUTPUT"
+          echo "from=${from}"        >> "$GITHUB_OUTPUT"
+          echo "to=${to}"            >> "$GITHUB_OUTPUT"
+
+      # (Opcional) Ler conteúdo atual do arquivo para inserir no e-mail
+      - name: Ler arquivo versao_release.txt
+        if: contains(steps.runcheck.outputs.result, 'CHANGED|')
+        id: file
+        shell: bash
+        run: |
+          echo 'content<<EOF' >> $GITHUB_OUTPUT
+          cat "${PATH_VERSAO_FILE}" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+      # Enviar e-mail
       - name: Enviar e-mail (conteúdo: de → para)
         if: contains(steps.runcheck.outputs.result, 'CHANGED|')
         uses: dawidd6/action-send-mail@v3
@@ -54,17 +90,15 @@ jobs:
           from:           ${{ secrets.FROM_EMAIL }}
           secure:         true
           subject: >
-            Atualização de ${{ contains(steps.runcheck.outputs.result, 'VERSION') && 'VERSÃO' || 'RELEASE' }} no repositório
+            Atualização de ${{ steps.interp.outputs.kind }} no repositório
           body: |
             Houve uma atualização automática em **Atual/versao_release.txt**.
 
-            Tipo: ${{ contains(steps.runcheck.outputs.result, 'VERSION') && 'VERSÃO' || 'RELEASE' }}
+            Tipo: ${{ steps.interp.outputs.kind }}
 
             Alteração:
-            De → ${{ fromJSON('["' + steps.runcheck.outputs.result + '"]')[0].split('|')[2] }}
-            Para → ${{ fromJSON('["' + steps.runcheck.outputs.result + '"]')[0].split('|')[3] }}
+            De → ${{ steps.interp.outputs.from }}
+            Para → ${{ steps.interp.outputs.to }}
 
             Conteúdo atual do arquivo:
-            ```
-            $(cat ${{ env.PATH_VERSAO_FILE }})
-            ```
+            ${{ steps.file.outputs.content }}
