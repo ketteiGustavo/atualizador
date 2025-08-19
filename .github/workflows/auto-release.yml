@@ -2,8 +2,8 @@ name: Atualizar versao_release.txt (COBOL 4.0)
 
 on:
   schedule:
-    # Seg–Qui às 10h, 11h, 14h, 15h e 16h (BRT) = 13h, 14h, 17h, 18h, 19h UTC
-    - cron: "0 13,14,17,18,19 * * 1-4"
+    # Seg–Qui das 09h as 17h
+    - cron: "0 12-20 * * 1-4"
   workflow_dispatch: {}
 
 permissions:
