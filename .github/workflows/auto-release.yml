@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: auto-release
+  cancel-in-progress: true
+
 env:
   TZ: America/Sao_Paulo
   PATH_VERSAO_FILE: "Atual/versao_release.txt"
@@ -21,6 +25,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Data/hora (BRT) e fim da janela?
+        id: dt
+        shell: bash
+        run: |
+          export TZ="${TZ:-America/Sao_Paulo}"
+          day=$(date +%Y%m%d)         # ex: 20250819
+          hour=$(date +%H)            # 00..23 (BRT)
+          is_end=false
+          if [ "$hour" -eq 17 ]; then is_end=true; fi  # último horário do dia útil
+          echo "day=$day" >> "$GITHUB_OUTPUT"
+          echo "hour=$hour" >> "$GITHUB_OUTPUT"
+          echo "is_end_of_window=$is_end" >> "$GITHUB_OUTPUT"
+
+      - name: Restaurar estado diário
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: .gha-state
+          key: state-${{ steps.dt.outputs.day }}
+          # sem restore-keys: 1 cache por dia
 
       - name: Garantir permissão de execução do script
         run: chmod +x scripts/check_release_first.sh
@@ -108,9 +133,11 @@ jobs:
           cat "${PATH_VERSAO_FILE}" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
-      # Envia e-mail quando houve alteração
-      - name: "Enviar e-mail (conteúdo de/para)"
-        if: contains(steps.runcheck.outputs.result, 'CHANGED|')
+      # === E-mails com anti-spam de "mesmo dia" via flags no cache ===
+
+      # Enviar SOMENTE a 1ª vez que mudar no dia (se já enviou, não repete)
+      - name: Enviar e-mail (mudou hoje - primeira vez)
+        if: contains(steps.runcheck.outputs.result, 'CHANGED|') && hashFiles('.gha-state/changed.flag') == ''
         continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
@@ -135,9 +162,20 @@ jobs:
             Conteúdo atual do arquivo:
             ${{ steps.file.outputs.content }}
 
-      # Envia e-mail quando NÃO houve alteração
-      - name: "Enviar e-mail (sem alterações)"
+      - name: Marcar que já enviou e-mail de mudança hoje
+        if: contains(steps.runcheck.outputs.result, 'CHANGED|') && hashFiles('.gha-state/changed.flag') == ''
+        shell: bash
+        run: |
+          mkdir -p .gha-state
+          echo "sent $(date)" > .gha-state/changed.flag
+
+      # Enviar NOCHANGE apenas no último horário do dia útil
+      # …e só se NÃO houve mudança hoje, e ainda não mandamos NOCHANGE.
+      - name: Enviar e-mail (NOCHANGE no fim do dia)
         if: contains(steps.runcheck.outputs.result, 'NOCHANGE|')
+            && steps.dt.outputs.is_end_of_window == 'true'
+            && hashFiles('.gha-state/changed.flag') == ''
+            && hashFiles('.gha-state/nochange.flag') == ''
         continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
@@ -157,3 +195,13 @@ jobs:
 
             Conteúdo atual do arquivo:
             ${{ steps.file.outputs.content }}
+
+      - name: Marcar que já enviou NOCHANGE hoje
+        if: contains(steps.runcheck.outputs.result, 'NOCHANGE|')
+            && steps.dt.outputs.is_end_of_window == 'true'
+            && hashFiles('.gha-state/changed.flag') == ''
+            && hashFiles('.gha-state/nochange.flag') == ''
+        shell: bash
+        run: |
+          mkdir -p .gha-state
+          echo "sent $(date)" > .gha-state/nochange.flag
