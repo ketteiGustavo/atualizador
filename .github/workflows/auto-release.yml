@@ -3,7 +3,7 @@ name: Atualizar versao_release.txt (COBOL 4.0)
 on:
   schedule:
     # Seg–Qui das 09h as 17h
-    - cron: "0 12-20 * * 1-4"
+    - cron: "*/20 11-21 * * 1-4"
   workflow_dispatch: {}
 
 permissions:
