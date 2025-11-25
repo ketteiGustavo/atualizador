@@ -3,7 +3,7 @@
 ################################################################################
 # atualizador - Programa para atualizar o sistema Integral
 #
-# DATA: 28/01/2025 21:40 - Versao 5.0.0.3
+# DATA: 25/11/2025 16:30 - Versao 5.0.0.4
 # -------------------------------------------------------------------------------
 # Autor: Luiz Gustavo <luiz.gustavo@avancoinfo.com.br>
 # -------------------------------------------------------------------------------
@@ -28,6 +28,10 @@
 #             e .sh necessarios vindos pelo ATU-HELP
 #           - nova opcao de argumento --extras
 #
+# v5.0.0.4  - 25/11/2025 - Luiz Gustavo:
+#           - criado nova função para ativar o baixar extras pelo cron 2 vezes
+#           - por dia
+#
 # -------------------------------------------------------------------------------
 # Testado em:
 #   bash 4.3.25 - slackware
@@ -39,8 +43,8 @@
 # O objetivo desse Programa e facilitar o dia-a-dia do clinte usuario Avanco!
 ################################################################################
 
-versaoPrograma="5.0.0.3"
-DATA_VERSAO="06/05/2025"
+versaoPrograma="5.0.0.4"
+DATA_VERSAO="25/11/2025"
 distro_nome=$(grep '^NAME=' /etc/os-release | cut -d '=' -f 2 | tr -d '"' | awk '{print $1}')
 manual_uso="
 Programa: $(basename "$0")
@@ -1040,7 +1044,6 @@ baixar_controle() {
     echo "OBTENDO DETALHES DA VERSAO E RELEASE"
     if curl -k --output /dev/null --silent --head --fail "$url_versao_release"; then
         curl -k -# -o /u/sist/controle/versao_release.txt "$url_versao_release"
-
         if [ $? -eq 0 ]; then
             chmod 666 /u/sist/controle/versao_release.txt
             clear
@@ -1452,10 +1455,22 @@ adicionar_cron_avanco() {
             echo "$cron_job"
         ) | crontab -u avanco -
     fi
+
+    local novo_extra="BAIXAR ATUALIZACOES EMERGENCIAS - NAO REMOVER ESSE CRON"
+    local novo_cron="00 10,16 * * * . /etc/profile ; /u/bats/atualizador --extras >/dev/null 2>&1"
+    if ! crontab -u avanco -l | grep -q "/u/bats/atualizador --extras"; then
+        (
+            crontab -u avanco -l
+            echo ""
+            echo "$novo_extra"
+            echo "$novo_cron"
+        ) | crontab -u avanco -
+    fi
 }
 
 testar_atualizado() {
     baixar_controle >/dev/null 2>&1
+    baixar_extras >/dev/null 2>&1
 
     if [ ! -f "/u/sist/exec/versao-release.gnt" ]; then
         echo "PROGRAMA 'versao-release.gnt' NAO ENCONTRADO!" >>$erro_log_file
@@ -1515,6 +1530,7 @@ testar_atualizado() {
             echo "################################################################################" >>$log_file
         fi
     fi
+
 }
 
 parametros() {
@@ -2606,6 +2622,20 @@ baixar_extras() {
         echo "CONFIGURANDO VERIFICA PROCESSO"
         curl -k -L -# -o "/u/bats/verificar-processo" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/verificar-processo"
         chmod 777 "/u/bats/verificar-processo"
+    fi
+    echo
+
+    if [ ! -f "/u/bats/conv-xml.sh" ]; then
+        echo "CONFIGURANDO CONV-XML NOVO"
+        curl -k -L -# -o "/u/bats/conv-xml.sh" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/conv-xml.sh"
+        chmod 777 "/u/bats/conv-xml.sh"
+    fi
+    echo
+
+    if [ ! -f "/u/bats/gerarlotertc" ]; then
+        echo "CONFIGURANDO gerarlotertc.sh"
+        curl -k -L -# -o "/u/bats/gerarlotertc.sh" "https://raw.githubusercontent.com/ketteiGustavo/atualizador/main/extras/gerarlotertc.sh"
+        chmod 777 "/u/bats/gerarlotertc.sh"
     fi
     echo
 
