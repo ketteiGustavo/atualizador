@@ -1456,7 +1456,7 @@ adicionar_cron_avanco() {
         ) | crontab -u avanco -
     fi
 
-    local novo_extra="BAIXAR ATUALIZACOES EMERGENCIAS - NAO REMOVER ESSE CRON"
+    local novo_extra="#BAIXAR ATUALIZACOES EMERGENCIAS - NAO REMOVER ESSE CRON"
     local novo_cron="00 10,16 * * * . /etc/profile ; /u/bats/atualizador --extras >/dev/null 2>&1"
     if ! crontab -u avanco -l | grep -q "/u/bats/atualizador --extras"; then
         (
